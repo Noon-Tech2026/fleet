@@ -1,0 +1,84 @@
+# Pile de developpement.
+# Traccar n'est pas necessaire tant que TELEMETRY_SOURCE=simulator,
+# mais on le declare des maintenant pour que la bascule vers le materiel
+# reel ne demande aucune reorganisation.
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_DATABASE: fleet
+      MYSQL_USER: fleet
+      MYSQL_PASSWORD: ${DB_PASSWORD:?definir DB_PASSWORD dans .env}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?definir DB_ROOT_PASSWORD dans .env}
+    ports:
+      - "127.0.0.1:3306:3306"   # jamais expose publiquement
+    volumes:
+      - mysqldata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Interface web d'administration de la base.
+  # Profil optionnel : ne demarre qu'avec `--profile tools`.
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    restart: unless-stopped
+    profiles: ["tools"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 64M
+    ports:
+      # Lie a 127.0.0.1 : phpMyAdmin ne doit JAMAIS etre joignable
+      # depuis Internet sur le VPS de production.
+      - "127.0.0.1:8081:80"
+
+  traccar:
+    image: traccar/traccar:latest
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8082:8082"     # interface web et API REST
+      - "5027:5027/tcp" # protocole Teltonika
+      - "5027:5027/udp"
+      - "5055:5055"     # OsmAnd — utile pour simuler un camion depuis un telephone
+    volumes:
+      - ./infra/traccar.xml:/opt/traccar/conf/traccar.xml:ro
+      - traccar-logs:/opt/traccar/logs
+
+  api:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: fleet
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: fleet
+      JWT_SECRET: ${JWT_SECRET:?definir JWT_SECRET dans .env}
+      TELEMETRY_SOURCE: ${TELEMETRY_SOURCE:-simulator}
+      TRACCAR_URL: http://traccar:8082
+      TRACCAR_USER: ${TRACCAR_USER:-admin@example.com}
+      TRACCAR_PASSWORD: ${TRACCAR_PASSWORD:-changeme}
+      PORT: 3000
+    ports:
+      - "3000:3000"
+
+volumes:
+  mysqldata:
+  traccar-logs:

@@ -1,0 +1,1283 @@
+/* =========================================================================
+   Système de design — thème « atelier ».
+
+   Une seule échelle de surfaces, d'espacements et de rayons. Tout composant
+   s'y réfère : redéfinir une valeur en dur ailleurs fait dériver l'ensemble
+   au premier ajout d'écran.
+
+   L'interface est consultée en cabine et en bureau d'exploitation, souvent
+   sur écran non calibré et en lumière forte. D'où les partis pris : fond
+   très sombre pour limiter l'éblouissement nocturne, contraste élevé sur les
+   valeurs numériques, couleur réservée à l'état — jamais décorative.
+   ========================================================================= */
+
+:root {
+  /* Surfaces, de la plus profonde à la plus haute. L'élévation se lit à la
+     clarté du fond, pas à l'ombre : les ombres portées se voient mal sur
+     fond sombre. */
+  --ink-0: #070f11;
+  --ink-1: #0d181b;
+  --ink-2: #13242a;
+  --ink-3: #1a3138;
+
+  --line: #23383f;
+  --line-strong: #33525b;
+
+  --bone: #e9efec;
+  --dim: #8ba1a7;
+  --faint: #63797f;
+
+  /* Couleurs d'état. Une seule signification chacune, partout :
+     ambre = attention, rouge = blocage ou danger, menthe = nominal. */
+  --amber: #f5b13d;
+  --red: #ef625a;
+  --mint: #4ecf9f;
+  --sky: #62a8d8;
+
+  --amber-soft: rgba(245, 177, 61, 0.13);
+  --red-soft: rgba(239, 98, 90, 0.14);
+  --mint-soft: rgba(78, 207, 159, 0.13);
+  --dim-soft: rgba(139, 161, 167, 0.1);
+
+  --radius-1: 6px;
+  --radius-2: 10px;
+  --radius-3: 16px;
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 18px 44px rgba(0, 0, 0, 0.55);
+
+  --font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  color-scheme: dark;
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ink-0);
+  color: var(--bone);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+/* Toute valeur mesurée est en chiffres à chasse fixe : sans cela une vitesse
+   qui passe de 9 à 10 km/h fait sauter la ligne entière. */
+.row.muted,
+.stats dd,
+.tech dd,
+.conditions dd,
+.fuel-value,
+.metric,
+.summary-cell b,
+.alert-feed time {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgba(245, 177, 61, 0.3);
+}
+
+/* Barres de défilement discrètes : trois colonnes qui défilent chacune de
+   leur côté, les barres natives claires découpent la mise en page. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 99px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--dim);
+  background-clip: padding-box;
+}
+
+/* --- structure ---------------------------------------------------------- */
+
+/* Hauteur fixe et non `min-height` : c'est ce qui permet aux trois colonnes
+   de défiler indépendamment au lieu d'allonger la page entière. */
+.app {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding: 10px var(--sp-5);
+  background: linear-gradient(180deg, var(--ink-2), var(--ink-1));
+  border-bottom: 1px solid var(--line);
+  box-shadow: var(--shadow-1);
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.brand h1 {
+  font-size: 15px;
+}
+
+.brand p {
+  margin: 2px 0 0;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.mark {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: var(--radius-1);
+  background: linear-gradient(160deg, #ffd071, var(--amber) 55%, #d9902a);
+  clip-path: polygon(0 35%, 62% 35%, 62% 12%, 100% 12%, 100% 100%, 0 100%);
+}
+
+.pills {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 650;
+  padding: 5px 11px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  color: var(--dim);
+  background: rgba(255, 255, 255, 0.02);
+  white-space: nowrap;
+}
+
+.pill .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.pill.sim {
+  color: var(--amber);
+  border-color: rgba(245, 177, 61, 0.4);
+  background: var(--amber-soft);
+}
+
+.pill.live {
+  color: var(--mint);
+  border-color: rgba(78, 207, 159, 0.35);
+  background: var(--mint-soft);
+}
+
+/* Le battement signale que le flux vit encore. Une pastille fixe ne
+   distingue pas « connecté » de « figé depuis dix minutes ». */
+.pill.live .dot {
+  animation: beat 2.4s var(--ease) infinite;
+}
+
+.pill.connecting {
+  color: var(--sky);
+  border-color: rgba(98, 168, 216, 0.35);
+}
+
+.pill.connecting .dot {
+  animation: beat 1s var(--ease) infinite;
+}
+
+.pill.lost {
+  color: var(--red);
+  border-color: rgba(239, 98, 90, 0.45);
+  background: var(--red-soft);
+}
+
+@keyframes beat {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 currentColor;
+    opacity: 1;
+  }
+  70% {
+    box-shadow: 0 0 0 5px transparent;
+    opacity: 0.65;
+  }
+}
+
+.layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 268px minmax(0, 1fr) 352px;
+  gap: 1px;
+  background: var(--line);
+}
+
+.col {
+  background: var(--ink-1);
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--sp-4);
+}
+
+.col.center {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.feed {
+  background: var(--ink-1);
+  height: clamp(170px, 25vh, 260px);
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.col-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: var(--sp-3);
+}
+
+/* Le trait qui prolonge le titre remplace un séparateur : il borne la
+   colonne sans ajouter une ligne de plus à l'écran. */
+.col-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--line), transparent);
+}
+
+.col-title .count {
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  color: var(--faint);
+  font-size: 12.5px;
+  line-height: 1.6;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-2);
+  padding: var(--sp-4);
+  margin: 0;
+}
+
+/* --- récapitulatif de flotte -------------------------------------------- */
+
+.fleet-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  overflow: hidden;
+  margin-bottom: var(--sp-3);
+}
+
+.summary-cell {
+  background: var(--ink-2);
+  padding: 8px 10px;
+}
+
+.summary-cell b {
+  display: block;
+  font-size: 19px;
+  font-weight: 650;
+  line-height: 1.15;
+}
+
+.summary-cell span {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.summary-cell.ok b {
+  color: var(--mint);
+}
+.summary-cell.idle b {
+  color: var(--dim);
+}
+.summary-cell.danger b {
+  color: var(--red);
+}
+
+/* --- liste véhicules ---------------------------------------------------- */
+
+.vehicle-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.vehicle-card {
+  position: relative;
+  width: 100%;
+  text-align: left;
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  padding: 10px 12px 12px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    background 0.15s var(--ease),
+    border-color 0.15s var(--ease),
+    transform 0.15s var(--ease);
+}
+
+/* Le liseré d'état est un pseudo-élément et non une bordure : la bordure
+   sert déjà à marquer la sélection, les deux se marcheraient dessus. */
+.vehicle-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: var(--line-strong);
+  transition: background 0.15s var(--ease);
+}
+
+.vehicle-card.tone-ok::before {
+  background: var(--mint);
+}
+.vehicle-card.tone-warn::before {
+  background: var(--amber);
+}
+.vehicle-card.tone-danger::before {
+  background: var(--red);
+}
+
+.vehicle-card:hover {
+  background: var(--ink-3);
+  border-color: var(--line-strong);
+}
+
+.vehicle-card:active {
+  transform: translateY(1px);
+}
+
+.vehicle-card.active {
+  background: var(--ink-3);
+  border-color: rgba(245, 177, 61, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(245, 177, 61, 0.12);
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.row.muted {
+  color: var(--dim);
+  font-size: 11.5px;
+  margin-top: 7px;
+}
+
+.vid {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.plate {
+  font-size: 11.5px;
+  color: var(--faint);
+  font-family: var(--mono);
+  margin-top: 1px;
+}
+
+.metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.metric u {
+  text-decoration: none;
+  font-size: 10px;
+  color: var(--faint);
+}
+
+.gauge {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 7px;
+}
+
+.gauge i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--mint);
+  transition: width 0.5s var(--ease);
+}
+
+.gauge.warn i {
+  background: var(--amber);
+}
+
+.gauge.danger i {
+  background: var(--red);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.badge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.badge.ok {
+  background: var(--mint-soft);
+  color: var(--mint);
+}
+
+.badge.warn {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.badge.danger {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.badge.idle {
+  background: var(--dim-soft);
+  color: var(--dim);
+}
+
+/* --- carte -------------------------------------------------------------- */
+
+.map-shell {
+  position: relative;
+  flex: 1;
+  min-height: 320px;
+  display: flex;
+}
+
+.map {
+  flex: 1;
+  background: var(--ink-1);
+}
+
+.map-legend {
+  position: absolute;
+  left: var(--sp-3);
+  bottom: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 9px 11px;
+  background: rgba(13, 24, 27, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  font-size: 10.5px;
+  color: var(--dim);
+  pointer-events: none;
+}
+
+.map-legend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 7px;
+  vertical-align: 1px;
+}
+
+/* Les contrôles MapLibre arrivent en thème clair : sans cela un bloc blanc
+   flotte sur un fond sombre. */
+.maplibregl-ctrl-group {
+  background: var(--ink-2) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--radius-1) !important;
+  box-shadow: var(--shadow-1) !important;
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--line) !important;
+}
+
+.maplibregl-ctrl-group button:hover {
+  background: var(--ink-3) !important;
+}
+
+.maplibregl-ctrl-group button span {
+  filter: invert(1) opacity(0.72);
+}
+
+/* --- alertes ------------------------------------------------------------ */
+
+.alert-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alert-feed li {
+  display: grid;
+  grid-template-columns: 46px 62px 1fr;
+  align-items: baseline;
+  gap: var(--sp-3);
+  padding: 6px 10px;
+  font-size: 12.5px;
+  border-left: 2px solid var(--line);
+  border-radius: 0 var(--radius-1) var(--radius-1) 0;
+  animation: slide-in 0.25s var(--ease);
+}
+
+.alert-feed li:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.alert-feed li.crit {
+  border-left-color: var(--red);
+  background: var(--red-soft);
+}
+
+.alert-feed li.warn {
+  border-left-color: var(--amber);
+  background: rgba(245, 177, 61, 0.06);
+}
+
+.alert-feed li.info {
+  border-left-color: var(--sky);
+}
+
+.alert-feed time,
+.alert-feed .who {
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.alert-feed .who {
+  color: var(--amber);
+  font-weight: 650;
+  font-family: var(--mono);
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* --- fiche véhicule ----------------------------------------------------- */
+
+.detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.detail-head h2 {
+  font-size: 22px;
+}
+
+.detail-head p {
+  margin: 3px 0 0;
+  font-size: 11.5px;
+  color: var(--faint);
+}
+
+.detail h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin: var(--sp-5) 0 var(--sp-3);
+}
+
+.detail h3::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--line), transparent);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  overflow: hidden;
+  margin: var(--sp-4) 0 0;
+}
+
+.stats > div {
+  background: var(--ink-2);
+  padding: 10px 12px;
+}
+
+.stats dt,
+.tech dt {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.stats dd {
+  margin: 3px 0 0;
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.fuel-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.fuel {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  padding: var(--sp-3) var(--sp-2);
+  text-align: center;
+}
+
+.fuel-tank {
+  position: relative;
+  height: 124px;
+  width: 54px;
+  margin: 0 auto var(--sp-2);
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-1) var(--radius-1) 9px 9px;
+  background: var(--ink-0);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+/* Graduations tous les quarts : une hauteur de liquide seule ne se lit pas,
+   un repère visuel évite d'aller chercher le chiffre. */
+.fuel-tank::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to top,
+    transparent 0 24.5%,
+    rgba(255, 255, 255, 0.09) 24.5%,
+    rgba(255, 255, 255, 0.09) 25%
+  );
+}
+
+.fuel-level {
+  width: 100%;
+  transition: height 0.5s var(--ease);
+  opacity: 0.9;
+  box-shadow: 0 0 12px currentColor;
+}
+
+.fuel-value {
+  font-size: 20px;
+  font-weight: 650;
+  line-height: 1.15;
+}
+
+.fuel-value span {
+  font-size: 11px;
+  color: var(--faint);
+  font-weight: 500;
+}
+
+.fuel-label {
+  font-size: 11px;
+  font-weight: 650;
+  margin-top: 2px;
+}
+
+.fuel-cap {
+  font-size: 10px;
+  color: var(--faint);
+}
+
+.panel {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--line-strong);
+  border-radius: var(--radius-2);
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.panel strong {
+  font-size: 13.5px;
+}
+
+.panel span {
+  font-size: 11px;
+  color: var(--faint);
+  font-family: var(--mono);
+}
+
+.panel.ok {
+  border-left-color: var(--mint);
+}
+.panel.ok strong {
+  color: var(--mint);
+}
+.panel.warn {
+  border-left-color: var(--amber);
+  background: linear-gradient(90deg, var(--amber-soft), transparent 60%), var(--ink-2);
+}
+.panel.warn strong {
+  color: var(--amber);
+}
+.panel.danger {
+  border-left-color: var(--red);
+  background: linear-gradient(90deg, var(--red-soft), transparent 60%), var(--ink-2);
+}
+.panel.danger strong {
+  color: var(--red);
+}
+
+.notice {
+  margin-top: var(--sp-3);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--amber);
+  background: var(--amber-soft);
+  border: 1px solid rgba(245, 177, 61, 0.28);
+  border-radius: var(--radius-2);
+  padding: 9px 11px;
+  animation: slide-in 0.25s var(--ease);
+}
+
+.tech {
+  margin: var(--sp-5) 0 0;
+  border-top: 1px solid var(--line);
+  padding-top: var(--sp-3);
+  font-size: 11.5px;
+  color: var(--faint);
+}
+
+.tech > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 3px 0;
+}
+
+.tech dd {
+  margin: 0;
+  color: var(--dim);
+  font-family: var(--mono);
+}
+
+/* --- boutons et dialogue ------------------------------------------------ */
+
+.btn {
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--bone);
+  border-radius: var(--radius-1);
+  padding: 8px 13px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    background 0.15s var(--ease),
+    border-color 0.15s var(--ease),
+    filter 0.15s var(--ease);
+}
+
+.btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--dim);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn.full {
+  width: 100%;
+  margin-top: var(--sp-3);
+}
+
+.btn.ghost {
+  color: var(--dim);
+  background: transparent;
+  border-color: var(--line);
+}
+
+.btn.danger {
+  background: var(--red-soft);
+  border-color: rgba(239, 98, 90, 0.5);
+  color: var(--red);
+}
+
+.btn.danger:hover:not(:disabled) {
+  background: rgba(239, 98, 90, 0.22);
+  border-color: var(--red);
+}
+
+.btn.mint {
+  background: var(--mint-soft);
+  border-color: rgba(78, 207, 159, 0.45);
+  color: var(--mint);
+}
+
+.btn.mint:hover:not(:disabled) {
+  background: rgba(78, 207, 159, 0.2);
+  border-color: var(--mint);
+}
+
+.btn.primary {
+  background: linear-gradient(180deg, #ffc25c, var(--amber));
+  border-color: var(--amber);
+  color: #1a1204;
+}
+
+.btn.primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.btn.small {
+  padding: 5px 10px;
+  font-size: 11.5px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 9, 10, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-5);
+  z-index: 50;
+  animation: fade-in 0.15s var(--ease);
+}
+
+.modal {
+  background: var(--ink-1);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-3);
+  box-shadow: var(--shadow-2);
+  max-width: 470px;
+  width: 100%;
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  padding: var(--sp-5);
+  animation: rise 0.2s var(--ease);
+}
+
+.modal h2 {
+  font-size: 16px;
+  margin-bottom: var(--sp-4);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+
+/* L'avertissement de sécurité est le seul bloc de la page à porter une
+   bordure pleine rouge : il ne doit jamais se confondre avec une alerte
+   d'exploitation ordinaire. */
+.warning {
+  background: var(--red-soft);
+  border: 1px solid rgba(239, 98, 90, 0.4);
+  border-radius: var(--radius-2);
+  padding: var(--sp-3);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--dim);
+}
+
+.warning strong {
+  display: block;
+  color: var(--red);
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.conditions {
+  margin: var(--sp-4) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  overflow: hidden;
+}
+
+.conditions > div {
+  background: var(--ink-2);
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 12.5px;
+}
+
+.conditions dt {
+  color: var(--faint);
+}
+
+.conditions dd {
+  margin: 0;
+  font-weight: 650;
+}
+
+.modal-note {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--dim);
+  margin: var(--sp-3) 0 0;
+}
+
+.field {
+  display: block;
+  margin-top: var(--sp-4);
+}
+
+.field span {
+  display: block;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 6px;
+}
+
+.field input {
+  width: 100%;
+  background: var(--ink-0);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-1);
+  padding: 9px 11px;
+  color: var(--bone);
+  font: inherit;
+  font-size: 13px;
+  transition:
+    border-color 0.15s var(--ease),
+    background 0.15s var(--ease);
+}
+
+.field input::placeholder {
+  color: var(--faint);
+}
+
+.field input:hover {
+  border-color: var(--line-strong);
+}
+
+.field input:focus {
+  border-color: var(--amber);
+  background: var(--ink-2);
+  outline: none;
+}
+
+.error {
+  color: var(--red);
+  font-size: 12px;
+  margin: var(--sp-3) 0 0;
+  background: var(--red-soft);
+  border-radius: var(--radius-1);
+  padding: 7px 10px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: var(--sp-2);
+  justify-content: flex-end;
+  margin-top: var(--sp-5);
+}
+
+.hint {
+  margin: var(--sp-2) 0 0;
+  font-size: 11.5px;
+  color: var(--faint);
+  font-style: italic;
+}
+
+/* --- connexion ---------------------------------------------------------- */
+
+.boot {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  color: var(--faint);
+  font-size: 13px;
+}
+
+.login-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-5);
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 0%, rgba(245, 177, 61, 0.09), transparent 70%),
+    var(--ink-0);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 372px;
+  background: linear-gradient(180deg, var(--ink-2), var(--ink-1));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-3);
+  box-shadow: var(--shadow-2);
+  padding: var(--sp-5);
+}
+
+.login-card .mark {
+  display: block;
+  width: 38px;
+  height: 38px;
+  margin-bottom: var(--sp-4);
+}
+
+.login-card h1 {
+  font-size: 20px;
+}
+
+.login-sub {
+  margin: 6px 0 var(--sp-5);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--faint);
+}
+
+.login-card .btn.full {
+  margin-top: var(--sp-5);
+  padding: 10px 13px;
+}
+
+/* --- session dans la barre du haut -------------------------------------- */
+
+.session {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.session .who {
+  text-align: right;
+  line-height: 1.3;
+}
+
+.session .who strong {
+  display: block;
+  font-size: 12.5px;
+}
+
+.session .who span {
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* --- responsive --------------------------------------------------------- */
+
+@media (max-width: 1180px) {
+  /* En colonne unique la page redevient un document : la hauteur figée
+     empêcherait d'atteindre le bas de la fiche véhicule. */
+  .app {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .col {
+    overflow: visible;
+  }
+
+  .col.left {
+    order: 2;
+  }
+  .col.center {
+    order: 1;
+    overflow: visible;
+  }
+  .col.right {
+    order: 3;
+  }
+
+  .map-shell {
+    min-height: 400px;
+  }
+
+  .vehicle-list {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: var(--sp-2);
+  }
+
+  .vehicle-card {
+    min-width: 190px;
+  }
+
+  .fleet-summary {
+    max-width: 420px;
+  }
+}
+
+@media (max-width: 620px) {
+  .topbar {
+    padding: 10px var(--sp-3);
+  }
+
+  .col {
+    padding: var(--sp-3);
+  }
+
+  .fuel-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* Sur mobile le message passe sous l'horodatage plutôt que de se réduire
+     à deux mots par ligne. */
+  .alert-feed li {
+    grid-template-columns: 44px 1fr;
+  }
+
+  .alert-feed li > span:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

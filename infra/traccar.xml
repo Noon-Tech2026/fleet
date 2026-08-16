@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM 'http://java.sun.com/dtd/properties.dtd'>
+<properties>
+  <entry key='config.default'>./conf/default.xml</entry>
+
+  <!-- Traccar utilise sa PROPRE base, distincte de celle de l'API.
+       Melanger les deux exposerait les tables de Traccar aux migrations
+       de l'application, et inversement. -->
+  <entry key='database.driver'>com.mysql.cj.jdbc.Driver</entry>
+  <entry key='database.url'>jdbc:mysql://mysql:3306/traccar?serverTimezone=UTC&amp;allowPublicKeyRetrieval=true&amp;useSSL=false&amp;allowMultiQueries=true&amp;autoReconnect=true&amp;useUnicode=yes&amp;characterEncoding=UTF-8&amp;sessionVariables=sql_mode=''</entry>
+  <entry key='database.user'>fleet</entry>
+  <entry key='database.password'>changeme</entry>
+
+  <!-- Protocole Teltonika : c'est ce port qu'il faut ouvrir sur le VPS
+       et renseigner dans la configuration du FMC650. -->
+  <entry key='teltonika.port'>5027</entry>
+
+  <!-- OsmAnd : permet d'injecter des positions depuis un telephone
+       pour tester avant l'arrivee du materiel. -->
+  <entry key='osmand.port'>5055</entry>
+</properties>
