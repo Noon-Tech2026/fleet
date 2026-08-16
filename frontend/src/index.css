@@ -290,6 +290,25 @@ h3 {
   min-height: 0;
 }
 
+.feed.collapsed {
+  height: auto;
+}
+
+.feed-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.feed-head .col-title {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.feed:not(.collapsed) .feed-head {
+  margin-bottom: var(--sp-3);
+}
+
 .col-title {
   display: flex;
   align-items: center;
@@ -569,13 +588,134 @@ h3 {
   pointer-events: none;
 }
 
-.map-legend i {
+.map-legend .swatch {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   display: inline-block;
   margin-right: 7px;
   vertical-align: 1px;
+}
+
+.map-legend .swatch.amber {
+  background: var(--amber);
+}
+.map-legend .swatch.dim {
+  background: var(--dim);
+}
+.map-legend .swatch.red {
+  background: var(--red);
+}
+
+.map-legend em {
+  font-style: normal;
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+  border-top: 1px solid var(--line);
+  padding-top: 5px;
+  margin-top: 1px;
+}
+
+/* --- marqueurs véhicules (DOM, pas de couche symbol) --------------------- */
+
+.veh-marker {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.veh-pin {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--ink-0);
+  background: var(--dim);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  transition:
+    width 0.2s var(--ease),
+    height 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+
+/* La flèche porte le cap ; à l'arrêt elle laisse place à un simple point,
+   car un cap immobile n'a pas de sens. */
+.veh-arrow {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 8px solid var(--ink-0);
+  transform-origin: 50% 65%;
+}
+
+.veh-marker.tone-moving .veh-pin {
+  background: var(--amber);
+}
+
+.veh-marker.tone-blocked .veh-pin {
+  background: var(--red);
+}
+
+.veh-marker.tone-off .veh-pin {
+  background: transparent;
+  border-color: var(--line-strong);
+  box-shadow: none;
+}
+
+.veh-marker.tone-idle .veh-arrow,
+.veh-marker.tone-off .veh-arrow {
+  width: 6px;
+  height: 6px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ink-0);
+}
+
+.veh-marker.tone-off .veh-arrow {
+  background: var(--line-strong);
+}
+
+.veh-tag {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 7px;
+  border-radius: 99px;
+  background: rgba(7, 15, 17, 0.82);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--bone);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.veh-marker.is-selected .veh-pin {
+  width: 30px;
+  height: 30px;
+  box-shadow:
+    0 0 0 5px rgba(245, 177, 61, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.55);
+}
+
+.veh-marker.is-selected .veh-tag {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: #1a1204;
+}
+
+.veh-marker:hover .veh-pin {
+  filter: brightness(1.15);
 }
 
 /* Les contrôles MapLibre arrivent en thème clair : sans cela un bloc blanc

@@ -42,6 +42,7 @@ function Dashboard({
 }) {
   const { vehicles, alerts, connection } = useFleetStream();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [feedOpen, setFeedOpen] = useState(true);
 
   const selected = useMemo(
     () => vehicles.find((v) => v.id === selectedId) ?? vehicles[0] ?? null,
@@ -93,11 +94,22 @@ function Dashboard({
 
         <section className="col center">
           <FleetMap vehicles={vehicles} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
-          <div className="feed">
-            <h2 className="col-title">
-              Événements {alerts.length > 0 && <span className="count">{alerts.length}</span>}
-            </h2>
-            <AlertFeed alerts={alerts} />
+          {/* Le bandeau se replie pour rendre toute la hauteur à la carte :
+              en suivi de flotte, la carte est l'écran de travail. */}
+          <div className={`feed ${feedOpen ? '' : 'collapsed'}`}>
+            <div className="feed-head">
+              <h2 className="col-title">
+                Événements {alerts.length > 0 && <span className="count">{alerts.length}</span>}
+              </h2>
+              <button
+                className="btn ghost small"
+                onClick={() => setFeedOpen((open) => !open)}
+                aria-expanded={feedOpen}
+              >
+                {feedOpen ? 'Masquer' : 'Afficher'}
+              </button>
+            </div>
+            {feedOpen && <AlertFeed alerts={alerts} />}
           </div>
         </section>
 
