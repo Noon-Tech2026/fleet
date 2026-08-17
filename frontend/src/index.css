@@ -180,6 +180,42 @@ h3 {
   clip-path: polygon(0 35%, 62% 35%, 62% 12%, 100% 12%, 100% 100%, 0 100%);
 }
 
+/* --- navigation --------------------------------------------------------- */
+
+.nav {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--ink-0);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+}
+
+.nav-tab {
+  border: 0;
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  padding: 6px 16px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition:
+    background 0.15s var(--ease),
+    color 0.15s var(--ease);
+}
+
+.nav-tab:hover {
+  color: var(--bone);
+}
+
+.nav-tab.active {
+  background: var(--ink-3);
+  color: var(--bone);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
 .pills {
   display: flex;
   gap: var(--sp-2);
@@ -1262,6 +1298,330 @@ h3 {
   font-style: italic;
 }
 
+/* --- pages de gestion --------------------------------------------------- */
+
+.page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--ink-1);
+  padding: var(--sp-5);
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.page-head h2 {
+  font-size: 22px;
+}
+
+.page-head p {
+  margin: 6px 0 0;
+  max-width: 62ch;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--faint);
+}
+
+.page-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  margin: var(--sp-4) 0;
+}
+
+.fleet-summary.compact {
+  margin-bottom: 0;
+  min-width: 320px;
+}
+
+.search {
+  flex: 1;
+  min-width: 220px;
+  max-width: 340px;
+}
+
+.search input {
+  width: 100%;
+  background: var(--ink-0);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  padding: 8px 14px;
+  color: var(--bone);
+  font: inherit;
+  font-size: 12.5px;
+}
+
+.search input::placeholder {
+  color: var(--faint);
+}
+
+.search input:focus {
+  border-color: var(--amber);
+  outline: none;
+}
+
+.banner {
+  margin: 0 0 var(--sp-3);
+  padding: 9px 12px;
+  border-radius: var(--radius-2);
+  font-size: 12.5px;
+  line-height: 1.5;
+  animation: slide-in 0.25s var(--ease);
+}
+
+.banner.ok {
+  background: var(--mint-soft);
+  border: 1px solid rgba(78, 207, 159, 0.3);
+  color: var(--mint);
+}
+
+.banner.err {
+  background: var(--red-soft);
+  border: 1px solid rgba(239, 98, 90, 0.35);
+  color: var(--red);
+}
+
+/* --- tableau ------------------------------------------------------------ */
+
+.table-wrap {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 650;
+  background: var(--ink-2);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+/* Un compte désactivé reste lisible mais visiblement inerte : le supprimer
+   de la liste ferait perdre la trace de qui a existé. */
+.table tbody tr.is-off {
+  opacity: 0.55;
+}
+
+.cell-user {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.cell-user strong {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 13px;
+}
+
+.cell-user span {
+  font-size: 11.5px;
+  color: var(--faint);
+  font-family: var(--mono);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--ink-3);
+  border: 1px solid var(--line-strong);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--dim);
+}
+
+.self {
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 99px;
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.cell-muted {
+  color: var(--faint);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.cell-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* --- sélecteur et interrupteur ------------------------------------------ */
+
+.select {
+  appearance: none;
+  background: var(--ink-0);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-1);
+  color: var(--bone);
+  font: inherit;
+  font-size: 12.5px;
+  padding: 7px 30px 7px 11px;
+  cursor: pointer;
+  /* Chevron dessiné en CSS : aucune image à charger. */
+  background-image: linear-gradient(45deg, transparent 50%, var(--dim) 50%),
+    linear-gradient(135deg, var(--dim) 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) calc(50% + 1px),
+    calc(100% - 11px) calc(50% + 1px);
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  transition: border-color 0.15s var(--ease);
+}
+
+.select:hover:not(:disabled) {
+  border-color: var(--line-strong);
+}
+
+.select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-image: none;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  border: 1px solid var(--line);
+  background: var(--ink-0);
+  color: var(--dim);
+  border-radius: 99px;
+  padding: 5px 12px 5px 6px;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    border-color 0.15s var(--ease),
+    color 0.15s var(--ease);
+}
+
+.switch i {
+  width: 26px;
+  height: 14px;
+  border-radius: 99px;
+  background: var(--line-strong);
+  position: relative;
+  transition: background 0.2s var(--ease);
+}
+
+.switch i::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink-1);
+  transition: transform 0.2s var(--ease);
+}
+
+.switch.on {
+  color: var(--mint);
+  border-color: rgba(78, 207, 159, 0.35);
+}
+
+.switch.on i {
+  background: var(--mint);
+}
+
+.switch.on i::after {
+  transform: translateX(12px);
+}
+
+.switch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- formulaires de compte ---------------------------------------------- */
+
+.field-row {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.field-row input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--mono);
+}
+
+.field-error {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  color: var(--amber);
+}
+
+.role-hint {
+  margin: var(--sp-2) 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--faint);
+  border-left: 2px solid var(--line-strong);
+  padding-left: var(--sp-3);
+}
+
+.modal .select {
+  width: 100%;
+  padding: 9px 30px 9px 11px;
+  font-size: 13px;
+}
+
 /* --- connexion ---------------------------------------------------------- */
 
 .boot {
@@ -1394,8 +1754,16 @@ h3 {
     padding: 10px var(--sp-3);
   }
 
-  .col {
+  .col,
+  .page {
     padding: var(--sp-3);
+  }
+
+  .fleet-summary.compact,
+  .search {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
   }
 
   .fuel-row {

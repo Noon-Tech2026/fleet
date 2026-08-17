@@ -1,4 +1,4 @@
-import type { Alert, AuthUser, CommandAudit, VehicleState } from '../lib/types';
+import type { Alert, AuthUser, CommandAudit, Role, VehicleState } from '../lib/types';
 
 /** Declenche quand la session est definitivement perdue. */
 let onSessionLost: (() => void) | null = null;
@@ -95,4 +95,20 @@ export const api = {
 
   pressButton: (id: string) =>
     request<{ ok: boolean }>(`/api/simulator/vehicles/${id}/press-button`, { method: 'POST' }),
+
+  /* --- comptes (reserve au role admin cote serveur) --- */
+  users: () => request<AuthUser[]>('/api/users'),
+
+  createUser: (input: { email: string; fullName: string; role: Role; password: string }) =>
+    request<AuthUser>('/api/users', { method: 'POST', body: JSON.stringify(input) }),
+
+  updateUser: (id: string, patch: { role?: Role; active?: boolean; fullName?: string }) =>
+    request<AuthUser>(`/api/users/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+
+  /** Coupe aussi toutes les sessions ouvertes de l'utilisateur. */
+  resetUserPassword: (id: string, password: string) =>
+    request<{ ok: true }>(`/api/users/${id}/password`, {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    }),
 };
