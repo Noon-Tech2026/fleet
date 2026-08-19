@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { AuthService, JwtPayload, TokenPair } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { Public } from './decorators/public.decorator';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { ACCESS_COOKIE, REFRESH_COOKIE } from './guards/jwt-auth.guard';
 import { toPublic } from './entities/user.entity';
@@ -11,6 +12,7 @@ import { toPublic } from './entities/user.entity';
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Public()
   @Post('login')
   async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {

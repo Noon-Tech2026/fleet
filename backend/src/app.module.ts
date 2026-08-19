@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { DatabaseModule } from './database/database.module';
@@ -34,6 +35,7 @@ import { ImmobilizerService } from './immobilizer/immobilizer.service';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     DatabaseModule,
     AuthModule,
     UsersModule,
@@ -55,6 +57,7 @@ import { ImmobilizerService } from './immobilizer/immobilizer.service';
 
     // Ordre significatif : on identifie l'utilisateur (JwtAuthGuard)
     // avant de verifier son role (RolesGuard).
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
