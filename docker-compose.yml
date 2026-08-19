@@ -1,11 +1,8 @@
-# Pile de developpement.
-# Traccar n'est pas necessaire tant que TELEMETRY_SOURCE=simulator,
-# mais on le declare des maintenant pour que la bascule vers le materiel
-# reel ne demande aucune reorganisation.
-
+# Pile de production — isolee de Supabase (reseau + noms dedies)
 services:
   mysql:
     image: mysql:8.4
+    container_name: fleet-mysql
     restart: unless-stopped
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
@@ -14,19 +11,20 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD:?definir DB_PASSWORD dans .env}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?definir DB_ROOT_PASSWORD dans .env}
     ports:
-      - "127.0.0.1:3306:3306"   # jamais expose publiquement
+      - "127.0.0.1:3307:3306"
     volumes:
-      - mysqldata:/var/lib/mysql
+      - fleet-mysqldata:/var/lib/mysql
+    networks:
+      - fleet-net
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
       interval: 10s
       timeout: 5s
       retries: 10
 
-  # Interface web d'administration de la base.
-  # Profil optionnel : ne demarre qu'avec `--profile tools`.
   phpmyadmin:
     image: phpmyadmin:5.2
+    container_name: fleet-phpmyadmin
     restart: unless-stopped
     profiles: ["tools"]
     depends_on:
@@ -37,28 +35,32 @@ services:
       PMA_PORT: 3306
       UPLOAD_LIMIT: 64M
     ports:
-      # Lie a 127.0.0.1 : phpMyAdmin ne doit JAMAIS etre joignable
-      # depuis Internet sur le VPS de production.
-      - "127.0.0.1:8081:80"
+      - "127.0.0.1:8083:80"
+    networks:
+      - fleet-net
 
   traccar:
     image: traccar/traccar:latest
+    container_name: fleet-traccar
     restart: unless-stopped
     depends_on:
       mysql:
         condition: service_healthy
     ports:
-      - "8082:8082"     # interface web et API REST
-      - "5027:5027/tcp" # protocole Teltonika
+      - "8082:8082"
+      - "5027:5027/tcp"
       - "5027:5027/udp"
-      - "5055:5055"     # OsmAnd — utile pour simuler un camion depuis un telephone
+      - "5055:5055"
     volumes:
       - ./infra/traccar.xml:/opt/traccar/conf/traccar.xml:ro
-      - traccar-logs:/opt/traccar/logs
+      - fleet-traccar-logs:/opt/traccar/logs
+    networks:
+      - fleet-net
 
   api:
     build:
       context: ./backend
+    container_name: fleet-api
     restart: unless-stopped
     depends_on:
       mysql:
@@ -77,8 +79,15 @@ services:
       TRACCAR_PASSWORD: ${TRACCAR_PASSWORD:-changeme}
       PORT: 3000
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3001:3000"
+    networks:
+      - fleet-net
+
+networks:
+  fleet-net:
+    driver: bridge
+    name: fleet-net
 
 volumes:
-  mysqldata:
-  traccar-logs:
+  fleet-mysqldata:
+  fleet-traccar-logs:
