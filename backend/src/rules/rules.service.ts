@@ -5,6 +5,7 @@ import { FuelService } from '../fuel/fuel.service';
 import { AlertsService } from './alerts.service';
 import { ImmobilizerService, SYSTEM_ACTOR } from '../immobilizer/immobilizer.service';
 import { DeparturesService } from '../fleet/departures.service';
+import { MaintenanceService, describeDeadline } from '../maintenance/maintenance.service';
 
 /**
  * Règles métier évaluées à chaque position reçue.
@@ -19,12 +20,14 @@ export class RulesService {
     private readonly alerts: AlertsService,
     private readonly immobilizer: ImmobilizerService,
     private readonly departures: DeparturesService,
+    private readonly maintenance: MaintenanceService,
   ) {}
 
   async evaluate(previous: VehicleState | undefined, current: VehicleState): Promise<void> {
     this.checkZoneTransition(previous, current);
     await this.checkDeparture(previous, current);
     this.checkFuel(current);
+    this.checkMaintenance(current);
   }
 
   private checkZoneTransition(previous: VehicleState | undefined, current: VehicleState): void {
@@ -107,6 +110,37 @@ export class RulesService {
         'fuel_drop',
         `Chute anormale du réservoir auxiliaire — ${dropAux.delta} L véhicule à l'arrêt`,
       );
+    }
+  }
+
+  /**
+   * Echeances d'entretien.
+   *
+   * MaintenanceService ne renvoie que les franchissements de seuil, pas
+   * l'etat courant : une vidange en retard depuis trois semaines ne doit
+   * pas produire une alerte a chaque trame.
+   *
+   * Niveau `warning` et non `critical` : un entretien depasse coute un
+   * moteur a terme, il ne met personne en danger dans la minute. Le
+   * critique reste reserve a la zone interdite et au siphonnage.
+   */
+  private checkMaintenance(current: VehicleState): void {
+    for (const due of this.maintenance.detectTransitions(current)) {
+      if (due.status === 'overdue') {
+        this.alerts.raise(
+          current.id,
+          'warning',
+          'maintenance_overdue',
+          `Entretien dépassé — ${due.label} (${describeDeadline(due)})`,
+        );
+      } else {
+        this.alerts.raise(
+          current.id,
+          'info',
+          'maintenance_due',
+          `Entretien à prévoir — ${due.label} (${describeDeadline(due)})`,
+        );
+      }
     }
   }
 }

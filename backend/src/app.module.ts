@@ -16,6 +16,8 @@ import { Position } from './fleet/entities/position.entity';
 import { Departure } from './fleet/entities/departure.entity';
 import { Zone } from './geofence/entities/zone.entity';
 import { FuelCalibration } from './fuel/entities/fuel-calibration.entity';
+import { MaintenancePlan } from './maintenance/entities/maintenance-plan.entity';
+import { MaintenanceLog } from './maintenance/entities/maintenance-log.entity';
 
 import { EventsModule } from './events/events.module';
 import { EventsController } from './events/events.controller';
@@ -31,6 +33,8 @@ import { FuelService } from './fuel/fuel.service';
 import { RulesService } from './rules/rules.service';
 import { AlertsService } from './rules/alerts.service';
 import { ImmobilizerService } from './immobilizer/immobilizer.service';
+import { MaintenanceService } from './maintenance/maintenance.service';
+import { MaintenanceController } from './maintenance/maintenance.controller';
 
 @Module({
   imports: [
@@ -39,11 +43,20 @@ import { ImmobilizerService } from './immobilizer/immobilizer.service';
     DatabaseModule,
     AuthModule,
     UsersModule,
-    TypeOrmModule.forFeature([CommandLog, Vehicle, Position, Departure, Zone, FuelCalibration]),
+    TypeOrmModule.forFeature([
+      CommandLog,
+      Vehicle,
+      Position,
+      Departure,
+      Zone,
+      FuelCalibration,
+      MaintenancePlan,
+      MaintenanceLog,
+    ]),
     EventsModule,
     TelemetryModule,
   ],
-  controllers: [FleetController, FleetAdminController, EventsController],
+  controllers: [FleetController, FleetAdminController, MaintenanceController, EventsController],
   providers: [
     FleetService,
     VehiclesService,
@@ -54,6 +67,7 @@ import { ImmobilizerService } from './immobilizer/immobilizer.service';
     RulesService,
     AlertsService,
     ImmobilizerService,
+    MaintenanceService,
 
     // Ordre significatif : on identifie l'utilisateur (JwtAuthGuard)
     // avant de verifier son role (RolesGuard).

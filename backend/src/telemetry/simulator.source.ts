@@ -62,6 +62,7 @@ export class SimulatorSource implements TelemetrySource, OnModuleDestroy {
     mk('C-03', R1, 0.0, 0, false, 700, 300, 96540, 2874, 'departure_without_button'),
     mk('C-04', R1, 0.74, 58, true, 340, 210, 302115, 9140, 'fuel_theft'),
     mk('C-05', R3, 0.42, 47, true, 528, 300, 158702, 4630, 'normal'),
+    
   ];
 
   async start(onPosition: PositionHandler): Promise<void> {

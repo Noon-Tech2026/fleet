@@ -7,6 +7,8 @@ import { User, Role } from './auth/entities/user.entity';
 import { Vehicle } from './fleet/entities/vehicle.entity';
 import { Zone } from './geofence/entities/zone.entity';
 import { FuelCalibration } from './fuel/entities/fuel-calibration.entity';
+import { MaintenancePlan } from './maintenance/entities/maintenance-plan.entity';
+import { MAINTENANCE_CATALOG } from './maintenance/maintenance.catalog';
 import { AuthService } from './auth/auth.service';
 
 config();
@@ -38,6 +40,7 @@ async function seed(): Promise<void> {
   await seedVehicles(dataSource);
   await seedZones(dataSource);
   await seedCalibrations(dataSource);
+  await seedMaintenance(dataSource);
 
   await dataSource.destroy();
   console.log('\nSeed termine.\n');
@@ -178,6 +181,76 @@ async function seedCalibrations(ds: DataSource): Promise<void> {
   }
 
   console.log(`Calibrations : ${created} creees (provisoires, a refaire sur le terrain).`);
+}
+
+
+/* --- echeances d'entretien -------------------------------------------------- */
+
+/**
+ * Releves de depart, alignes sur les compteurs du simulateur.
+ *
+ * `usage` est la part d'intervalle deja consommee au moment du seed :
+ * elle place chaque camion a un endroit different de son cycle pour que
+ * l'ecran d'entretien montre a la fois du conforme, du proche et du
+ * depasse des le premier lancement.
+ */
+const DEMO_SERVICE_STATE: Record<string, { odometer: number; hours: number; usage: number }> = {
+  'C-01': { odometer: 184_320, hours: 5_412, usage: 0.9 },
+  'C-02': { odometer: 231_884, hours: 6_980, usage: 1.05 },
+  'C-03': { odometer: 96_540, hours: 2_874, usage: 0.25 },
+  'C-04': { odometer: 302_115, hours: 9_140, usage: 0.65 },
+  'C-05': { odometer: 158_702, hours: 4_630, usage: 0.4 },
+};
+
+const DAY_MS = 24 * 3600 * 1000;
+
+function clampRatio(value: number): number {
+  return Math.max(0.05, Math.min(1.25, value));
+}
+
+async function seedMaintenance(ds: DataSource): Promise<void> {
+  const repo = ds.getRepository(MaintenancePlan);
+  let created = 0;
+
+  for (const vehicle of DEMO_VEHICLES) {
+    const base = DEMO_SERVICE_STATE[vehicle.id!];
+    if (!base) continue;
+
+    for (const [index, task] of MAINTENANCE_CATALOG.entries()) {
+      if (await repo.findOne({ where: { vehicleId: vehicle.id!, kind: task.kind } })) continue;
+
+      // Etalement volontaire : sans variation, les neuf echeances d'un
+      // camion tomberaient toutes le meme jour.
+      const usage = clampRatio(base.usage + (((index * 17) % 50) - 25) / 100);
+
+      await repo.save(
+        repo.create({
+          vehicleId: vehicle.id!,
+          kind: task.kind,
+          intervalKm: task.intervalKm,
+          intervalHours: task.intervalHours,
+          intervalDays: task.intervalDays,
+          lastServiceOdometer:
+            task.intervalKm === null
+              ? null
+              : Math.max(0, Math.round(base.odometer - task.intervalKm * usage)),
+          lastServiceHours:
+            task.intervalHours === null
+              ? null
+              : Math.max(0, Math.round(base.hours - task.intervalHours * usage)),
+          lastServiceAt:
+            task.intervalDays === null
+              ? null
+              : new Date(Date.now() - task.intervalDays * usage * DAY_MS),
+          active: true,
+          notes: null,
+        }),
+      );
+      created++;
+    }
+  }
+
+  console.log(`Entretien : ${created} echeances creees.`);
 }
 
 seed().catch((err) => {

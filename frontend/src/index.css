@@ -1330,6 +1330,10 @@ h3 {
   color: var(--faint);
 }
 
+.page-head .chips {
+  flex: none;
+}
+
 .page-toolbar {
   display: flex;
   align-items: center;
@@ -1498,6 +1502,10 @@ h3 {
   white-space: nowrap;
 }
 
+.cell-actions .btn + .btn {
+  margin-left: var(--sp-2);
+}
+
 /* --- sélecteur et interrupteur ------------------------------------------ */
 
 .select {
@@ -1620,6 +1628,151 @@ h3 {
   width: 100%;
   padding: 9px 30px 9px 11px;
   font-size: 13px;
+}
+
+/* --- entretien ---------------------------------------------------------- */
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.chips {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--ink-0);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+}
+
+.chip {
+  border: 0;
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 650;
+  padding: 5px 13px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition:
+    background 0.15s var(--ease),
+    color 0.15s var(--ease);
+}
+
+.chip:hover {
+  color: var(--bone);
+}
+
+.chip.active {
+  background: var(--ink-3);
+  color: var(--bone);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.banner.warn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  background: var(--amber-soft);
+  border: 1px solid rgba(245, 177, 61, 0.32);
+  color: var(--amber);
+}
+
+.summary-cell.warn b {
+  color: var(--amber);
+}
+
+.cell-sub {
+  font-size: 11px;
+  color: var(--faint);
+  font-family: var(--mono);
+  margin-top: 2px;
+}
+
+.cell-deadline {
+  min-width: 190px;
+  font-size: 12.5px;
+}
+
+/* Barre de consommation de l'intervalle : la valeur chiffrée dit combien
+   il reste, la barre dit à quel point c'est proche. */
+.usage {
+  height: 4px;
+  margin-top: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.usage i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--mint);
+  transition: width 0.4s var(--ease);
+}
+
+.usage.warn i {
+  background: var(--amber);
+}
+
+.usage.danger i {
+  background: var(--red);
+}
+
+.usage.idle i {
+  background: var(--line-strong);
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+/* --- échéances dans la fiche véhicule ----------------------------------- */
+
+.maint-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.maint-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--line-strong);
+  border-radius: var(--radius-2);
+  padding: 9px 11px;
+}
+
+.maint-row strong {
+  display: block;
+  font-size: 12.5px;
+}
+
+.maint-row span:not(.badge) {
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.maint-row.ok {
+  border-left-color: var(--mint);
+}
+.maint-row.warn {
+  border-left-color: var(--amber);
+}
+.maint-row.danger {
+  border-left-color: var(--red);
 }
 
 /* --- connexion ---------------------------------------------------------- */
@@ -1766,7 +1919,8 @@ h3 {
     width: 100%;
   }
 
-  .fuel-row {
+  .fuel-row,
+  .field-grid {
     grid-template-columns: 1fr;
   }
 

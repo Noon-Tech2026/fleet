@@ -1,4 +1,13 @@
-import type { Alert, AuthUser, CommandAudit, Role, VehicleState } from '../lib/types';
+import type {
+  Alert,
+  AuthUser,
+  CommandAudit,
+  MaintenanceKind,
+  MaintenanceLogEntry,
+  MaintenancePlanState,
+  Role,
+  VehicleState,
+} from '../lib/types';
 
 /** Declenche quand la session est definitivement perdue. */
 let onSessionLost: (() => void) | null = null;
@@ -95,6 +104,49 @@ export const api = {
 
   pressButton: (id: string) =>
     request<{ ok: boolean }>(`/api/simulator/vehicles/${id}/press-button`, { method: 'POST' }),
+
+  /* --- entretien --- */
+  maintenance: () => request<MaintenancePlanState[]>('/api/maintenance'),
+
+  vehicleMaintenance: (id: string) =>
+    request<MaintenancePlanState[]>(`/api/vehicles/${id}/maintenance`),
+
+  maintenanceLogs: (vehicleId?: string) =>
+    request<MaintenanceLogEntry[]>(
+      vehicleId ? `/api/maintenance/logs?vehicleId=${encodeURIComponent(vehicleId)}` : '/api/maintenance/logs',
+    ),
+
+  /** Consigne un entretien realise et repousse l'echeance. */
+  recordService: (
+    id: string,
+    kind: MaintenanceKind,
+    body: {
+      at?: string;
+      odometer?: number;
+      engineHours?: number;
+      partReference?: string;
+      cost?: number;
+      notes?: string;
+    },
+  ) =>
+    request<MaintenancePlanState>(`/api/vehicles/${id}/maintenance/${kind}/service`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  /** Reglage des periodicites — superviseur cote serveur. */
+  saveMaintenancePlan: (
+    id: string,
+    kind: MaintenanceKind,
+    body: { intervalKm?: number; intervalHours?: number; intervalDays?: number; notes?: string },
+  ) =>
+    request<MaintenancePlanState>(`/api/vehicles/${id}/maintenance/${kind}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  applyMaintenanceCatalog: (id: string) =>
+    request<MaintenancePlanState[]>(`/api/vehicles/${id}/maintenance`, { method: 'POST' }),
 
   /* --- comptes (reserve au role admin cote serveur) --- */
   users: () => request<AuthUser[]>('/api/users'),

@@ -19,7 +19,9 @@ export type AlertCode =
   | 'fuel_low'
   | 'starter_blocked'
   | 'starter_released'
-  | 'device_offline';
+  | 'device_offline'
+  | 'maintenance_due'
+  | 'maintenance_overdue';
 
 export interface VehicleState {
   id: string;
@@ -72,6 +74,68 @@ export interface CommandAudit {
   vehicleSpeedAtRequest: number;
   ignitionAtRequest: boolean;
   at: string;
+}
+
+/* --- Entretien ------------------------------------------------------------ */
+
+/** Operations suivies. Ce catalogue est celui d'un SHACMAN F3000 : il
+ *  se complete, mais un code retire laisserait des lignes orphelines. */
+export type MaintenanceKind =
+  | 'engine_oil' // vidange huile moteur
+  | 'oil_filter' // cartouche filtre a huile
+  | 'fuel_filter' // cartouche filtre a gasoil
+  | 'water_separator' // cartouche decanteur d'eau
+  | 'air_filter' // filtre a air
+  | 'gearbox_oil' // huile de boite
+  | 'axle_oil' // huile de ponts
+  | 'greasing' // graissage general
+  | 'brake_check'; // controle du freinage
+
+export type MaintenanceStatus =
+  | 'unknown' // aucun entretien enregistre : echeance incalculable
+  | 'ok'
+  | 'soon' // dans les derniers 15 % de l'intervalle
+  | 'overdue';
+
+/** Echeance calculee a partir du releve courant du camion. */
+export interface MaintenancePlanState {
+  id: string;
+  vehicleId: string;
+  kind: MaintenanceKind;
+  label: string;
+  status: MaintenanceStatus;
+
+  intervalKm: number | null;
+  intervalHours: number | null;
+  intervalDays: number | null;
+
+  lastServiceOdometer: number | null;
+  lastServiceHours: number | null;
+  lastServiceAt: string | null;
+
+  /** Restant avant echeance ; negatif = depasse. null = axe non suivi. */
+  remainingKm: number | null;
+  remainingHours: number | null;
+  remainingDays: number | null;
+
+  /** Part consommee de l'intervalle sur l'axe le plus avance, 0..1 et au-dela. */
+  usage: number;
+
+  notes: string | null;
+}
+
+export interface MaintenanceLogEntry {
+  id: string;
+  vehicleId: string;
+  kind: MaintenanceKind;
+  label: string;
+  at: string;
+  odometer: number | null;
+  engineHours: number | null;
+  partReference: string | null;
+  cost: number | null;
+  performedBy: string;
+  notes: string | null;
 }
 
 /* --- Messages poussés sur le flux SSE ------------------------------------ */

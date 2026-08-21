@@ -80,6 +80,7 @@ backend/src/
   fuel/            calibration des sondes, détection de siphonnage
   geofence/        zones, point-dans-polygone, haversine
   immobilizer/     contrôle du démarreur — voir règle de sécurité
+  maintenance/     échéances d'entretien, journal des interventions
   rules/           moteur de règles métier, alertes
   telemetry/       source abstraite + simulateur + client Traccar
   seed.ts
@@ -87,6 +88,8 @@ backend/src/
 frontend/src/
   api/             client HTTP, hook SSE
   auth/            contexte d'authentification, page de connexion
+  maintenance/     écran d'entretien, journal, saisie d'intervention
+  users/           écran de gestion des comptes
   components/      carte, liste, fiche véhicule, jauges, dialogue
   lib/types.ts     miroir de backend/src/common/types.ts
 ```
@@ -132,8 +135,8 @@ Hiérarchie cumulative : `viewer` < `operator` < `supervisor` < `admin`.
 | Rôle | Ajoute |
 |---|---|
 | `viewer` | carte, fiches, alertes, historique |
-| `operator` | confirmer un départ, acquitter une alerte, ouvrir une fiche |
-| `supervisor` | bloquer/réautoriser un démarreur, gérer zones et calibrations |
+| `operator` | confirmer un départ, acquitter une alerte, ouvrir une fiche, consigner un entretien réalisé |
+| `supervisor` | bloquer/réautoriser un démarreur, gérer zones, calibrations et périodicités d'entretien |
 | `admin` | gérer les comptes et le répertoire des véhicules |
 
 Décorateur : `@RequireRole(Role.Supervisor)` sur la méthode ou la classe.
@@ -174,6 +177,12 @@ mise en service.
 en amont : changement de contact, transition de zone, déplacement ≥ 60 m, ou
 point de contrôle toutes les 3 minutes. Ne pas retirer ce filtre.
 
+**Les alertes d'entretien ne se déclenchent qu'au franchissement.**
+`MaintenanceService.detectTransitions()` amorce son état en silence à la
+première évaluation de chaque échéance. Au démarrage de l'API, un parc dont la
+moitié des vidanges est en retard ne noie donc pas le fil d'événements. Cet état
+permanent se lit dans l'onglet Entretien, pas dans les alertes.
+
 **Les calibrations carburant du seed sont fausses.** Linéaires par construction,
 alors qu'un réservoir aluminium de 700 L n'a pas une section constante. Elles
 permettent de démarrer, pas de facturer.
@@ -186,9 +195,11 @@ silencieusement.
 
 ## État actuel
 
-Fait : authentification et rôles, persistance MySQL (8 tables), simulateur,
-règles métier (geofence, départ non confirmé, siphonnage), immobiliseur avec
-audit, flux SSE, dashboard de base.
+Fait : authentification et rôles, persistance MySQL (10 tables), simulateur,
+règles métier (geofence, départ non confirmé, siphonnage, échéances d'entretien),
+immobiliseur avec audit, flux SSE, dashboard, écran de gestion des comptes,
+suivi d'entretien (vidanges, cartouches, contrôles) avec journal des
+interventions.
 
 Reste, par ordre de priorité :
 

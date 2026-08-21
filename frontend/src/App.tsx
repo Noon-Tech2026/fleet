@@ -8,6 +8,7 @@ import { VehicleList } from './components/VehicleList';
 import { VehicleDetail } from './components/VehicleDetail';
 import { AlertFeed } from './components/AlertFeed';
 import { UsersPage } from './users/UsersPage';
+import { MaintenancePage } from './maintenance/MaintenancePage';
 import { ROLE_LABEL } from './lib/roles';
 
 const SIMULATOR_MODE = import.meta.env.DEV;
@@ -41,7 +42,7 @@ function Dashboard({
   const { vehicles, alerts, connection } = useFleetStream();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [feedOpen, setFeedOpen] = useState(true);
-  const [view, setView] = useState<'fleet' | 'users'>('fleet');
+  const [view, setView] = useState<'fleet' | 'maintenance' | 'users'>('fleet');
   const { can } = useAuth();
   const isAdmin = can('admin');
 
@@ -61,24 +62,30 @@ function Dashboard({
           </div>
         </div>
 
-        {/* Un seul onglet ne serait que du bruit : la navigation
-            n'apparaît que si elle mène quelque part. */}
-        {isAdmin && (
-          <nav className="nav">
-            <button
-              className={`nav-tab ${view === 'fleet' ? 'active' : ''}`}
-              onClick={() => setView('fleet')}
-            >
-              Supervision
-            </button>
+        <nav className="nav">
+          <button
+            className={`nav-tab ${view === 'fleet' ? 'active' : ''}`}
+            onClick={() => setView('fleet')}
+          >
+            Supervision
+          </button>
+          <button
+            className={`nav-tab ${view === 'maintenance' ? 'active' : ''}`}
+            onClick={() => setView('maintenance')}
+          >
+            Entretien
+          </button>
+          {/* L'onglet n'apparaît que pour un administrateur — confort
+              d'affichage : le serveur refuse de toute façon. */}
+          {isAdmin && (
             <button
               className={`nav-tab ${view === 'users' ? 'active' : ''}`}
               onClick={() => setView('users')}
             >
               Utilisateurs
             </button>
-          </nav>
-        )}
+          )}
+        </nav>
 
         <div className="pills">
           {SIMULATOR_MODE && (
@@ -106,6 +113,8 @@ function Dashboard({
 
       {view === 'users' && isAdmin ? (
         <UsersPage />
+      ) : view === 'maintenance' ? (
+        <MaintenancePage vehicles={vehicles} />
       ) : (
         <main className="layout">
           <aside className="col left">

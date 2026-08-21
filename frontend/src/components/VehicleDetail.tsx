@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { VehicleState } from '../lib/types';
 import { statusOf } from '../lib/status';
 import { FuelGauge } from './FuelGauge';
+import { MaintenancePanel } from './MaintenancePanel';
 import { StarterDialog } from './StarterDialog';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
@@ -74,6 +75,9 @@ export function VehicleDetail({ vehicle, simulatorMode }: Props) {
         <FuelGauge liters={vehicle.fuelMain} capacity={700} label="Principal" />
         <FuelGauge liters={vehicle.fuelAux} capacity={300} label="Auxiliaire" />
       </div>
+
+      <h3>Entretien</h3>
+      <MaintenancePanel vehicleId={vehicle.id} />
 
       <h3>Confirmation de départ</h3>
       <div className={`panel ${vehicle.departureConfirmed ? 'ok' : 'warn'}`}>
