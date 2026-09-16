@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   ClientRecord,
   DriverRecord,
@@ -40,6 +40,27 @@ export function VehicleAccountingPanel({
   const [addingTrip, setAddingTrip] = useState(false);
   const [addingExpense, setAddingExpense] = useState(false);
   const [addingInvestment, setAddingInvestment] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Un mouvement à la fois : trois entrées (voyage, charge, investissement)
+  // regroupées derrière un seul bouton plutôt qu'un bouton par section —
+  // le type se choisit après, pas avant.
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMenuOpen(false);
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
 
   const load = useCallback(async () => {
     try {
@@ -66,12 +87,62 @@ export function VehicleAccountingPanel({
   return (
     <div className="accounting-detail">
       <div className="page-toolbar">
-        <button className="btn ghost small" onClick={onBack}>
-          ← Retour à la synthèse
-        </button>
-        <h3 className="col-title">
-          {vehicleId} <span className="cell-sub">{plate}</span>
-        </h3>
+        <div className="toolbar-right">
+          <button className="btn ghost small" onClick={onBack}>
+            ← Retour à la synthèse
+          </button>
+          <h3 className="col-title">
+            {vehicleId} <span className="cell-sub">{plate}</span>
+          </h3>
+        </div>
+
+        {(canRecordTrip || canManageMoney) && (
+          <div className="dropdown" ref={menuRef}>
+            <button className="btn primary small" onClick={() => setMenuOpen((open) => !open)}>
+              + Ajouter un mouvement
+            </button>
+            {menuOpen && (
+              <div className="dropdown-menu">
+                {canRecordTrip && (
+                  <button
+                    className="dropdown-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setAddingTrip(true);
+                    }}
+                  >
+                    <strong>Voyage</strong>
+                    <span>Course facturée à un client</span>
+                  </button>
+                )}
+                {canManageMoney && (
+                  <button
+                    className="dropdown-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setAddingExpense(true);
+                    }}
+                  >
+                    <strong>Charge</strong>
+                    <span>Carburant, pneus, péage, salaire…</span>
+                  </button>
+                )}
+                {canManageMoney && (
+                  <button
+                    className="dropdown-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setAddingInvestment(true);
+                    }}
+                  >
+                    <strong>Investissement</strong>
+                    <span>Achat, équipement, réfection lourde</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {error && <p className="banner err">{error}</p>}
@@ -100,11 +171,6 @@ export function VehicleAccountingPanel({
       <section className="accounting-block">
         <header>
           <h4>Voyages</h4>
-          {canRecordTrip && (
-            <button className="btn small" onClick={() => setAddingTrip(true)}>
-              Nouveau voyage
-            </button>
-          )}
         </header>
 
         {!trips ? (
@@ -155,11 +221,6 @@ export function VehicleAccountingPanel({
       <section className="accounting-block">
         <header>
           <h4>Charges</h4>
-          {canManageMoney && (
-            <button className="btn small" onClick={() => setAddingExpense(true)}>
-              Nouvelle charge
-            </button>
-          )}
         </header>
 
         {!expenses ? (
@@ -195,11 +256,6 @@ export function VehicleAccountingPanel({
       <section className="accounting-block">
         <header>
           <h4>Investissements</h4>
-          {canManageMoney && (
-            <button className="btn small" onClick={() => setAddingInvestment(true)}>
-              Nouvel investissement
-            </button>
-          )}
         </header>
 
         {!investments ? (

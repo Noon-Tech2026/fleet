@@ -66,10 +66,6 @@ export function AccountingPage({ vehicles }: { vehicles: VehicleState[] }) {
       <header className="page-head">
         <div>
           <h2>Comptabilité</h2>
-          <p>
-            Revenu des voyages facturés contre charges d'exploitation, entretien et investissement —
-            camion par camion.
-          </p>
         </div>
 
         {!selectedVehicleId && (

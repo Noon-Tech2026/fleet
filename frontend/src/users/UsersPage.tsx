@@ -70,10 +70,6 @@ export function UsersPage() {
       <header className="page-head">
         <div>
           <h2>Utilisateurs</h2>
-          <p>
-            Les rôles sont cumulatifs et appliqués par le serveur : masquer un bouton ne protège
-            rien, seul le rôle compte.
-          </p>
         </div>
         <button className="btn primary" onClick={() => setCreating(true)}>
           Nouvel utilisateur
@@ -81,16 +77,16 @@ export function UsersPage() {
       </header>
 
       <div className="page-toolbar">
-        <div className="fleet-summary compact">
-          <div className="summary-cell">
+        <div className="user-stats">
+          <div className="user-stat">
             <b>{users?.length ?? '—'}</b>
             <span>Comptes</span>
           </div>
-          <div className="summary-cell ok">
+          <div className="user-stat brand">
             <b>{activeCount}</b>
             <span>Actifs</span>
           </div>
-          <div className="summary-cell">
+          <div className="user-stat">
             <b>{adminCount}</b>
             <span>Administrateurs</span>
           </div>

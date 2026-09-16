@@ -23,8 +23,8 @@ export function LoginPage() {
   return (
     <div className="login-page">
       <form className="login-card" onSubmit={submit}>
-        <span className="mark" aria-hidden="true" />
-        <h1>Gestion de flotte</h1>
+        <img src="/logo.png" className="mark" alt="" aria-hidden="true" />
+        <h1>GeoTruck</h1>
         <p className="login-sub">Connectez-vous pour accéder au suivi des véhicules.</p>
 
         <label className="field">

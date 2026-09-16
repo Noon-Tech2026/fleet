@@ -97,10 +97,6 @@ export function MaintenancePage({ vehicles }: { vehicles: VehicleState[] }) {
       <header className="page-head">
         <div>
           <h2>Entretien</h2>
-          <p>
-            Vidanges, cartouches et contrôles périodiques. Chaque échéance se compte sur trois axes —
-            kilométrage, heures moteur et calendrier — et c'est le plus avancé qui décide.
-          </p>
         </div>
 
         <nav className="chips">

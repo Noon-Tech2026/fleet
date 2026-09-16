@@ -4,6 +4,7 @@ import { useFleetStream } from './api/useFleetStream';
 import { useAuth } from './auth/AuthContext';
 import { LoginPage } from './auth/LoginPage';
 import { FleetMap } from './components/FleetMap';
+import { FleetOverview } from './components/FleetOverview';
 import { VehicleList } from './components/VehicleList';
 import { VehicleDetail } from './components/VehicleDetail';
 import { AlertFeed } from './components/AlertFeed';
@@ -43,7 +44,7 @@ function Dashboard({
   const { vehicles, alerts, connection } = useFleetStream();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [feedOpen, setFeedOpen] = useState(true);
-  const [view, setView] = useState<'fleet' | 'maintenance' | 'accounting' | 'users'>('fleet');
+  const [view, setView] = useState<'overview' | 'fleet' | 'maintenance' | 'accounting' | 'users'>('overview');
   const { can } = useAuth();
   const isAdmin = can('admin');
 
@@ -56,14 +57,20 @@ function Dashboard({
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <span className="mark" aria-hidden="true" />
+          <img src="/logo.png" className="mark" alt="" aria-hidden="true" />
           <div>
-            <h1>Gestion de flotte</h1>
-            <p>SHACMAN F3000 · {vehicles.length} véhicules</p>
+            <h1>GeoTruck</h1>
+            <p>Your fleet under control</p>
           </div>
         </div>
 
         <nav className="nav">
+          <button
+            className={`nav-tab ${view === 'overview' ? 'active' : ''}`}
+            onClick={() => setView('overview')}
+          >
+            Vue d'ensemble
+          </button>
           <button
             className={`nav-tab ${view === 'fleet' ? 'active' : ''}`}
             onClick={() => setView('fleet')}
@@ -124,6 +131,14 @@ function Dashboard({
         <MaintenancePage vehicles={vehicles} />
       ) : view === 'accounting' ? (
         <AccountingPage vehicles={vehicles} />
+      ) : view === 'overview' ? (
+        <FleetOverview
+          vehicles={vehicles}
+          onTrack={(id) => {
+            setSelectedId(id);
+            setView('fleet');
+          }}
+        />
       ) : (
         <main className="layout">
           <aside className="col left">
