@@ -119,7 +119,7 @@ export function ServiceDialog({ plan, vehicle, onCancel, onDone }: Props) {
           </label>
 
           <label className="field">
-            <span>Coût (DH)</span>
+            <span>Coût (MRU)</span>
             <input type="number" min={0} step="0.01" value={cost} onChange={(e) => setCost(e.target.value)} />
           </label>
         </div>

@@ -132,7 +132,7 @@ export function TripDialog({ vehicleId, clients, drivers, onCancel, onDone }: Pr
           </label>
 
           <label className="field">
-            <span>Montant facturé (DH)</span>
+            <span>Montant facturé (MRU)</span>
             <input
               type="number"
               min={0}

@@ -73,7 +73,7 @@ export function MaintenanceLogs() {
               </td>
               <td className="cell-muted">{entry.partReference ?? '—'}</td>
               <td className="cell-muted">
-                {entry.cost !== null ? `${entry.cost.toLocaleString('fr-FR')} DH` : '—'}
+                {entry.cost !== null ? `${entry.cost.toLocaleString('fr-FR')} MRU` : '—'}
               </td>
               <td className="cell-muted">{entry.performedBy}</td>
             </tr>

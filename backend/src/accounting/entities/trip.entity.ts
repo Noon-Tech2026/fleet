@@ -35,7 +35,7 @@ export class Trip {
   @Column({ type: 'varchar', length: 160, nullable: true })
   destination: string | null;
 
-  /** Montant facturé au client, en dirhams. */
+  /** Montant facturé au client, en ouguiyas (MRU). */
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount: string;
 

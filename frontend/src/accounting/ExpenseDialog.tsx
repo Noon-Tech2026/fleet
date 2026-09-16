@@ -76,7 +76,7 @@ export function ExpenseDialog({ vehicleId, onCancel, onDone }: Props) {
           </label>
 
           <label className="field">
-            <span>Montant (DH)</span>
+            <span>Montant (MRU)</span>
             <input type="number" min={0} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
           </label>
         </div>

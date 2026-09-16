@@ -36,7 +36,7 @@ export class MaintenanceLog {
   @Column({ name: 'part_reference', type: 'varchar', length: 120, nullable: true })
   partReference: string | null;
 
-  /** Cout en dirhams, saisi si connu. */
+  /** Cout en ouguiyas (MRU), saisi si connu. */
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   cost: string | null;
 
