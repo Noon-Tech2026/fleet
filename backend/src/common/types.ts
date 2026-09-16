@@ -138,6 +138,102 @@ export interface MaintenanceLogEntry {
   notes: string | null;
 }
 
+/* --- Comptabilité ---------------------------------------------------------- */
+
+export interface ClientRecord {
+  id: string;
+  name: string;
+  contact: string | null;
+  notes: string | null;
+  active: boolean;
+}
+
+export interface DriverRecord {
+  id: string;
+  fullName: string;
+  phone: string | null;
+  licenseNumber: string | null;
+  active: boolean;
+}
+
+/** Conteneurs standard : 20 ou 40 pieds. */
+export type ContainerSize = '20' | '40';
+
+export interface TripContainerEntry {
+  id: string;
+  containerNumber: string | null;
+  size: ContainerSize;
+  loaded: boolean;
+  notes: string | null;
+}
+
+export interface TripEntry {
+  id: string;
+  vehicleId: string;
+  driverId: string;
+  driverName: string;
+  clientId: string;
+  clientName: string;
+  startedAt: string;
+  endedAt: string | null;
+  origin: string | null;
+  destination: string | null;
+  amount: number;
+  containers: TripContainerEntry[];
+  notes: string | null;
+  createdBy: string;
+}
+
+/** Catalogue volontairement sans "entretien" : déjà suivi par
+ *  `maintenance_logs.cost`, compter les deux compterait deux fois. */
+export type VehicleExpenseCategory =
+  | 'fuel' // carburant
+  | 'tires' // pneus
+  | 'insurance' // assurance
+  | 'toll' // péage
+  | 'salary' // salaire
+  | 'fine' // amende
+  | 'other'; // autre
+
+export interface VehicleExpenseEntry {
+  id: string;
+  vehicleId: string;
+  category: VehicleExpenseCategory;
+  amount: number;
+  at: string;
+  reference: string | null;
+  notes: string | null;
+  createdBy: string;
+}
+
+export type VehicleInvestmentKind =
+  | 'purchase' // achat du camion
+  | 'equipment' // équipement additionnel
+  | 'overhaul' // réfection lourde
+  | 'other';
+
+export interface VehicleInvestmentEntry {
+  id: string;
+  vehicleId: string;
+  kind: VehicleInvestmentKind;
+  amount: number;
+  at: string;
+  description: string | null;
+  createdBy: string;
+}
+
+/** Synthèse financière d'un véhicule : revenu des voyages contre charges
+ *  (générales + entretien) et investissements. */
+export interface VehicleAccountingSummary {
+  vehicleId: string;
+  tripsCount: number;
+  revenue: number;
+  expenses: number;
+  maintenanceCost: number;
+  investments: number;
+  netResult: number;
+}
+
 /* --- Messages poussés sur le flux SSE ------------------------------------ */
 
 export type StreamMessage =

@@ -11,7 +11,7 @@ import type { VehicleState } from '../lib/types';
 const OFFLINE_STYLE: StyleSpecification = {
   version: 8,
   sources: {},
-  layers: [{ id: 'fond', type: 'background', paint: { 'background-color': '#0B1518' } }],
+  layers: [{ id: 'fond', type: 'background', paint: { 'background-color': '#F2F4F7' } }],
 };
 
 const MAP_STYLE = import.meta.env.VITE_MAP_STYLE as string | undefined;
@@ -20,7 +20,7 @@ const MAP_STYLE = import.meta.env.VITE_MAP_STYLE as string | undefined;
  *  voit pas les variables CSS. Toute retouche de palette se fait aux deux
  *  endroits, sinon la carte se désaccorde du reste de l'écran. */
 const PAINT = {
-  grid: '#1B3036',
+  grid: '#D7DDE3',
   red: '#EF625A',
   mint: '#4ECF9F',
 } as const;

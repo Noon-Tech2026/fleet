@@ -1,47 +1,76 @@
 /* =========================================================================
-   Système de design — thème « atelier ».
+   Système de design — thème « atelier », variante claire.
 
    Une seule échelle de surfaces, d'espacements et de rayons. Tout composant
    s'y réfère : redéfinir une valeur en dur ailleurs fait dériver l'ensemble
    au premier ajout d'écran.
 
-   L'interface est consultée en cabine et en bureau d'exploitation, souvent
-   sur écran non calibré et en lumière forte. D'où les partis pris : fond
-   très sombre pour limiter l'éblouissement nocturne, contraste élevé sur les
-   valeurs numériques, couleur réservée à l'état — jamais décorative.
+   Passé du sombre au clair à la demande : le fond sombre limitait
+   l'éblouissement nocturne en cabine, mais l'exploitation se fait surtout
+   au bureau. Les tons restent les mêmes (ambre/rouge/menthe/ciel), juste
+   recalibrés — plus sombres qu'en thème sombre — pour rester lisibles en
+   texte sur fond clair (contraste AA).
    ========================================================================= */
 
 :root {
-  /* Surfaces, de la plus profonde à la plus haute. L'élévation se lit à la
-     clarté du fond, pas à l'ombre : les ombres portées se voient mal sur
-     fond sombre. */
-  --ink-0: #070f11;
-  --ink-1: #0d181b;
-  --ink-2: #13242a;
-  --ink-3: #1a3138;
+  /* Surfaces, de la plus reculée à la plus élevée. Chaque écran de plus
+     est légèrement plus clair que le précédent — même logique qu'avant,
+     translatée vers le haut de l'échelle. */
+  --ink-0: #e9edf1;
+  --ink-1: #f2f4f7;
+  --ink-2: #fafbfc;
+  --ink-3: #ffffff;
 
-  --line: #23383f;
-  --line-strong: #33525b;
+  --line: #dde2e8;
+  --line-strong: #c2cad2;
 
-  --bone: #e9efec;
-  --dim: #8ba1a7;
-  --faint: #63797f;
+  --bone: #171e24;
+  --dim: #4b5866;
+  --faint: #71808f;
 
   /* Couleurs d'état. Une seule signification chacune, partout :
-     ambre = attention, rouge = blocage ou danger, menthe = nominal. */
-  --amber: #f5b13d;
-  --red: #ef625a;
-  --mint: #4ecf9f;
-  --sky: #62a8d8;
+     ambre = attention, rouge = blocage ou danger, menthe = nominal.
+     Assombries par rapport au thème sombre pour rester lisibles en texte
+     sur fond clair (~4.5:1 minimum sur blanc). */
+  --amber: #a3620a;
+  --red: #c53030;
+  --mint: #157a5c;
+  --sky: #2568a8;
 
-  --amber-soft: rgba(245, 177, 61, 0.13);
+  --amber-soft: rgba(245, 177, 61, 0.16);
   --red-soft: rgba(239, 98, 90, 0.14);
-  --mint-soft: rgba(78, 207, 159, 0.13);
-  --dim-soft: rgba(139, 161, 167, 0.1);
+  --mint-soft: rgba(78, 207, 159, 0.16);
+  --dim-soft: rgba(139, 161, 167, 0.14);
 
-  --radius-1: 6px;
-  --radius-2: 10px;
-  --radius-3: 16px;
+  /* Voile neutre pour les survols/pistes sur une surface claire — inverse
+     du voile blanc utilisé en thème sombre. */
+  --wash-1: rgba(23, 30, 36, 0.035);
+  --wash-2: rgba(23, 30, 36, 0.06);
+  --wash-3: rgba(23, 30, 36, 0.09);
+
+  /* Teintes vives : remplissages pleins (badges, bouton primaire, pastille
+     de carte) où c'est le TEXTE posé dessus qui doit contraster, pas la
+     teinte elle-même contre le fond de page. --amber/--red/--mint/--sky
+     ci-dessus sont assombris pour l'usage inverse (texte sur fond clair). */
+  --amber-vivid: #f5b13d;
+  --red-vivid: #ef625a;
+  --mint-vivid: #4ecf9f;
+  --sky-vivid: #62a8d8;
+
+  /* Marque : bleu nuit profond pour la barre du haut, en contraste avec le
+     contenu clair — c'est ce qui casse l'effet « tout est blanc ». */
+  --navy-0: #0a1120;
+  --navy-1: #101a30;
+  --navy-2: #182848;
+  --on-navy: #f3f6fc;
+  --on-navy-dim: rgba(243, 246, 252, 0.64);
+  --on-navy-faint: rgba(243, 246, 252, 0.42);
+  --on-navy-wash: rgba(243, 246, 252, 0.09);
+  --on-navy-wash-strong: rgba(243, 246, 252, 0.16);
+
+  --radius-1: 8px;
+  --radius-2: 12px;
+  --radius-3: 18px;
 
   --sp-1: 4px;
   --sp-2: 8px;
@@ -49,14 +78,14 @@
   --sp-4: 16px;
   --sp-5: 24px;
 
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-2: 0 18px 44px rgba(0, 0, 0, 0.55);
+  --shadow-1: 0 1px 2px rgba(23, 30, 36, 0.08);
+  --shadow-2: 0 20px 48px rgba(23, 30, 36, 0.16);
 
   --font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
   --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
 
-  color-scheme: dark;
+  color-scheme: light;
   font-family: var(--font);
   font-size: 14px;
   line-height: 1.45;
@@ -146,9 +175,9 @@ h3 {
   gap: var(--sp-4);
   flex-wrap: wrap;
   padding: 10px var(--sp-5);
-  background: linear-gradient(180deg, var(--ink-2), var(--ink-1));
-  border-bottom: 1px solid var(--line);
-  box-shadow: var(--shadow-1);
+  background: linear-gradient(120deg, var(--navy-0), var(--navy-2) 65%, #1c2e52);
+  border-bottom: 1px solid var(--navy-0);
+  box-shadow: 0 6px 24px rgba(10, 17, 32, 0.22);
   z-index: 10;
 }
 
@@ -160,6 +189,7 @@ h3 {
 
 .brand h1 {
   font-size: 15px;
+  color: var(--on-navy);
 }
 
 .brand p {
@@ -167,7 +197,7 @@ h3 {
   font-size: 10.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--faint);
+  color: var(--on-navy-faint);
 }
 
 .mark {
@@ -186,15 +216,15 @@ h3 {
   display: flex;
   gap: 2px;
   padding: 3px;
-  background: var(--ink-0);
-  border: 1px solid var(--line);
+  background: var(--on-navy-wash);
+  border: 1px solid var(--on-navy-wash-strong);
   border-radius: 99px;
 }
 
 .nav-tab {
   border: 0;
   background: transparent;
-  color: var(--dim);
+  color: var(--on-navy-dim);
   font: inherit;
   font-size: 12px;
   font-weight: 650;
@@ -207,13 +237,13 @@ h3 {
 }
 
 .nav-tab:hover {
-  color: var(--bone);
+  color: var(--on-navy);
 }
 
 .nav-tab.active {
-  background: var(--ink-3);
-  color: var(--bone);
-  box-shadow: inset 0 0 0 1px var(--line-strong);
+  background: linear-gradient(180deg, #ffc25c, var(--amber-vivid));
+  color: #1a1204;
+  box-shadow: 0 2px 10px rgba(245, 177, 61, 0.35);
 }
 
 .pills {
@@ -232,9 +262,9 @@ h3 {
   font-weight: 650;
   padding: 5px 11px;
   border-radius: 99px;
-  border: 1px solid var(--line);
-  color: var(--dim);
-  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--on-navy-wash-strong);
+  color: var(--on-navy-dim);
+  background: var(--on-navy-wash);
   white-space: nowrap;
 }
 
@@ -247,15 +277,15 @@ h3 {
 }
 
 .pill.sim {
-  color: var(--amber);
-  border-color: rgba(245, 177, 61, 0.4);
-  background: var(--amber-soft);
+  color: #ffd27a;
+  border-color: rgba(255, 178, 61, 0.4);
+  background: rgba(255, 178, 61, 0.14);
 }
 
 .pill.live {
-  color: var(--mint);
-  border-color: rgba(78, 207, 159, 0.35);
-  background: var(--mint-soft);
+  color: #7de8bf;
+  border-color: rgba(78, 207, 159, 0.4);
+  background: rgba(78, 207, 159, 0.14);
 }
 
 /* Le battement signale que le flux vit encore. Une pastille fixe ne
@@ -265,8 +295,9 @@ h3 {
 }
 
 .pill.connecting {
-  color: var(--sky);
-  border-color: rgba(98, 168, 216, 0.35);
+  color: #8fcdf5;
+  border-color: rgba(98, 168, 216, 0.4);
+  background: rgba(98, 168, 216, 0.14);
 }
 
 .pill.connecting .dot {
@@ -274,9 +305,9 @@ h3 {
 }
 
 .pill.lost {
-  color: var(--red);
+  color: #ff9a92;
   border-color: rgba(239, 98, 90, 0.45);
-  background: var(--red-soft);
+  background: rgba(239, 98, 90, 0.16);
 }
 
 @keyframes beat {
@@ -385,17 +416,17 @@ h3 {
 .fleet-summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  background: var(--line);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-2);
-  overflow: hidden;
+  gap: var(--sp-2);
   margin-bottom: var(--sp-3);
 }
 
 .summary-cell {
-  background: var(--ink-2);
-  padding: 8px 10px;
+  background: var(--ink-3);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--line-strong);
+  border-radius: var(--radius-2);
+  padding: 9px 11px;
+  box-shadow: var(--shadow-1);
 }
 
 .summary-cell b {
@@ -412,11 +443,25 @@ h3 {
   color: var(--faint);
 }
 
+.summary-cell.ok {
+  background: linear-gradient(160deg, rgba(21, 122, 92, 0.12), var(--ink-3) 70%);
+  border-top-color: var(--mint);
+}
 .summary-cell.ok b {
   color: var(--mint);
 }
+
+.summary-cell.warn {
+  background: linear-gradient(160deg, rgba(163, 98, 10, 0.12), var(--ink-3) 70%);
+  border-top-color: var(--amber);
+}
 .summary-cell.idle b {
   color: var(--dim);
+}
+
+.summary-cell.danger {
+  background: linear-gradient(160deg, rgba(197, 48, 48, 0.12), var(--ink-3) 70%);
+  border-top-color: var(--red);
 }
 .summary-cell.danger b {
   color: var(--red);
@@ -459,20 +504,20 @@ h3 {
   left: 0;
   top: 10px;
   bottom: 10px;
-  width: 2px;
-  border-radius: 0 2px 2px 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
   background: var(--line-strong);
   transition: background 0.15s var(--ease);
 }
 
 .vehicle-card.tone-ok::before {
-  background: var(--mint);
+  background: var(--mint-vivid);
 }
 .vehicle-card.tone-warn::before {
-  background: var(--amber);
+  background: var(--amber-vivid);
 }
 .vehicle-card.tone-danger::before {
-  background: var(--red);
+  background: var(--red-vivid);
 }
 
 .vehicle-card:hover {
@@ -529,7 +574,7 @@ h3 {
 
 .gauge {
   height: 4px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--wash-2);
   border-radius: 99px;
   overflow: hidden;
   margin-top: 7px;
@@ -539,16 +584,16 @@ h3 {
   display: block;
   height: 100%;
   border-radius: 99px;
-  background: var(--mint);
+  background: var(--mint-vivid);
   transition: width 0.5s var(--ease);
 }
 
 .gauge.warn i {
-  background: var(--amber);
+  background: var(--amber-vivid);
 }
 
 .gauge.danger i {
-  background: var(--red);
+  background: var(--red-vivid);
 }
 
 .badge {
@@ -571,26 +616,29 @@ h3 {
   border-radius: 50%;
   background: currentColor;
   flex: none;
+  opacity: 0.85;
 }
 
+/* Pastilles pleines plutôt que texte teinté sur fond pâle : c'est ce qui
+   fait qu'un état se voit d'un coup d'œil dans une liste ou un tableau. */
 .badge.ok {
-  background: var(--mint-soft);
-  color: var(--mint);
+  background: var(--mint);
+  color: #fff;
 }
 
 .badge.warn {
-  background: var(--amber-soft);
-  color: var(--amber);
+  background: var(--amber);
+  color: #fff;
 }
 
 .badge.danger {
-  background: var(--red-soft);
-  color: var(--red);
+  background: var(--red);
+  color: #fff;
 }
 
 .badge.idle {
-  background: var(--dim-soft);
-  color: var(--dim);
+  background: var(--line-strong);
+  color: var(--bone);
 }
 
 /* --- carte -------------------------------------------------------------- */
@@ -615,10 +663,11 @@ h3 {
   flex-direction: column;
   gap: 5px;
   padding: 9px 11px;
-  background: rgba(13, 24, 27, 0.88);
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(8px);
   border: 1px solid var(--line);
   border-radius: var(--radius-2);
+  box-shadow: var(--shadow-1);
   font-size: 10.5px;
   color: var(--dim);
   pointer-events: none;
@@ -634,13 +683,13 @@ h3 {
 }
 
 .map-legend .swatch.amber {
-  background: var(--amber);
+  background: var(--amber-vivid);
 }
 .map-legend .swatch.dim {
   background: var(--dim);
 }
 .map-legend .swatch.red {
-  background: var(--red);
+  background: var(--red-vivid);
 }
 
 .map-legend em {
@@ -674,7 +723,7 @@ h3 {
   border-radius: 50%;
   border: 2px solid var(--ink-0);
   background: var(--dim);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 6px rgba(23, 30, 36, 0.3);
   transition:
     width 0.2s var(--ease),
     height 0.2s var(--ease),
@@ -693,11 +742,11 @@ h3 {
 }
 
 .veh-marker.tone-moving .veh-pin {
-  background: var(--amber);
+  background: var(--amber-vivid);
 }
 
 .veh-marker.tone-blocked .veh-pin {
-  background: var(--red);
+  background: var(--red-vivid);
 }
 
 .veh-marker.tone-off .veh-pin {
@@ -726,8 +775,9 @@ h3 {
   transform: translateX(-50%);
   padding: 2px 7px;
   border-radius: 99px;
-  background: rgba(7, 15, 17, 0.82);
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--line);
+  box-shadow: var(--shadow-1);
   font-family: var(--mono);
   font-size: 10.5px;
   font-weight: 600;
@@ -740,13 +790,16 @@ h3 {
   width: 30px;
   height: 30px;
   box-shadow:
-    0 0 0 5px rgba(245, 177, 61, 0.18),
-    0 2px 8px rgba(0, 0, 0, 0.55);
+    0 0 0 5px rgba(245, 177, 61, 0.22),
+    0 2px 8px rgba(23, 30, 36, 0.3);
 }
 
+/* Remplissage plein : la teinte franche du bouton primaire, pas la
+   variable --amber assombrie pour le texte — il faut du contraste avec
+   le texte sombre, pas l'inverse. */
 .veh-marker.is-selected .veh-tag {
-  background: var(--amber);
-  border-color: var(--amber);
+  background: #f5b13d;
+  border-color: #f5b13d;
   color: #1a1204;
 }
 
@@ -754,10 +807,11 @@ h3 {
   filter: brightness(1.15);
 }
 
-/* Les contrôles MapLibre arrivent en thème clair : sans cela un bloc blanc
-   flotte sur un fond sombre. */
+/* Les contrôles MapLibre arrivent déjà stylés pour un thème clair — leurs
+   icônes sont dessinées sombres par défaut, il suffit d'accorder le
+   conteneur à la palette de l'app. */
 .maplibregl-ctrl-group {
-  background: var(--ink-2) !important;
+  background: var(--ink-3) !important;
   border: 1px solid var(--line) !important;
   border-radius: var(--radius-1) !important;
   box-shadow: var(--shadow-1) !important;
@@ -768,11 +822,11 @@ h3 {
 }
 
 .maplibregl-ctrl-group button:hover {
-  background: var(--ink-3) !important;
+  background: var(--ink-0) !important;
 }
 
 .maplibregl-ctrl-group button span {
-  filter: invert(1) opacity(0.72);
+  opacity: 0.75;
 }
 
 /* --- alertes ------------------------------------------------------------ */
@@ -801,7 +855,7 @@ h3 {
 }
 
 .alert-feed li:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--wash-1);
 }
 
 .alert-feed li.crit {
@@ -944,8 +998,8 @@ h3 {
   background: repeating-linear-gradient(
     to top,
     transparent 0 24.5%,
-    rgba(255, 255, 255, 0.09) 24.5%,
-    rgba(255, 255, 255, 0.09) 25%
+    var(--wash-3) 24.5%,
+    var(--wash-3) 25%
   );
 }
 
@@ -1058,7 +1112,7 @@ h3 {
 
 .btn {
   border: 1px solid var(--line-strong);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--wash-1);
   color: var(--bone);
   border-radius: var(--radius-1);
   padding: 8px 13px;
@@ -1073,7 +1127,7 @@ h3 {
 }
 
 .btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--wash-2);
   border-color: var(--dim);
 }
 
@@ -1148,7 +1202,7 @@ h3 {
 }
 
 .modal {
-  background: var(--ink-1);
+  background: var(--ink-3);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-3);
   box-shadow: var(--shadow-2);
@@ -1436,7 +1490,7 @@ h3 {
 }
 
 .table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--wash-1);
 }
 
 /* Un compte désactivé reste lisible mais visiblement inerte : le supprimer
@@ -1704,7 +1758,7 @@ h3 {
 .usage {
   height: 4px;
   margin-top: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--wash-2);
   border-radius: 99px;
   overflow: hidden;
 }
@@ -1773,6 +1827,67 @@ h3 {
 }
 .maint-row.danger {
   border-left-color: var(--red);
+}
+
+/* --- comptabilité --------------------------------------------------------- */
+
+.fleet-summary.cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.ok-text {
+  color: var(--mint);
+}
+
+.danger-text {
+  color: var(--red);
+}
+
+.accounting-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.accounting-block header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-2);
+}
+
+.accounting-block h4 {
+  font-size: 13px;
+}
+
+.repeatable {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: var(--sp-2) 0;
+}
+
+.repeatable-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.field-row select {
+  flex: 1;
+}
+
+.field-row .check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--faint);
+  white-space: nowrap;
 }
 
 /* --- connexion ---------------------------------------------------------- */
@@ -1846,11 +1961,26 @@ h3 {
   font-size: 12.5px;
 }
 
+.session .who strong {
+  color: var(--on-navy);
+}
+
 .session .who span {
   font-size: 9.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--faint);
+  color: var(--on-navy-faint);
+}
+
+.session .btn.ghost {
+  color: var(--on-navy-dim);
+  border-color: var(--on-navy-wash-strong);
+}
+
+.session .btn.ghost:hover:not(:disabled) {
+  color: var(--on-navy);
+  background: var(--on-navy-wash);
+  border-color: var(--on-navy-wash-strong);
 }
 
 /* --- responsive --------------------------------------------------------- */
@@ -1920,8 +2050,13 @@ h3 {
   }
 
   .fuel-row,
-  .field-grid {
+  .field-grid,
+  .fleet-summary.cols-4 {
     grid-template-columns: 1fr;
+  }
+
+  .field-row {
+    flex-wrap: wrap;
   }
 
   /* Sur mobile le message passe sous l'horodatage plutôt que de se réduire

@@ -9,6 +9,7 @@ import { VehicleDetail } from './components/VehicleDetail';
 import { AlertFeed } from './components/AlertFeed';
 import { UsersPage } from './users/UsersPage';
 import { MaintenancePage } from './maintenance/MaintenancePage';
+import { AccountingPage } from './accounting/AccountingPage';
 import { ROLE_LABEL } from './lib/roles';
 
 const SIMULATOR_MODE = import.meta.env.DEV;
@@ -42,7 +43,7 @@ function Dashboard({
   const { vehicles, alerts, connection } = useFleetStream();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [feedOpen, setFeedOpen] = useState(true);
-  const [view, setView] = useState<'fleet' | 'maintenance' | 'users'>('fleet');
+  const [view, setView] = useState<'fleet' | 'maintenance' | 'accounting' | 'users'>('fleet');
   const { can } = useAuth();
   const isAdmin = can('admin');
 
@@ -74,6 +75,12 @@ function Dashboard({
             onClick={() => setView('maintenance')}
           >
             Entretien
+          </button>
+          <button
+            className={`nav-tab ${view === 'accounting' ? 'active' : ''}`}
+            onClick={() => setView('accounting')}
+          >
+            Comptabilité
           </button>
           {/* L'onglet n'apparaît que pour un administrateur — confort
               d'affichage : le serveur refuse de toute façon. */}
@@ -115,6 +122,8 @@ function Dashboard({
         <UsersPage />
       ) : view === 'maintenance' ? (
         <MaintenancePage vehicles={vehicles} />
+      ) : view === 'accounting' ? (
+        <AccountingPage vehicles={vehicles} />
       ) : (
         <main className="layout">
           <aside className="col left">

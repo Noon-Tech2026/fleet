@@ -18,6 +18,12 @@ import { Zone } from './geofence/entities/zone.entity';
 import { FuelCalibration } from './fuel/entities/fuel-calibration.entity';
 import { MaintenancePlan } from './maintenance/entities/maintenance-plan.entity';
 import { MaintenanceLog } from './maintenance/entities/maintenance-log.entity';
+import { Client } from './accounting/entities/client.entity';
+import { Driver } from './accounting/entities/driver.entity';
+import { Trip } from './accounting/entities/trip.entity';
+import { TripContainer } from './accounting/entities/trip-container.entity';
+import { VehicleExpense } from './accounting/entities/vehicle-expense.entity';
+import { VehicleInvestment } from './accounting/entities/vehicle-investment.entity';
 
 import { EventsModule } from './events/events.module';
 import { EventsController } from './events/events.controller';
@@ -35,6 +41,8 @@ import { AlertsService } from './rules/alerts.service';
 import { ImmobilizerService } from './immobilizer/immobilizer.service';
 import { MaintenanceService } from './maintenance/maintenance.service';
 import { MaintenanceController } from './maintenance/maintenance.controller';
+import { AccountingService } from './accounting/accounting.service';
+import { AccountingController } from './accounting/accounting.controller';
 
 @Module({
   imports: [
@@ -52,11 +60,23 @@ import { MaintenanceController } from './maintenance/maintenance.controller';
       FuelCalibration,
       MaintenancePlan,
       MaintenanceLog,
+      Client,
+      Driver,
+      Trip,
+      TripContainer,
+      VehicleExpense,
+      VehicleInvestment,
     ]),
     EventsModule,
     TelemetryModule,
   ],
-  controllers: [FleetController, FleetAdminController, MaintenanceController, EventsController],
+  controllers: [
+    FleetController,
+    FleetAdminController,
+    MaintenanceController,
+    AccountingController,
+    EventsController,
+  ],
   providers: [
     FleetService,
     VehiclesService,
@@ -68,6 +88,7 @@ import { MaintenanceController } from './maintenance/maintenance.controller';
     AlertsService,
     ImmobilizerService,
     MaintenanceService,
+    AccountingService,
 
     // Ordre significatif : on identifie l'utilisateur (JwtAuthGuard)
     // avant de verifier son role (RolesGuard).

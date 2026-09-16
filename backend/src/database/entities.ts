@@ -8,6 +8,12 @@ import { Zone } from '../geofence/entities/zone.entity';
 import { FuelCalibration } from '../fuel/entities/fuel-calibration.entity';
 import { MaintenancePlan } from '../maintenance/entities/maintenance-plan.entity';
 import { MaintenanceLog } from '../maintenance/entities/maintenance-log.entity';
+import { Client } from '../accounting/entities/client.entity';
+import { Driver } from '../accounting/entities/driver.entity';
+import { Trip } from '../accounting/entities/trip.entity';
+import { TripContainer } from '../accounting/entities/trip-container.entity';
+import { VehicleExpense } from '../accounting/entities/vehicle-expense.entity';
+import { VehicleInvestment } from '../accounting/entities/vehicle-investment.entity';
 
 /**
  * Liste unique des entites, partagee par DatabaseModule et le script
@@ -25,4 +31,10 @@ export const ENTITIES = [
   FuelCalibration,
   MaintenancePlan,
   MaintenanceLog,
+  Client,
+  Driver,
+  Trip,
+  TripContainer,
+  VehicleExpense,
+  VehicleInvestment,
 ];

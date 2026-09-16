@@ -9,7 +9,7 @@ export default defineConfig({
       // Le dashboard ne parle jamais a Traccar directement :
       // tout passe par l'API, y compris le flux SSE.
       '/api': {
-        target: 'https://fleet.noor.lu',
+        target: 'http://localhost:3000',
         changeOrigin: true,
       },
     },

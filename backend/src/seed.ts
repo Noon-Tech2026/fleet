@@ -10,6 +10,10 @@ import { FuelCalibration } from './fuel/entities/fuel-calibration.entity';
 import { MaintenancePlan } from './maintenance/entities/maintenance-plan.entity';
 import { MAINTENANCE_CATALOG } from './maintenance/maintenance.catalog';
 import { AuthService } from './auth/auth.service';
+import { Client } from './accounting/entities/client.entity';
+import { Driver } from './accounting/entities/driver.entity';
+import { Trip } from './accounting/entities/trip.entity';
+import { TripContainer } from './accounting/entities/trip-container.entity';
 
 config();
 
@@ -41,6 +45,7 @@ async function seed(): Promise<void> {
   await seedZones(dataSource);
   await seedCalibrations(dataSource);
   await seedMaintenance(dataSource);
+  await seedAccounting(dataSource);
 
   await dataSource.destroy();
   console.log('\nSeed termine.\n');
@@ -58,7 +63,7 @@ async function seedAdmin(ds: DataSource): Promise<void> {
   }
 
   const generated = !process.env.ADMIN_PASSWORD;
-  const password = process.env.ADMIN_PASSWORD ?? randomBytes(12).toString('base64url');
+  const password = process.env.ADMIN_PASSWORD || randomBytes(12).toString('base64url');
 
   if (password.length < 12) {
     console.error('ADMIN_PASSWORD doit faire au moins 12 caracteres.');
@@ -251,6 +256,82 @@ async function seedMaintenance(ds: DataSource): Promise<void> {
   }
 
   console.log(`Entretien : ${created} echeances creees.`);
+}
+
+/* --- comptabilite ------------------------------------------------------------ */
+
+const DEMO_CLIENTS: Partial<Client>[] = [
+  { name: 'Sonasid', contact: 'achats@sonasid.example' },
+  { name: 'Marsa Maroc', contact: 'logistique@marsamaroc.example' },
+  { name: 'Ciments du Nord', contact: 'transport@cimentsdunord.example' },
+];
+
+const DEMO_DRIVERS: Partial<Driver>[] = [
+  { fullName: 'M. Belkacem', phone: '0612345601' },
+  { fullName: 'M. Traore', phone: '0612345602' },
+  { fullName: 'M. Diallo', phone: '0612345603' },
+];
+
+/**
+ * Quelques voyages de demonstration, pour que l'ecran Comptabilite ne
+ * s'ouvre pas vide au premier lancement. Ne seme rien si des voyages
+ * existent deja : contrairement aux autres tables, un voyage n'a pas de
+ * cle naturelle a verifier ligne par ligne.
+ */
+async function seedAccounting(ds: DataSource): Promise<void> {
+  const clientsRepo = ds.getRepository(Client);
+  const driversRepo = ds.getRepository(Driver);
+  const tripsRepo = ds.getRepository(Trip);
+  const containersRepo = ds.getRepository(TripContainer);
+
+  const clients: Client[] = [];
+  for (const data of DEMO_CLIENTS) {
+    clients.push((await clientsRepo.findOne({ where: { name: data.name } })) ?? (await clientsRepo.save(clientsRepo.create({ ...data, active: true }))));
+  }
+
+  const drivers: Driver[] = [];
+  for (const data of DEMO_DRIVERS) {
+    drivers.push(
+      (await driversRepo.findOne({ where: { fullName: data.fullName } })) ??
+        (await driversRepo.save(driversRepo.create({ ...data, active: true }))),
+    );
+  }
+  console.log(`Comptabilite : ${clients.length} client(s), ${drivers.length} chauffeur(s) au referentiel.`);
+
+  if ((await tripsRepo.count()) > 0) {
+    console.log('Comptabilite : des voyages existent deja, aucun voyage de demonstration ajoute.');
+    return;
+  }
+
+  let created = 0;
+  for (const [index, vehicle] of DEMO_VEHICLES.entries()) {
+    const client = clients[index % clients.length];
+    const driver = drivers[index % drivers.length];
+    const startedAt = new Date(Date.now() - (index + 1) * DAY_MS);
+
+    const trip = await tripsRepo.save(
+      tripsRepo.create({
+        vehicleId: vehicle.id!,
+        driverId: driver.id,
+        clientId: client.id,
+        startedAt,
+        endedAt: new Date(startedAt.getTime() + 6 * 3600 * 1000),
+        origin: 'Port de Nador',
+        destination: 'Zone industrielle Selouane',
+        amount: (8500 + index * 350).toFixed(2),
+        notes: null,
+        createdBy: 'seed',
+      }),
+    );
+
+    await containersRepo.save([
+      containersRepo.create({ tripId: trip.id, containerNumber: `MSCU${1000000 + index}`, size: '40', loaded: true, notes: null }),
+      containersRepo.create({ tripId: trip.id, containerNumber: `TCLU${2000000 + index}`, size: '20', loaded: true, notes: null }),
+    ]);
+    created++;
+  }
+
+  console.log(`Comptabilite : ${created} voyage(s) de demonstration crees.`);
 }
 
 seed().catch((err) => {

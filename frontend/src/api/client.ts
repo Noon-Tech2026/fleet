@@ -1,11 +1,20 @@
 import type {
   Alert,
   AuthUser,
+  ClientRecord,
   CommandAudit,
+  ContainerSize,
+  DriverRecord,
   MaintenanceKind,
   MaintenanceLogEntry,
   MaintenancePlanState,
   Role,
+  TripEntry,
+  VehicleAccountingSummary,
+  VehicleExpenseCategory,
+  VehicleExpenseEntry,
+  VehicleInvestmentEntry,
+  VehicleInvestmentKind,
   VehicleState,
 } from '../lib/types';
 
@@ -147,6 +156,59 @@ export const api = {
 
   applyMaintenanceCatalog: (id: string) =>
     request<MaintenancePlanState[]>(`/api/vehicles/${id}/maintenance`, { method: 'POST' }),
+
+  /* --- comptabilite --- */
+  accountingSummary: () => request<VehicleAccountingSummary[]>('/api/accounting/summary'),
+
+  vehicleAccountingSummary: (id: string) =>
+    request<VehicleAccountingSummary>(`/api/vehicles/${id}/accounting-summary`),
+
+  clients: () => request<ClientRecord[]>('/api/accounting/clients'),
+
+  createClient: (input: { name: string; contact?: string; notes?: string }) =>
+    request<ClientRecord>('/api/accounting/clients', { method: 'POST', body: JSON.stringify(input) }),
+
+  drivers: () => request<DriverRecord[]>('/api/accounting/drivers'),
+
+  createDriver: (input: { fullName: string; phone?: string; licenseNumber?: string }) =>
+    request<DriverRecord>('/api/accounting/drivers', { method: 'POST', body: JSON.stringify(input) }),
+
+  vehicleTrips: (id: string) => request<TripEntry[]>(`/api/vehicles/${id}/trips`),
+
+  createTrip: (input: {
+    vehicleId: string;
+    driverId: string;
+    clientId: string;
+    startedAt: string;
+    endedAt?: string;
+    origin?: string;
+    destination?: string;
+    amount: number;
+    notes?: string;
+    containers: { containerNumber?: string; size: ContainerSize; loaded?: boolean; notes?: string }[];
+  }) => request<TripEntry>('/api/accounting/trips', { method: 'POST', body: JSON.stringify(input) }),
+
+  vehicleExpenses: (id: string) => request<VehicleExpenseEntry[]>(`/api/vehicles/${id}/expenses`),
+
+  addExpense: (
+    id: string,
+    input: { category: VehicleExpenseCategory; amount: number; at?: string; reference?: string; notes?: string },
+  ) =>
+    request<VehicleExpenseEntry>(`/api/vehicles/${id}/expenses`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+
+  vehicleInvestments: (id: string) => request<VehicleInvestmentEntry[]>(`/api/vehicles/${id}/investments`),
+
+  addInvestment: (
+    id: string,
+    input: { kind: VehicleInvestmentKind; amount: number; at?: string; description?: string },
+  ) =>
+    request<VehicleInvestmentEntry>(`/api/vehicles/${id}/investments`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
 
   /* --- comptes (reserve au role admin cote serveur) --- */
   users: () => request<AuthUser[]>('/api/users'),
