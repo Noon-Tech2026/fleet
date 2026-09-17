@@ -1,19 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ClientRecord, DriverRecord, VehicleAccountingSummary, VehicleState } from '../lib/types';
+import type { ClientRecord, DriverRecord, VehicleAccountingSummary } from '../lib/types';
 import { formatMoney } from '../lib/accounting';
-import { api } from '../api/client';
+import { api, type VehicleDirectoryEntry } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { VehicleAccountingPanel } from './VehicleAccountingPanel';
-import { DirectoryPanel } from './DirectoryPanel';
 
-type Tab = 'summary' | 'directory';
-
-export function AccountingPage({ vehicles }: { vehicles: VehicleState[] }) {
+export function AccountingPage() {
   const { can } = useAuth();
-  const [tab, setTab] = useState<Tab>('summary');
   const [summaries, setSummaries] = useState<VehicleAccountingSummary[] | null>(null);
   const [clients, setClients] = useState<ClientRecord[]>([]);
   const [drivers, setDrivers] = useState<DriverRecord[]>([]);
+  const [fleet, setFleet] = useState<VehicleDirectoryEntry[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,9 +28,10 @@ export function AccountingPage({ vehicles }: { vehicles: VehicleState[] }) {
 
   const loadDirectory = useCallback(async () => {
     try {
-      const [c, d] = await Promise.all([api.clients(), api.drivers()]);
+      const [c, d, f] = await Promise.all([api.clients(), api.drivers(), api.fleetVehicles()]);
       setClients(c);
       setDrivers(d);
+      setFleet(f);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Chargement impossible');
     }
@@ -44,7 +42,9 @@ export function AccountingPage({ vehicles }: { vehicles: VehicleState[] }) {
     void loadDirectory();
   }, [loadSummaries, loadDirectory]);
 
-  const byVehicle = useMemo(() => new Map(vehicles.map((v) => [v.id, v])), [vehicles]);
+  // Le repertoire, pas la telemetrie en direct : un camion tout juste cree
+  // doit rester consultable ici avant meme d'avoir emis sa premiere position.
+  const byVehicle = useMemo(() => new Map(fleet.map((v) => [v.id, v])), [fleet]);
 
   const fleetTotals = useMemo(() => {
     if (!summaries) return null;
@@ -67,17 +67,6 @@ export function AccountingPage({ vehicles }: { vehicles: VehicleState[] }) {
         <div>
           <h2>Comptabilité</h2>
         </div>
-
-        {!selectedVehicleId && (
-          <nav className="chips">
-            <button className={`chip ${tab === 'summary' ? 'active' : ''}`} onClick={() => setTab('summary')}>
-              Synthèse
-            </button>
-            <button className={`chip ${tab === 'directory' ? 'active' : ''}`} onClick={() => setTab('directory')}>
-              Référentiels
-            </button>
-          </nav>
-        )}
       </header>
 
       {error && <p className="banner err">{error}</p>}
@@ -94,14 +83,6 @@ export function AccountingPage({ vehicles }: { vehicles: VehicleState[] }) {
             setSelectedVehicleId(null);
             void loadSummaries();
           }}
-        />
-      ) : tab === 'directory' ? (
-        <DirectoryPanel
-          clients={clients}
-          drivers={drivers}
-          canManage={canManageMoney}
-          onClientsChange={setClients}
-          onDriversChange={setDrivers}
         />
       ) : (
         <>

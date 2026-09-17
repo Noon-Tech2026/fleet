@@ -89,6 +89,19 @@ export class SimulatorSource implements TelemetrySource, OnModuleDestroy {
     if (v) v.buttonPressed = true;
   }
 
+  /**
+   * Fait rouler un camion tout juste ajouté au répertoire, sans redémarrer
+   * le process. Sans ça, un camion créé depuis l'interface resterait
+   * invisible en Vue d'ensemble jusqu'au prochain redémarrage — la
+   * simulation n'a aucun boîtier réel pour le lui apprendre autrement.
+   */
+  addVehicle(vehicleId: string): void {
+    if (this.vehicles.some((x) => x.id === vehicleId)) return;
+    const routes = [R1, R2, R3];
+    const route = routes[this.vehicles.length % routes.length];
+    this.vehicles.push(mk(vehicleId, route, Math.random(), 50, true, 650, 280, 0, 0, 'normal'));
+  }
+
   private step(emit: PositionHandler): void {
     this.tick += 1;
 

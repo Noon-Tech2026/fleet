@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleIni
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Vehicle } from './entities/vehicle.entity';
+import { SimulatorSource } from '../telemetry/simulator.source';
 
 /**
  * Repertoire de la flotte, avec cache : le repertoire est consulte a
@@ -13,7 +14,10 @@ export class VehiclesService implements OnModuleInit {
   private readonly log = new Logger(VehiclesService.name);
   private cache = new Map<string, Vehicle>();
 
-  constructor(@InjectRepository(Vehicle) private readonly repo: Repository<Vehicle>) {}
+  constructor(
+    @InjectRepository(Vehicle) private readonly repo: Repository<Vehicle>,
+    private readonly simulator: SimulatorSource,
+  ) {}
 
   async onModuleInit(): Promise<void> {
     await this.reload();
@@ -23,6 +27,11 @@ export class VehiclesService implements OnModuleInit {
     const rows = await this.repo.find();
     this.cache = new Map(rows.map((v) => [v.id, v]));
     this.log.log(`${rows.length} vehicules au repertoire`);
+
+    // Sans boitier reel pour l'annoncer, un camion du repertoire resterait
+    // invisible en Vue d'ensemble tant que la simulation ne sait pas qu'il
+    // existe — que ce soit un ajout au demarrage ou depuis l'interface.
+    for (const v of rows) this.simulator.addVehicle(v.id);
   }
 
   peek(id: string): Vehicle | undefined {

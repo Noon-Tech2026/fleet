@@ -29,7 +29,6 @@ import { JwtPayload } from '../auth/auth.service';
 class CreateVehicleDto {
   @IsString() @MinLength(2) @MaxLength(32) id: string;
   @IsString() @MinLength(2) @MaxLength(32) plate: string;
-  @IsString() @MinLength(2) @MaxLength(120) driver: string;
   @IsString() @MinLength(10) @MaxLength(32) imei: string;
   @IsOptional() @IsString() @MaxLength(64) model?: string;
   @IsOptional() @IsInt() @Min(1) @Max(2000) tankMainCapacity?: number;

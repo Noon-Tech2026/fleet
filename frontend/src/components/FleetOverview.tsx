@@ -6,6 +6,7 @@ import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { StarterDialog } from './StarterDialog';
 import { VehicleHistoryDialog } from './VehicleHistoryDialog';
+import { CreateVehicleDialog } from './CreateVehicleDialog';
 
 interface Props {
   vehicles: VehicleState[];
@@ -34,11 +35,13 @@ function fuelTone(ratio: number): string {
 export function FleetOverview({ vehicles, onTrack }: Props) {
   const { can } = useAuth();
   const canControlStarter = can('supervisor');
+  const canManageFleet = can('admin');
 
   const [summaries, setSummaries] = useState<Record<string, { revenue: number; expenses: number; investments: number; netResult: number }>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
   const [dialogVehicleId, setDialogVehicleId] = useState<string | null>(null);
   const [historyVehicleId, setHistoryVehicleId] = useState<string | null>(null);
+  const [creatingVehicle, setCreatingVehicle] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,6 +87,11 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
         <div>
           <h2>Vue d'ensemble</h2>
         </div>
+        {canManageFleet && (
+          <button className="btn primary" onClick={() => setCreatingVehicle(true)}>
+            Nouveau camion
+          </button>
+        )}
       </header>
 
       {loadError && <p className="banner err">{loadError}</p>}
@@ -93,7 +101,7 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
         <p className="empty">Aucun boîtier n'a encore transmis de position.</p>
       ) : (
         <div className="overview-grid">
-          {vehicles.map((v) => {
+          {vehicles.map((v, i) => {
             const status = statusOf(v);
             const palette = TRUCK_PALETTE[status.tone];
             const summary = summaries[v.id];
@@ -104,32 +112,40 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
             const moteurBlocked = v.starter === 'blocked';
             const moteurLabel = moteurBlocked ? 'Bloqué' : v.ignition ? 'Marche' : 'Arrêté';
             const moteurColor = moteurBlocked ? 'var(--red)' : v.ignition ? 'var(--mint)' : 'var(--dim)';
+            const moving = v.ignition && v.speed > 0;
 
             return (
-              <article className="ov-card" key={v.id}>
-                <svg viewBox="0 0 440 96" className="ov-truck" role="img" aria-label={`${v.id}, ${v.plate}`}>
-                  <rect x="0" y="0" width="440" height="96" fill={palette.base} />
-                  <path d="M300 0 L360 0 L360 96 L300 96 Z" fill={palette.mid} />
-                  <path d="M360 0 L440 0 L440 96 L360 96 L372 60 L372 36 Z" fill={palette.dark} />
-                  <rect x="384" y="30" width="44" height="26" rx="4" fill={palette.glass} />
-                  <rect x="388" y="34" width="36" height="18" rx="2" fill={palette.glassPale} />
-                  <circle cx="432" cy="70" r="4" fill="#FAC775" />
-                  <rect x="300" y="40" width="60" height="4" rx="2" fill={palette.stripe} />
-                  <rect x="300" y="52" width="60" height="4" rx="2" fill={palette.stripe} />
-                  <text x="28" y="42" fill="#fff" fontSize="24" fontWeight="600">
-                    {v.id}
-                  </text>
-                  <text x="28" y="66" fill={palette.glassPale} fontSize="13">
-                    SHACMAN F3000 · {v.plate}
-                  </text>
-                  <circle cx="200" cy="30" r="4" fill={palette.glass} />
-                  <text x="212" y="34" fill={palette.glassPale} fontSize="11">
-                    {v.driver}
-                  </text>
-                </svg>
+              <article className="ov-card" key={v.id} style={{ animationDelay: `${Math.min(i, 10) * 45}ms` }}>
+                <div className="ov-truck-wrap">
+                  <svg viewBox="0 0 440 96" className="ov-truck" role="img" aria-label={`${v.id}, ${v.plate}`}>
+                    <rect x="0" y="0" width="440" height="96" fill={palette.base} />
+                    <path d="M300 0 L360 0 L360 96 L300 96 Z" fill={palette.mid} />
+                    <path d="M360 0 L440 0 L440 96 L360 96 L372 60 L372 36 Z" fill={palette.dark} />
+                    <rect x="384" y="30" width="44" height="26" rx="4" fill={palette.glass} />
+                    <rect x="388" y="34" width="36" height="18" rx="2" fill={palette.glassPale} />
+                    <circle cx="432" cy="70" r="4" fill="#FAC775" />
+                    <rect x="300" y="40" width="60" height="4" rx="2" fill={palette.stripe} />
+                    <rect x="300" y="52" width="60" height="4" rx="2" fill={palette.stripe} />
+                  </svg>
+
+                  {/* Texte en HTML, pas dans le SVG : sinon il retrecit avec la
+                      largeur de la carte et devient illisible sur une grille dense. */}
+                  <div className="ov-truck-info">
+                    <div className="ov-truck-driver" style={{ color: palette.glassPale }}>
+                      <span className="dot" style={{ background: palette.glass }} />
+                      {v.driver || 'Non affecté'}
+                    </div>
+                    <div>
+                      <div className="ov-truck-id">{v.id}</div>
+                      <div className="ov-truck-sub" style={{ color: palette.glassPale }}>
+                        SHACMAN F3000 · {v.plate}
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 <div
-                  className="ov-strip"
+                  className={`ov-strip ${moving ? 'moving' : ''}`}
                   style={{
                     background: `repeating-linear-gradient(90deg, ${palette.stripe} 0 20px, transparent 20px 40px)`,
                   }}
@@ -233,6 +249,19 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
           onClose={() => setHistoryVehicleId(null)}
         />
       )}
+
+      {creatingVehicle && (
+        <CreateVehicleDialog
+          onCancel={() => setCreatingVehicle(false)}
+          onCreated={(vehicleId) => {
+            setCreatingVehicle(false);
+            setNotice(
+              `${vehicleId} — ajouté au répertoire, apparaîtra dès réception de sa première position.`,
+            );
+          }}
+        />
+      )}
+
     </main>
   );
 }

@@ -18,6 +18,20 @@ import type {
   VehicleState,
 } from '../lib/types';
 
+/**
+ * Repertoire d'un vehicule (fiche administrative), independant de sa
+ * telemetrie : existe des la creation, meme si le boitier n'a encore rien
+ * transmis — contrairement a VehicleState, alimente par le flux SSE.
+ */
+export interface VehicleDirectoryEntry {
+  id: string;
+  plate: string;
+  driver: string;
+  imei: string;
+  model: string;
+  active: boolean;
+}
+
 /** Declenche quand la session est definitivement perdue. */
 let onSessionLost: (() => void) | null = null;
 export function setSessionLostHandler(handler: () => void): void {
@@ -209,6 +223,20 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+
+  /* --- repertoire des vehicules --- */
+  fleetVehicles: () => request<VehicleDirectoryEntry[]>('/api/fleet/vehicles'),
+
+  /** Reserve au role admin cote serveur. */
+  createVehicle: (input: {
+    id: string;
+    plate: string;
+    imei: string;
+    model?: string;
+    tankMainCapacity?: number;
+    tankAuxCapacity?: number;
+    notes?: string;
+  }) => request<VehicleDirectoryEntry>('/api/fleet/vehicles', { method: 'POST', body: JSON.stringify(input) }),
 
   /* --- comptes (reserve au role admin cote serveur) --- */
   users: () => request<AuthUser[]>('/api/users'),

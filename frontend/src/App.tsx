@@ -11,15 +11,11 @@ import { AlertFeed } from './components/AlertFeed';
 import { UsersPage } from './users/UsersPage';
 import { MaintenancePage } from './maintenance/MaintenancePage';
 import { AccountingPage } from './accounting/AccountingPage';
+import { CreateDriverDialog } from './accounting/CreateDriverDialog';
+import { CreateClientDialog } from './accounting/CreateClientDialog';
 import { ROLE_LABEL } from './lib/roles';
 
 const SIMULATOR_MODE = import.meta.env.DEV;
-
-const CONNECTION_LABEL: Record<string, string> = {
-  live: 'Flux en direct',
-  connecting: 'Connexion…',
-  lost: 'Flux interrompu',
-};
 
 export default function App() {
   const { user, loading, logout } = useAuth();
@@ -41,12 +37,16 @@ function Dashboard({
 }) {
   // Le flux SSE est ouvert par le tableau de bord et non par la vue carte :
   // changer d'onglet ne doit pas rouvrir une connexion vers l'API.
-  const { vehicles, alerts, connection } = useFleetStream();
+  const { vehicles, alerts } = useFleetStream();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [feedOpen, setFeedOpen] = useState(true);
   const [view, setView] = useState<'overview' | 'fleet' | 'maintenance' | 'accounting' | 'users'>('overview');
+  const [creatingDriver, setCreatingDriver] = useState(false);
+  const [creatingClient, setCreatingClient] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const { can } = useAuth();
   const isAdmin = can('admin');
+  const canManageDirectory = can('supervisor');
 
   const selected = useMemo(
     () => vehicles.find((v) => v.id === selectedId) ?? vehicles[0] ?? null,
@@ -99,20 +99,17 @@ function Dashboard({
               Utilisateurs
             </button>
           )}
-        </nav>
-
-        <div className="pills">
-          {SIMULATOR_MODE && (
-            <span className="pill sim">
-              <i className="dot" aria-hidden="true" />
-              Données simulées
-            </span>
+          {canManageDirectory && (
+            <>
+              <button className="nav-tab" onClick={() => setCreatingDriver(true)}>
+                Ajouter chauffeur
+              </button>
+              <button className="nav-tab" onClick={() => setCreatingClient(true)}>
+                Ajouter client
+              </button>
+            </>
           )}
-          <span className={`pill ${connection}`}>
-            <i className="dot" aria-hidden="true" />
-            {CONNECTION_LABEL[connection] ?? connection}
-          </span>
-        </div>
+        </nav>
 
         <div className="session">
           <div className="who">
@@ -125,12 +122,14 @@ function Dashboard({
         </div>
       </header>
 
+      {notice && <p className="banner ok app-notice">{notice}</p>}
+
       {view === 'users' && isAdmin ? (
         <UsersPage />
       ) : view === 'maintenance' ? (
         <MaintenancePage vehicles={vehicles} />
       ) : view === 'accounting' ? (
-        <AccountingPage vehicles={vehicles} />
+        <AccountingPage />
       ) : view === 'overview' ? (
         <FleetOverview
           vehicles={vehicles}
@@ -181,6 +180,26 @@ function Dashboard({
             )}
           </aside>
         </main>
+      )}
+
+      {creatingDriver && (
+        <CreateDriverDialog
+          onCancel={() => setCreatingDriver(false)}
+          onCreated={(driver) => {
+            setCreatingDriver(false);
+            setNotice(`${driver.fullName} — chauffeur ajouté au référentiel.`);
+          }}
+        />
+      )}
+
+      {creatingClient && (
+        <CreateClientDialog
+          onCancel={() => setCreatingClient(false)}
+          onCreated={(client) => {
+            setCreatingClient(false);
+            setNotice(`${client.name} — client ajouté au référentiel.`);
+          }}
+        />
       )}
     </div>
   );

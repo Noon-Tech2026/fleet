@@ -45,7 +45,7 @@ export function VehicleDetail({ vehicle, simulatorMode }: Props) {
         <div>
           <h2>{vehicle.id}</h2>
           <p>
-            {vehicle.plate} · {vehicle.driver}
+            {vehicle.plate} · {vehicle.driver || 'Non affecté'}
           </p>
         </div>
         <span className={`badge ${status.tone}`}>{status.label}</span>

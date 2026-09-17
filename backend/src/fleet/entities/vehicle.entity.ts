@@ -17,7 +17,8 @@ export class Vehicle {
   @Column({ length: 32 })
   plate: string;
 
-  @Column({ length: 120 })
+  /** Vide tant qu'aucun depart n'a ete confirme pour ce camion. */
+  @Column({ length: 120, default: '' })
   driver: string;
 
   /** IMEI du boitier Teltonika. Unique : un boitier = un camion. */
