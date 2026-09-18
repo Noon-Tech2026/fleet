@@ -1,13 +1,17 @@
-import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Vehicle } from './entities/vehicle.entity';
 import { SimulatorSource } from '../telemetry/simulator.source';
+import { TELEMETRY_SOURCE, TelemetrySource } from '../telemetry/telemetry.source';
 
 /**
  * Repertoire de la flotte, avec cache : le repertoire est consulte a
  * chaque trame pour enrichir la position (plaque, chauffeur), et il
  * change quelques fois par an.
+ *
+ * Le repertoire est tenu synchrone avec la source de telemetrie (Traccar) :
+ * un camion cree ici existe dans Traccar, sinon la creation echoue.
  */
 @Injectable()
 export class VehiclesService implements OnModuleInit {
@@ -17,6 +21,7 @@ export class VehiclesService implements OnModuleInit {
   constructor(
     @InjectRepository(Vehicle) private readonly repo: Repository<Vehicle>,
     private readonly simulator: SimulatorSource,
+    @Inject(TELEMETRY_SOURCE) private readonly source: TelemetrySource,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -48,22 +53,52 @@ export class VehiclesService implements OnModuleInit {
     return vehicle;
   }
 
+  /** Traduit un refus de la source en 400 lisible par l'interface. */
+  private async withSource(action: () => Promise<void> | undefined): Promise<void> {
+    try {
+      await action();
+    } catch (err) {
+      throw new BadRequestException(err instanceof Error ? err.message : String(err));
+    }
+  }
+
   async create(data: Partial<Vehicle>): Promise<Vehicle> {
     if (!data.id) throw new BadRequestException('Le code du vehicule est obligatoire');
+    if (!data.imei) throw new BadRequestException("L'IMEI est obligatoire");
     if (this.cache.has(data.id)) {
       throw new BadRequestException(`Le code ${data.id} est deja utilise`);
     }
-    if (data.imei && (await this.repo.findOne({ where: { imei: data.imei } }))) {
+    if (await this.repo.findOne({ where: { imei: data.imei } })) {
       throw new BadRequestException('Cet IMEI est deja associe a un autre vehicule');
     }
 
-    const saved = await this.repo.save(this.repo.create(data));
-    await this.reload();
-    return saved;
+    // Traccar d'abord : c'est lui qui detecte un IMEI deja pris ailleurs.
+    await this.withSource(() => this.source.registerDevice?.(data.id!, data.imei!));
+
+    try {
+      const saved = await this.repo.save(this.repo.create(data));
+      await this.reload();
+      return saved;
+    } catch (err) {
+      // Ne pas laisser un boitier orphelin dans Traccar.
+      await this.source.unregisterDevice?.(data.id).catch((e) =>
+        this.log.error(`Rollback Traccar impossible pour ${data.id} : ${String(e)}`),
+      );
+      throw err;
+    }
   }
 
   async update(id: string, data: Partial<Vehicle>): Promise<Vehicle> {
     const vehicle = await this.get(id);
+
+    if (data.imei && data.imei !== vehicle.imei) {
+      const clash = await this.repo.findOne({ where: { imei: data.imei } });
+      if (clash && clash.id !== id) {
+        throw new BadRequestException(`Cet IMEI est deja associe au vehicule ${clash.id}`);
+      }
+      await this.withSource(() => this.source.updateDeviceImei?.(id, data.imei!));
+    }
+
     Object.assign(vehicle, data, { id: vehicle.id });
     const saved = await this.repo.save(vehicle);
     await this.reload();
@@ -72,9 +107,11 @@ export class VehiclesService implements OnModuleInit {
 
   /**
    * Desactivation plutot que suppression : les positions et le journal
-   * d'audit referencent ce code de vehicule.
+   * d'audit referencent ce code de vehicule. Le boitier est desactive dans
+   * Traccar (pas supprime) pour garder son historique.
    */
   async deactivate(id: string): Promise<Vehicle> {
+    await this.withSource(() => this.source.setDeviceEnabled?.(id, false));
     return this.update(id, { active: false });
   }
 }

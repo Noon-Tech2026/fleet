@@ -40,4 +40,14 @@ export interface TelemetrySource {
    * ne considère jamais une commande comme appliquée sans confirmation.
    */
   setDigitalOutput(vehicleId: string, output: 1 | 2, active: boolean): Promise<void>;
+
+  /**
+   * Gestion du répertoire des boîtiers côté source (Traccar). Optionnel :
+   * le simulateur n'en a pas besoin. Doit rejeter si la source refuse,
+   * pour que le répertoire local ne diverge jamais de celui de Traccar.
+   */
+  registerDevice?(vehicleId: string, imei: string): Promise<void>;
+  updateDeviceImei?(vehicleId: string, imei: string): Promise<void>;
+  setDeviceEnabled?(vehicleId: string, enabled: boolean): Promise<void>;
+  unregisterDevice?(vehicleId: string): Promise<void>;
 }

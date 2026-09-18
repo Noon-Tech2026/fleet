@@ -10,9 +10,9 @@ import { TelemetrySource, PositionHandler, RawPosition } from './telemetry.sourc
  * les connexions multiples : on en ouvre UNE seule ici, et le backend
  * rediffuse ensuite en SSE à tous les navigateurs.
  *
- * Non testé contre un serveur réel tant que le boîtier pilote n'est pas
- * installé — la correspondance des attributs (in1, in2, out1, adc1, adc2)
- * devra être vérifiée sur le FMC650 à l'installation.
+ * Le répertoire des boîtiers est aussi tenu à jour ici : créer un camion
+ * depuis l'interface crée le boîtier dans Traccar (name = code véhicule,
+ * uniqueId = IMEI). Sans cela, il faudrait le saisir deux fois.
  */
 @Injectable()
 export class TraccarSource implements TelemetrySource, OnModuleDestroy {
@@ -57,12 +57,98 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
     this.log.log('Session Traccar ouverte');
   }
 
+  /** Appel REST authentifié ; rouvre la session une fois si elle a expiré. */
+  private async api(path: string, init: RequestInit = {}, retry = true): Promise<Response> {
+    const res = await fetch(`${this.baseUrl}${path}`, {
+      ...init,
+      headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}), Cookie: this.cookie },
+    });
+    if (res.status === 401 && retry) {
+      await this.login();
+      return this.api(path, init, false);
+    }
+    return res;
+  }
+
   private async loadDevices(): Promise<void> {
-    const res = await fetch(`${this.baseUrl}/api/devices`, { headers: { Cookie: this.cookie } });
-    const devices = (await res.json()) as { id: number; name: string; uniqueId: string }[];
+    const res = await this.api('/api/devices');
+    const devices = (await res.json()) as TraccarDevice[];
     for (const d of devices) this.deviceToVehicle.set(d.id, d.name);
     this.log.log(`${devices.length} boîtiers connus`);
   }
+
+  private async findDevice(vehicleId: string): Promise<TraccarDevice | null> {
+    const res = await this.api('/api/devices');
+    if (!res.ok) throw new Error(`Traccar injoignable (${res.status})`);
+    const devices = (await res.json()) as TraccarDevice[];
+    return devices.find((d) => d.name === vehicleId) ?? null;
+  }
+
+  private async fail(prefix: string, res: Response): Promise<never> {
+    const detail = (await res.text()).slice(0, 200);
+    throw new Error(`${prefix} (${res.status})${detail ? ` : ${detail}` : ''}`);
+  }
+
+  /* --- répertoire des boîtiers ----------------------------------------- */
+
+  async registerDevice(vehicleId: string, imei: string): Promise<void> {
+    const existing = await this.findDevice(vehicleId);
+    if (existing) {
+      // Déjà là avec le même IMEI (ex. créé à la main) : on réutilise.
+      if (existing.uniqueId === imei) {
+        this.deviceToVehicle.set(existing.id, vehicleId);
+        return;
+      }
+      throw new Error(`Traccar : un boîtier nommé ${vehicleId} existe déjà avec l'IMEI ${existing.uniqueId}`);
+    }
+
+    const res = await this.api('/api/devices', {
+      method: 'POST',
+      body: JSON.stringify({ name: vehicleId, uniqueId: imei }),
+    });
+    if (!res.ok) await this.fail('Traccar a refusé la création du boîtier', res);
+
+    const device = (await res.json()) as TraccarDevice;
+    // Sans cette ligne, les positions du nouveau boîtier seraient ignorées
+    // jusqu'au prochain redémarrage (la carte n'est chargée qu'au boot).
+    this.deviceToVehicle.set(device.id, vehicleId);
+    this.log.log(`Boîtier ${vehicleId} (${imei}) enregistré dans Traccar`);
+  }
+
+  async updateDeviceImei(vehicleId: string, imei: string): Promise<void> {
+    const device = await this.findDevice(vehicleId);
+    if (!device) return this.registerDevice(vehicleId, imei);
+    if (device.uniqueId === imei) return;
+
+    // Traccar exige l'objet complet en PUT.
+    const res = await this.api(`/api/devices/${device.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ ...device, uniqueId: imei }),
+    });
+    if (!res.ok) await this.fail('Traccar a refusé la modification du boîtier', res);
+    this.log.log(`Boîtier ${vehicleId} : IMEI ${device.uniqueId} → ${imei}`);
+  }
+
+  async setDeviceEnabled(vehicleId: string, enabled: boolean): Promise<void> {
+    const device = await this.findDevice(vehicleId);
+    if (!device) return;
+    const res = await this.api(`/api/devices/${device.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ ...device, disabled: !enabled }),
+    });
+    if (!res.ok) await this.fail('Traccar a refusé la modification du boîtier', res);
+  }
+
+  /** Utilisé uniquement en rollback d'une création échouée côté base. */
+  async unregisterDevice(vehicleId: string): Promise<void> {
+    const device = await this.findDevice(vehicleId);
+    if (!device) return;
+    const res = await this.api(`/api/devices/${device.id}`, { method: 'DELETE' });
+    if (!res.ok) await this.fail('Traccar a refusé la suppression du boîtier', res);
+    this.deviceToVehicle.delete(device.id);
+  }
+
+  /* --- flux de positions ------------------------------------------------ */
 
   private connect(onPosition: PositionHandler): void {
     const url = this.baseUrl.replace(/^http/, 'ws') + '/api/socket';
@@ -98,6 +184,7 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
   private async restart(onPosition: PositionHandler): Promise<void> {
     try {
       await this.login();
+      await this.loadDevices();
       this.connect(onPosition);
     } catch (err) {
       this.log.error(`Reconnexion échouée : ${String(err)}`);
@@ -134,9 +221,8 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
 
     // Commande GPRS Teltonika : setdigout 1 = actif, 0 = inactif.
     const value = active ? '1' : '0';
-    const res = await fetch(`${this.baseUrl}/api/commands/send`, {
+    const res = await this.api('/api/commands/send', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Cookie: this.cookie },
       body: JSON.stringify({
         deviceId,
         type: 'custom',
@@ -146,6 +232,14 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
 
     if (!res.ok) throw new Error(`Commande refusée par Traccar (${res.status})`);
   }
+}
+
+interface TraccarDevice {
+  id: number;
+  name: string;
+  uniqueId: string;
+  disabled?: boolean;
+  [key: string]: unknown;
 }
 
 interface TraccarPosition {
