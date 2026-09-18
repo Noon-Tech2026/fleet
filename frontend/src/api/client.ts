@@ -233,6 +233,8 @@ export const api = {
     plate: string;
     imei: string;
     model?: string;
+    simNumber?: string;
+    initialOdometer?: number;
     tankMainCapacity?: number;
     tankAuxCapacity?: number;
     notes?: string;

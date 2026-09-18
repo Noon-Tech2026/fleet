@@ -2564,69 +2564,303 @@ h3 {
     transition: none !important;
   }
 }
+/* ═══════════════════════════════════════════════════════════
+   GeoTruck — Page de connexion (fond animé + Lottie + i18n)
+   À ajouter à la fin de frontend/src/index.css
+   ═══════════════════════════════════════════════════════════ */
 
-
-
-
-/* GeoTruck login — clean & élégant */
-.login-split { min-height: 100dvh; display: grid; grid-template-columns: 1.05fr 0.95fr; }
-.login-visual {
-  position: relative; overflow: hidden; display: flex; align-items: flex-end;
-  background:
-    radial-gradient(ellipse 100% 70% at 50% 0%, rgba(52,199,126,0.22), transparent 60%),
-    linear-gradient(160deg, #06251b 0%, #0e3f2d 45%, #145038 100%);
+.login-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0B3D2E 0%, #125138 45%, #1D7A54 100%);
 }
-.login-visual::after {
-  content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none;
-  background: linear-gradient(180deg, transparent 55%, rgba(6,37,27,0.55) 100%);
-}
-.login-visual .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.35; }
-.login-visual .blob-1 { width: 380px; height: 380px; background: #34c77e; top: -100px; left: -80px; animation: blobFloat1 16s ease-in-out infinite; }
-.login-visual .blob-2 { width: 300px; height: 300px; background: #00a550; bottom: 30px; right: -80px; animation: blobFloat2 19s ease-in-out infinite; }
-@keyframes blobFloat1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(36px,26px) scale(1.06)} }
-@keyframes blobFloat2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-32px,-22px) scale(1.1)} }
-.login-visual-caption {
-  position: absolute; top: 56px; left: 56px; right: 56px; z-index: 4; color: #fff;
-  animation: fadeDown 0.8s ease both;
-}
-@keyframes fadeDown { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
-.lv-logo { display: flex; align-items: center; gap: 13px; font-size: 34px; font-weight: 700; letter-spacing: -0.02em; }
-.lv-dot { width: 13px; height: 13px; border-radius: 50%; background: #34c77e; box-shadow: 0 0 0 0 rgba(52,199,126,0.6); animation: pinPulse 2.2s ease-out infinite; }
-@keyframes pinPulse { 0%{box-shadow:0 0 0 0 rgba(52,199,126,0.55)} 70%{box-shadow:0 0 0 14px transparent} 100%{box-shadow:0 0 0 0 transparent} }
-.login-visual-caption p { margin: 14px 0 0 26px; font-size: 15px; line-height: 1.5; color: rgba(255,255,255,0.7); max-width: 34ch; }
-.lv-truck-lane { position: absolute; bottom: 0; left: 0; right: 0; z-index: 2; display: flex; align-items: flex-end; }
-.login-truck { width: 100%; max-width: 100%; height: auto; object-fit: contain; display: block; animation: truckBob 4s ease-in-out infinite; }
-@keyframes truckBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-.login-form-panel { position: relative; display: flex; align-items: center; justify-content: center; padding: var(--sp-5); background: var(--ink-1); }
-.login-form-panel .lang-switch { position: absolute; top: 24px; right: 24px; display: flex; gap: 6px; z-index: 6; }
-.login-form-panel .lang-btn { background: var(--ink-0); color: var(--dim); border: 1px solid var(--line); border-radius: 8px; padding: 5px 11px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-.login-form-panel .lang-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
-.login-split .login-card { width: 100%; max-width: 384px; background: transparent; border: 0; box-shadow: none; padding: 0; animation: cardRise 0.7s cubic-bezier(0.2,0.8,0.2,1) both; }
-@keyframes cardRise { from{opacity:0;transform:translateY(26px)} to{opacity:1;transform:translateY(0)} }
-.login-split .login-card .mark { display: block; width: 48px; height: 48px; margin-bottom: var(--sp-4); animation: markPop 0.8s ease both; }
-@keyframes markPop { 0%{transform:scale(0.5) rotate(-6deg);opacity:0} 60%{transform:scale(1.1)} 100%{transform:scale(1) rotate(0);opacity:1} }
-.login-split .login-card h1 { font-size: 25px; }
-.login-split .login-sub { margin: 6px 0 var(--sp-5); font-size: 13px; line-height: 1.55; color: var(--faint); }
-.login-split .login-card .field { animation: fieldIn 0.6s ease both; }
-.login-split .login-card .field:nth-of-type(1) { animation-delay: 0.12s; }
-.login-split .login-card .field:nth-of-type(2) { animation-delay: 0.2s; }
-@keyframes fieldIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-.login-split .login-card .btn.full { margin-top: var(--sp-5); padding: 12px 13px; animation: fieldIn 0.6s ease 0.3s both; transition: transform 0.15s ease, filter 0.15s; }
-.login-split .login-card .btn.full:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.06); }
-.login-split[dir="rtl"] { direction: rtl; }
-.login-split[dir="rtl"] .login-visual { order: 2; }
-.login-split[dir="rtl"] .login-form-panel { order: 1; }
-.login-split[dir="rtl"] .lang-switch { right: auto; left: 24px; }
-.login-split[dir="rtl"] .login-visual-caption { left: auto; right: 56px; text-align: right; }
-.login-split[dir="rtl"] .login-visual-caption p { margin: 14px 26px 0 0; }
-@media (max-width: 900px) { .login-split { grid-template-columns: 1fr; grid-template-rows: 280px 1fr; } .login-visual-caption { top: 28px; left: 28px; right: 28px; } .lv-logo { font-size: 24px; } }
-@media (prefers-reduced-motion: reduce) { .login-truck, .login-visual .blob, .lv-dot, .login-split .login-card, .login-split .login-card .mark, .login-split .login-card .field, .login-split .login-card .btn.full, .login-visual-caption { animation: none !important; } }
 
-/* Fix: limiter la taille de l'illustration camion et des cartes overview */
-.overview-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 380px)); }
-.ov-truck { max-height: 150px; object-fit: cover; object-position: center; }
+/* ── Fond animé ── */
+.login-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
 
-/* Boutons de langue dans la barre du haut */
-.nav-lang { position: static; display: flex; gap: 4px; }
-.nav-lang .lang-btn { background: var(--on-navy-wash); color: var(--on-navy-dim); border: 1px solid var(--on-navy-wash-strong); border-radius: 7px; padding: 4px 9px; font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
-.nav-lang .lang-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(55px);
+  opacity: 0.3;
+}
+.blob-1 {
+  width: 320px; height: 320px;
+  background: #2FD08C;
+  top: -90px; left: -70px;
+  animation: blobFloat1 13s ease-in-out infinite;
+}
+.blob-2 {
+  width: 280px; height: 280px;
+  background: #0FA968;
+  bottom: -80px; right: -60px;
+  animation: blobFloat2 16s ease-in-out infinite;
+}
+@keyframes blobFloat1 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(40px, 30px); }
+}
+@keyframes blobFloat2 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-35px, -25px); }
+}
+
+/* ── Camion Lottie ── */
+.login-truck {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  max-width: 560px;
+  opacity: 0.85;
+  z-index: 1;
+}
+
+/* ── Route animée ── */
+.login-road {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 50px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255,255,255,0.22) 0 30px,
+    transparent 30px 70px
+  );
+  animation: roadMove 3s linear infinite;
+  opacity: 0.35;
+  z-index: 2;
+}
+@keyframes roadMove {
+  from { background-position: 0 0; }
+  to { background-position: 70px 0; }
+}
+
+/* ── Carte de connexion ── */
+.login-card {
+  position: relative;
+  z-index: 5;
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 20px;
+  padding: 38px 34px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.4);
+  animation: cardRise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes cardRise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.login-card .mark {
+  width: 56px;
+  height: 56px;
+  animation: markPop 0.7s ease;
+}
+@keyframes markPop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Sélecteur de langue ── */
+.lang-switch {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  display: flex;
+  gap: 6px;
+  z-index: 6;
+}
+.lang-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.lang-btn.active {
+  background: #fff;
+  color: #0F7A54;
+}
+
+/* ── RTL (arabe) ── */
+.login-page[dir="rtl"] .lang-switch {
+  right: auto;
+  left: 24px;
+}
+.login-page[dir="rtl"] .field span,
+.login-page[dir="rtl"] h1,
+.login-page[dir="rtl"] .login-sub {
+  text-align: right;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GeoTruck — Page de connexion (fond animé + Lottie + i18n)
+   À ajouter à la fin de frontend/src/index.css
+   ═══════════════════════════════════════════════════════════ */
+
+.login-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0B3D2E 0%, #125138 45%, #1D7A54 100%);
+}
+
+/* ── Fond animé ── */
+.login-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(55px);
+  opacity: 0.3;
+}
+.blob-1 {
+  width: 320px; height: 320px;
+  background: #2FD08C;
+  top: -90px; left: -70px;
+  animation: blobFloat1 13s ease-in-out infinite;
+}
+.blob-2 {
+  width: 280px; height: 280px;
+  background: #0FA968;
+  bottom: -80px; right: -60px;
+  animation: blobFloat2 16s ease-in-out infinite;
+}
+@keyframes blobFloat1 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(40px, 30px); }
+}
+@keyframes blobFloat2 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-35px, -25px); }
+}
+
+/* ── Camion Lottie ── */
+.login-truck {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  max-width: 560px;
+  opacity: 0.85;
+  z-index: 1;
+}
+
+/* ── Route animée ── */
+.login-road {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 50px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255,255,255,0.22) 0 30px,
+    transparent 30px 70px
+  );
+  animation: roadMove 3s linear infinite;
+  opacity: 0.35;
+  z-index: 2;
+}
+@keyframes roadMove {
+  from { background-position: 0 0; }
+  to { background-position: 70px 0; }
+}
+
+/* ── Carte de connexion ── */
+.login-card {
+  position: relative;
+  z-index: 5;
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 20px;
+  padding: 38px 34px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.4);
+  animation: cardRise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes cardRise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.login-card .mark {
+  width: 56px;
+  height: 56px;
+  animation: markPop 0.7s ease;
+}
+@keyframes markPop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Sélecteur de langue ── */
+.lang-switch {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  display: flex;
+  gap: 6px;
+  z-index: 6;
+}
+.lang-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.lang-btn.active {
+  background: #fff;
+  color: #0F7A54;
+}
+
+/* ── RTL (arabe) ── */
+.login-page[dir="rtl"] .lang-switch {
+  right: auto;
+  left: 24px;
+}
+.login-page[dir="rtl"] .field span,
+.login-page[dir="rtl"] h1,
+.login-page[dir="rtl"] .login-sub {
+  text-align: right;
+}
+
+/* Animation du camion SVG (léger balancement + roue) */
+.login-truck svg {
+  animation: truckBob 2.5s ease-in-out infinite;
+}
+@keyframes truckBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}

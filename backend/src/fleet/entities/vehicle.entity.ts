@@ -36,6 +36,15 @@ export class Vehicle {
   @Column({ name: 'tank_aux_capacity', default: 300 })
   tankAuxCapacity: number;
 
+  /** Numero de la carte SIM installee dans le boitier. */
+  @Column({ name: 'sim_number', length: 32, default: '' })
+  simNumber: string;
+
+  /** Kilometrage au compteur du camion lors de l'ajout (camion d'occasion).
+   *  L'odometre affiche = ce point de depart + la distance GPS accumulee. */
+  @Column({ name: 'initial_odometer', default: 0 })
+  initialOdometer: number;
+
   @Column({ default: true })
   active: boolean;
 

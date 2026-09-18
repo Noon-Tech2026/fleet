@@ -1,0 +1,11 @@
+{
+  "login": {
+    "title": "GeoTruck",
+    "subtitle": "Sign in to access vehicle tracking.",
+    "email": "Email address",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "error": "Login failed"
+  }
+}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { VehicleState } from '../lib/types';
 import { statusOf, type Status } from '../lib/status';
 import { formatMoney } from '../lib/accounting';
@@ -16,8 +17,6 @@ interface Props {
 const RING_RADIUS = 25;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
-/** Palette de l'illustration camion par ton d'état — même vocabulaire que
- *  `statusOf` (ok/warn/danger/idle), pas une couleur par véhicule. */
 const TRUCK_PALETTE: Record<Status['tone'], { base: string; mid: string; dark: string; glass: string; glassPale: string; stripe: string }> = {
   ok: { base: '#3FBE8E', mid: '#1D9E75', dark: '#12704F', glass: '#AEE9D3', glassPale: '#D6F5E9', stripe: '#0F5A3D' },
   warn: { base: '#E2A93A', mid: '#BA7517', dark: '#8A5710', glass: '#F5DDA6', glassPale: '#FBEFD3', stripe: '#6B4009' },
@@ -33,6 +32,7 @@ function fuelTone(ratio: number): string {
 }
 
 export function FleetOverview({ vehicles, onTrack }: Props) {
+  const { t } = useTranslation();
   const { can } = useAuth();
   const canControlStarter = can('supervisor');
   const canManageFleet = can('admin');
@@ -51,8 +51,8 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
         setSummaries(Object.fromEntries(rows.map((r) => [r.vehicleId, r])));
         setLoadError(null);
       })
-      .catch((err) => setLoadError(err instanceof Error ? err.message : 'Chargement impossible'));
-  }, []);
+      .catch((err) => setLoadError(err instanceof Error ? err.message : t('overview.loadError')));
+  }, [t]);
 
   const dialogVehicle = useMemo(
     () => vehicles.find((v) => v.id === dialogVehicleId) ?? null,
@@ -67,29 +67,23 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
   async function block(vehicleId: string, reason: string) {
     const audit = await api.blockStarter(vehicleId, reason);
     setDialogVehicleId(null);
-    setNotice(
-      `${vehicleId} — ${
-        audit.applied
-          ? 'démarreur bloqué, le boîtier a accusé réception.'
-          : "blocage en file d'attente, appliqué automatiquement dès l'arrêt."
-      }`,
-    );
+    setNotice(t(audit.applied ? 'overview.blockedApplied' : 'overview.blockedQueued', { id: vehicleId }));
   }
 
   async function release(vehicleId: string) {
     await api.releaseStarter(vehicleId, 'Réautorisation manuelle');
-    setNotice(`${vehicleId} — démarrage réautorisé.`);
+    setNotice(t('overview.released', { id: vehicleId }));
   }
 
   return (
     <main className="page">
       <header className="page-head">
         <div>
-          <h2>Vue d'ensemble</h2>
+          <h2>{t('overview.title')}</h2>
         </div>
         {canManageFleet && (
           <button className="btn primary" onClick={() => setCreatingVehicle(true)}>
-            Nouveau camion
+            {t('overview.newTruck')}
           </button>
         )}
       </header>
@@ -98,7 +92,7 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
       {notice && <p className="banner ok">{notice}</p>}
 
       {vehicles.length === 0 ? (
-        <p className="empty">Aucun boîtier n'a encore transmis de position.</p>
+        <p className="empty">{t('overview.empty')}</p>
       ) : (
         <div className="overview-grid">
           {vehicles.map((v, i) => {
@@ -110,7 +104,7 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
             const ratioAux = Math.max(0, Math.min(1, v.fuelAux / FUEL_AUX_CAPACITY));
 
             const moteurBlocked = v.starter === 'blocked';
-            const moteurLabel = moteurBlocked ? 'Bloqué' : v.ignition ? 'Marche' : 'Arrêté';
+            const moteurLabel = moteurBlocked ? t('overview.engineBlocked') : v.ignition ? t('overview.engineRunning') : t('overview.engineStopped');
             const moteurColor = moteurBlocked ? 'var(--red)' : v.ignition ? 'var(--mint)' : 'var(--dim)';
             const moving = v.ignition && v.speed > 0;
 
@@ -128,12 +122,10 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
                     <rect x="300" y="52" width="60" height="4" rx="2" fill={palette.stripe} />
                   </svg>
 
-                  {/* Texte en HTML, pas dans le SVG : sinon il retrecit avec la
-                      largeur de la carte et devient illisible sur une grille dense. */}
                   <div className="ov-truck-info">
                     <div className="ov-truck-driver" style={{ color: palette.glassPale }}>
                       <span className="dot" style={{ background: palette.glass }} />
-                      {v.driver || 'Non affecté'}
+                      {v.driver || t('overview.driverUnassigned')}
                     </div>
                     <div>
                       <div className="ov-truck-id">{v.id}</div>
@@ -146,9 +138,7 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
 
                 <div
                   className={`ov-strip ${moving ? 'moving' : ''}`}
-                  style={{
-                    background: `repeating-linear-gradient(90deg, ${palette.stripe} 0 20px, transparent 20px 40px)`,
-                  }}
+                  style={{ background: `repeating-linear-gradient(90deg, ${palette.stripe} 0 20px, transparent 20px 40px)` }}
                 />
 
                 <div className="ov-status-row">
@@ -157,26 +147,26 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
 
                 <div className="ov-body">
                   <div className="ov-gauges">
-                    <RingGauge ratio={ratioMain} label={`Princ. ${Math.round(v.fuelMain)}L`} />
-                    <RingGauge ratio={ratioAux} label={`Aux. ${Math.round(v.fuelAux)}L`} />
+                    <RingGauge ratio={ratioMain} label={`${t('overview.fuelMain')} ${Math.round(v.fuelMain)}L`} />
+                    <RingGauge ratio={ratioAux} label={`${t('overview.fuelAux')} ${Math.round(v.fuelAux)}L`} />
 
                     <dl className="ov-stat-grid">
                       <div className="ov-stat">
-                        <dt>Moteur</dt>
+                        <dt>{t('overview.engine')}</dt>
                         <dd style={{ color: moteurColor }}>{moteurLabel}</dd>
                       </div>
                       <div className="ov-stat">
-                        <dt>Odo</dt>
+                        <dt>{t('overview.odometer')}</dt>
                         <dd>{v.odometer.toLocaleString('fr-FR')} km</dd>
                       </div>
                       <div className="ov-stat">
-                        <dt>Batt.</dt>
+                        <dt>{t('overview.battery')}</dt>
                         <dd>{v.battery} V</dd>
                       </div>
                       <div className="ov-stat">
-                        <dt>GPS</dt>
+                        <dt>{t('overview.gps')}</dt>
                         <dd style={{ color: v.online ? 'var(--mint)' : 'var(--red)' }}>
-                          {v.online ? 'Actif' : 'Hors ligne'}
+                          {v.online ? t('overview.gpsOnline') : t('overview.gpsOffline')}
                         </dd>
                       </div>
                     </dl>
@@ -186,21 +176,21 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
                     <>
                       <dl className="ov-money-row">
                         <div className="ov-money ok">
-                          <dt>Voyages</dt>
+                          <dt>{t('overview.trips')}</dt>
                           <dd>{formatMoney(summary.revenue)}</dd>
                         </div>
                         <div className="ov-money danger">
-                          <dt>Charges</dt>
+                          <dt>{t('overview.charges')}</dt>
                           <dd>{formatMoney(summary.expenses)}</dd>
                         </div>
                         <div className="ov-money warn">
-                          <dt>Invest.</dt>
+                          <dt>{t('overview.investments')}</dt>
                           <dd>{formatMoney(summary.investments)}</dd>
                         </div>
                       </dl>
 
                       <div className={`ov-net ${summary.netResult >= 0 ? 'ok' : 'danger'}`}>
-                        <span>Reste après invest.</span>
+                        <span>{t('overview.netResult')}</span>
                         <b>
                           {summary.netResult >= 0 ? '+' : ''}
                           {formatMoney(summary.netResult)}
@@ -211,19 +201,19 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
 
                   <div className="ov-actions">
                     <button className="btn ghost small" onClick={() => onTrack(v.id)}>
-                      Suivi
+                      {t('overview.track')}
                     </button>
                     <button className="btn ghost small" onClick={() => setHistoryVehicleId(v.id)}>
-                      Historique
+                      {t('overview.history')}
                     </button>
                     {canControlStarter &&
                       (v.starter === 'allowed' ? (
                         <button className="btn danger small" onClick={() => setDialogVehicleId(v.id)}>
-                          Bloquer
+                          {t('overview.block')}
                         </button>
                       ) : (
                         <button className="btn mint small" onClick={() => void release(v.id)}>
-                          Débloquer
+                          {t('overview.unblock')}
                         </button>
                       ))}
                   </div>
@@ -255,13 +245,10 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
           onCancel={() => setCreatingVehicle(false)}
           onCreated={(vehicleId) => {
             setCreatingVehicle(false);
-            setNotice(
-              `${vehicleId} — ajouté au répertoire, apparaîtra dès réception de sa première position.`,
-            );
+            setNotice(t('overview.created', { id: vehicleId }));
           }}
         />
       )}
-
     </main>
   );
 }

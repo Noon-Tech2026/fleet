@@ -1,0 +1,11 @@
+{
+  "login": {
+    "title": "GeoTruck",
+    "subtitle": "Connectez-vous pour accéder au suivi des véhicules.",
+    "email": "Adresse email",
+    "password": "Mot de passe",
+    "submit": "Se connecter",
+    "submitting": "Connexion…",
+    "error": "Connexion impossible"
+  }
+}

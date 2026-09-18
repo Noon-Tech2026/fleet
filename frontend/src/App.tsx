@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Role } from './lib/types';
 import { useFleetStream } from './api/useFleetStream';
 import { useAuth } from './auth/AuthContext';
@@ -13,14 +14,35 @@ import { MaintenancePage } from './maintenance/MaintenancePage';
 import { AccountingPage } from './accounting/AccountingPage';
 import { CreateDriverDialog } from './accounting/CreateDriverDialog';
 import { CreateClientDialog } from './accounting/CreateClientDialog';
-import { ROLE_LABEL } from './lib/roles';
 
 const SIMULATOR_MODE = import.meta.env.DEV;
 
+type Lang = 'fr' | 'en' | 'ar';
+
+function LangSwitch() {
+  const { i18n } = useTranslation();
+  const current = (i18n.language || 'fr').slice(0, 2) as Lang;
+  return (
+    <div className="lang-switch nav-lang">
+      {(['ar', 'fr', 'en'] as Lang[]).map((l) => (
+        <button
+          key={l}
+          type="button"
+          className={l === current ? 'lang-btn active' : 'lang-btn'}
+          onClick={() => i18n.changeLanguage(l)}
+        >
+          {l === 'ar' ? 'ع' : l.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function App() {
+  const { t } = useTranslation();
   const { user, loading, logout } = useAuth();
 
-  if (loading) return <div className="boot">Vérification de la session…</div>;
+  if (loading) return <div className="boot">{t('app.checkingSession')}</div>;
   if (!user) return <LoginPage />;
 
   return <Dashboard onLogout={logout} userName={user.fullName} role={user.role} />;
@@ -35,8 +57,7 @@ function Dashboard({
   userName: string;
   role: Role;
 }) {
-  // Le flux SSE est ouvert par le tableau de bord et non par la vue carte :
-  // changer d'onglet ne doit pas rouvrir une connexion vers l'API.
+  const { t } = useTranslation();
   const { vehicles, alerts } = useFleetStream();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [feedOpen, setFeedOpen] = useState(true);
@@ -60,64 +81,48 @@ function Dashboard({
           <img src="/logo.png" className="mark" alt="" aria-hidden="true" />
           <div>
             <h1>GeoTruck</h1>
-            <p>Your fleet under control</p>
+            <p>{t('app.tagline')}</p>
           </div>
         </div>
 
         <nav className="nav">
-          <button
-            className={`nav-tab ${view === 'overview' ? 'active' : ''}`}
-            onClick={() => setView('overview')}
-          >
-            Vue d'ensemble
+          <button className={`nav-tab ${view === 'overview' ? 'active' : ''}`} onClick={() => setView('overview')}>
+            {t('nav.overview')}
           </button>
-          <button
-            className={`nav-tab ${view === 'fleet' ? 'active' : ''}`}
-            onClick={() => setView('fleet')}
-          >
-            Supervision
+          <button className={`nav-tab ${view === 'fleet' ? 'active' : ''}`} onClick={() => setView('fleet')}>
+            {t('nav.supervision')}
           </button>
-          <button
-            className={`nav-tab ${view === 'maintenance' ? 'active' : ''}`}
-            onClick={() => setView('maintenance')}
-          >
-            Entretien
+          <button className={`nav-tab ${view === 'maintenance' ? 'active' : ''}`} onClick={() => setView('maintenance')}>
+            {t('nav.maintenance')}
           </button>
-          <button
-            className={`nav-tab ${view === 'accounting' ? 'active' : ''}`}
-            onClick={() => setView('accounting')}
-          >
-            Comptabilité
+          <button className={`nav-tab ${view === 'accounting' ? 'active' : ''}`} onClick={() => setView('accounting')}>
+            {t('nav.accounting')}
           </button>
-          {/* L'onglet n'apparaît que pour un administrateur — confort
-              d'affichage : le serveur refuse de toute façon. */}
           {isAdmin && (
-            <button
-              className={`nav-tab ${view === 'users' ? 'active' : ''}`}
-              onClick={() => setView('users')}
-            >
-              Utilisateurs
+            <button className={`nav-tab ${view === 'users' ? 'active' : ''}`} onClick={() => setView('users')}>
+              {t('nav.users')}
             </button>
           )}
           {canManageDirectory && (
             <>
               <button className="nav-tab" onClick={() => setCreatingDriver(true)}>
-                Ajouter chauffeur
+                {t('nav.addDriver')}
               </button>
               <button className="nav-tab" onClick={() => setCreatingClient(true)}>
-                Ajouter client
+                {t('nav.addClient')}
               </button>
             </>
           )}
         </nav>
 
         <div className="session">
+          <LangSwitch />
           <div className="who">
             <strong>{userName}</strong>
-            <span>{ROLE_LABEL[role] ?? role}</span>
+            <span>{t(`roles.${role}`)}</span>
           </div>
           <button className="btn ghost small" onClick={() => void onLogout()}>
-            Se déconnecter
+            {t('nav.logout')}
           </button>
         </div>
       </header>
@@ -142,30 +147,20 @@ function Dashboard({
         <main className="layout">
           <aside className="col left">
             <h2 className="col-title">
-              Flotte <span className="count">{vehicles.length}</span>
+              {t('app.fleet')} <span className="count">{vehicles.length}</span>
             </h2>
-            <VehicleList
-              vehicles={vehicles}
-              selectedId={selected?.id ?? null}
-              onSelect={setSelectedId}
-            />
+            <VehicleList vehicles={vehicles} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
           </aside>
 
           <section className="col center">
             <FleetMap vehicles={vehicles} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
-            {/* Le bandeau se replie pour rendre toute la hauteur à la carte :
-                en suivi de flotte, la carte est l'écran de travail. */}
             <div className={`feed ${feedOpen ? '' : 'collapsed'}`}>
               <div className="feed-head">
                 <h2 className="col-title">
-                  Événements {alerts.length > 0 && <span className="count">{alerts.length}</span>}
+                  {t('app.events')} {alerts.length > 0 && <span className="count">{alerts.length}</span>}
                 </h2>
-                <button
-                  className="btn ghost small"
-                  onClick={() => setFeedOpen((open) => !open)}
-                  aria-expanded={feedOpen}
-                >
-                  {feedOpen ? 'Masquer' : 'Afficher'}
+                <button className="btn ghost small" onClick={() => setFeedOpen((open) => !open)} aria-expanded={feedOpen}>
+                  {feedOpen ? t('app.hide') : t('app.show')}
                 </button>
               </div>
               {feedOpen && <AlertFeed alerts={alerts} />}
@@ -176,7 +171,7 @@ function Dashboard({
             {selected ? (
               <VehicleDetail vehicle={selected} simulatorMode={SIMULATOR_MODE} />
             ) : (
-              <p className="empty">Sélectionnez un camion pour voir sa fiche.</p>
+              <p className="empty">{t('app.selectVehicle')}</p>
             )}
           </aside>
         </main>
@@ -187,7 +182,7 @@ function Dashboard({
           onCancel={() => setCreatingDriver(false)}
           onCreated={(driver) => {
             setCreatingDriver(false);
-            setNotice(`${driver.fullName} — chauffeur ajouté au référentiel.`);
+            setNotice(t('app.driverAdded', { name: driver.fullName }));
           }}
         />
       )}
@@ -197,7 +192,7 @@ function Dashboard({
           onCancel={() => setCreatingClient(false)}
           onCreated={(client) => {
             setCreatingClient(false);
-            setNotice(`${client.name} — client ajouté au référentiel.`);
+            setNotice(t('app.clientAdded', { name: client.name }));
           }}
         />
       )}

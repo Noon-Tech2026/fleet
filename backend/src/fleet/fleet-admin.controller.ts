@@ -33,6 +33,8 @@ class CreateVehicleDto {
   @IsOptional() @IsString() @MaxLength(64) model?: string;
   @IsOptional() @IsInt() @Min(1) @Max(2000) tankMainCapacity?: number;
   @IsOptional() @IsInt() @Min(1) @Max(2000) tankAuxCapacity?: number;
+  @IsOptional() @IsString() @MaxLength(32) simNumber?: string;
+  @IsOptional() @IsInt() @Min(0) @Max(9_999_999) initialOdometer?: number;
   @IsOptional() @IsString() notes?: string;
 }
 
@@ -42,6 +44,9 @@ class UpdateVehicleDto {
   @IsOptional() @IsString() @MaxLength(32) imei?: string;
   @IsOptional() @IsInt() @Min(1) @Max(2000) tankMainCapacity?: number;
   @IsOptional() @IsInt() @Min(1) @Max(2000) tankAuxCapacity?: number;
+  @IsOptional() @IsString() @MaxLength(64) model?: string;
+  @IsOptional() @IsString() @MaxLength(32) simNumber?: string;
+  @IsOptional() @IsInt() @Min(0) @Max(9_999_999) initialOdometer?: number;
   @IsOptional() @IsString() notes?: string;
 }
 
