@@ -41,11 +41,19 @@ async function seed(): Promise<void> {
   console.log('Schema synchronise.');
 
   await seedAdmin(dataSource);
-  await seedVehicles(dataSource);
-  await seedZones(dataSource);
-  await seedCalibrations(dataSource);
-  await seedMaintenance(dataSource);
-  await seedAccounting(dataSource);
+
+  // Les donnees de demonstration (camions fictifs, zones marocaines, voyages)
+  // ne sont JAMAIS semees en production : elles ecraseraient le parc reel.
+  // Uniquement pour un environnement de dev/simulation, avec SEED_DEMO=1.
+  if (process.env.SEED_DEMO === '1') {
+    await seedVehicles(dataSource);
+    await seedZones(dataSource);
+    await seedCalibrations(dataSource);
+    await seedMaintenance(dataSource);
+    await seedAccounting(dataSource);
+  } else {
+    console.log('Donnees de demonstration ignorees (SEED_DEMO=1 pour les creer en dev).');
+  }
 
   await dataSource.destroy();
   console.log('\nSeed termine.\n');
