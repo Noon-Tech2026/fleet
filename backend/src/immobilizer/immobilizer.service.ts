@@ -20,7 +20,7 @@ import { CommandLog } from '../auth/entities/command-log.entity';
  * effectivement le moteur sur C-01). Conditions d'execution :
  *   - contact coupe  -> immediat ;
  *   - contact mis    -> vitesse <= SPEED_THRESHOLD maintenue pendant au moins
- *                       STATIONARY_MS (un seul point GPS a 0 km/h ne suffit
+ *                       STATIONARY_MS = 10 s (un seul point GPS a 0 km/h ne suffit
  *                       pas : bruit GPS, arret bref a un feu).
  * Toute demande emise hors de ces conditions est mise en file d'attente,
  * jamais executee.
@@ -31,7 +31,7 @@ import { CommandLog } from '../auth/entities/command-log.entity';
  */
 
 const SPEED_THRESHOLD = 3; // km/h — tolerance sur le bruit GPS
-const STATIONARY_MS = 20_000; // duree d'immobilite requise, contact mis
+const STATIONARY_MS = 10_000; // duree d'immobilite requise, contact mis
 
 export interface Actor {
   id: string | null;
@@ -47,6 +47,8 @@ export class ImmobilizerService {
   private readonly pending = new Map<string, { actor: Actor; reason: string }>();
   /** Instant (ms) depuis lequel chaque vehicule est immobile ; absent = en mouvement. */
   private readonly stationarySince = new Map<string, number>();
+  /** Verification planifiee par vehicule, pour ne pas attendre la trame GPS suivante. */
+  private readonly timers = new Map<string, NodeJS.Timeout>();
 
   constructor(
     @Inject(TELEMETRY_SOURCE) private readonly source: TelemetrySource,
@@ -61,7 +63,28 @@ export class ImmobilizerService {
       if (this.stationarySince.has(v.id) === false) this.stationarySince.set(v.id, now);
     } else {
       this.stationarySince.delete(v.id);
+      this.cancelCheck(v.id);
     }
+  }
+
+  private cancelCheck(vehicleId: string): void {
+    const t = this.timers.get(vehicleId);
+    if (t !== undefined) clearTimeout(t);
+    this.timers.delete(vehicleId);
+  }
+
+  /** Planifie un reconcile() a la fin du delai d'immobilite si une demande attend. */
+  private scheduleCheck(vehicle: VehicleState): void {
+    const since = this.stationarySince.get(vehicle.id);
+    if (since === undefined || this.timers.has(vehicle.id)) return;
+    const delay = Math.max(0, STATIONARY_MS - (Date.now() - since)) + 500;
+    this.timers.set(
+      vehicle.id,
+      setTimeout(() => {
+        this.timers.delete(vehicle.id);
+        void this.reconcile(vehicle);
+      }, delay),
+    );
   }
 
   isSafeToBlock(v: Pick<VehicleState, 'id' | 'speed' | 'ignition'>, now = Date.now()): boolean {
@@ -79,6 +102,7 @@ export class ImmobilizerService {
         `${vehicle.id} — blocage differe demande par ${actor.email} ` +
           `(${vehicle.speed} km/h, contact ${vehicle.ignition ? 'mis' : 'coupe'})`,
       );
+      this.scheduleCheck(vehicle);
       return this.record(vehicle, 'block_starter', actor, reason, false);
     }
     return this.applyBlock(vehicle, actor, reason);
@@ -88,14 +112,20 @@ export class ImmobilizerService {
   async reconcile(vehicle: VehicleState): Promise<void> {
     this.trackMotion(vehicle);
     const waiting = this.pending.get(vehicle.id);
-    if (waiting === undefined || this.isSafeToBlock(vehicle) === false) return;
+    if (waiting === undefined) return;
+    if (this.isSafeToBlock(vehicle) === false) {
+      this.scheduleCheck(vehicle);
+      return;
+    }
 
     this.pending.delete(vehicle.id);
+    this.cancelCheck(vehicle.id);
     await this.applyBlock(vehicle, waiting.actor, `${waiting.reason} (execution differee)`);
   }
 
   async release(vehicle: VehicleState, actor: Actor, reason: string): Promise<CommandAudit> {
     this.pending.delete(vehicle.id);
+    this.cancelCheck(vehicle.id);
     await this.source.setDigitalOutput(vehicle.id, 1, false);
     vehicle.starter = 'allowed';
     this.alerts.raise(vehicle.id, 'info', 'starter_released', `Demarrage reautorise par ${actor.email}`);
