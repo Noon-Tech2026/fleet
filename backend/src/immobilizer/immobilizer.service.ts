@@ -11,13 +11,19 @@ import { CommandLog } from '../auth/entities/command-log.entity';
  * ============================================================================
  * REGLE DE SECURITE — NE PAS CONTOURNER
  * ============================================================================
- * Le systeme ne coupe jamais un moteur en marche. Couper l'alimentation d'un
- * moteur en roulage supprime la direction assistee et l'assistance de freinage
- * d'un ensemble de 40 tonnes.
+ * Le systeme ne coupe jamais un moteur d'un vehicule EN MOUVEMENT. Couper
+ * l'alimentation d'un moteur en roulage supprime la direction assistee et
+ * l'assistance de freinage d'un ensemble de 40 tonnes.
  *
- * La seule action autorisee est le blocage du DEMARREUR, et uniquement quand
- * le vehicule est deja a l'arret, contact coupe. Toute demande emise dans
- * d'autres conditions est mise en file d'attente, jamais executee.
+ * Decision client (18/09/2026) : le blocage doit s'appliquer quand le camion
+ * est immobile, meme moteur tournant au ralenti (le relais DOUT1 coupe
+ * effectivement le moteur sur C-01). Conditions d'execution :
+ *   - contact coupe  -> immediat ;
+ *   - contact mis    -> vitesse <= SPEED_THRESHOLD maintenue pendant au moins
+ *                       STATIONARY_MS (un seul point GPS a 0 km/h ne suffit
+ *                       pas : bruit GPS, arret bref a un feu).
+ * Toute demande emise hors de ces conditions est mise en file d'attente,
+ * jamais executee.
  *
  * Cette verification vit ici, cote serveur. Un bouton grise dans le navigateur
  * n'est pas une protection : il suffit d'un appel HTTP pour le contourner.
@@ -25,6 +31,7 @@ import { CommandLog } from '../auth/entities/command-log.entity';
  */
 
 const SPEED_THRESHOLD = 3; // km/h — tolerance sur le bruit GPS
+const STATIONARY_MS = 20_000; // duree d'immobilite requise, contact mis
 
 export interface Actor {
   id: string | null;
@@ -38,6 +45,8 @@ export const SYSTEM_ACTOR: Actor = { id: null, email: 'system' };
 export class ImmobilizerService {
   private readonly log = new Logger(ImmobilizerService.name);
   private readonly pending = new Map<string, { actor: Actor; reason: string }>();
+  /** Instant (ms) depuis lequel chaque vehicule est immobile ; absent = en mouvement. */
+  private readonly stationarySince = new Map<string, number>();
 
   constructor(
     @Inject(TELEMETRY_SOURCE) private readonly source: TelemetrySource,
@@ -46,12 +55,25 @@ export class ImmobilizerService {
     private readonly alerts: AlertsService,
   ) {}
 
-  static isSafeToBlock(v: Pick<VehicleState, 'speed' | 'ignition'>): boolean {
-    return v.speed <= SPEED_THRESHOLD && !v.ignition;
+  /** A appeler a chaque position recue : met a jour le compteur d'immobilite. */
+  trackMotion(v: Pick<VehicleState, 'id' | 'speed'>, now = Date.now()): void {
+    if (v.speed <= SPEED_THRESHOLD) {
+      if (this.stationarySince.has(v.id) === false) this.stationarySince.set(v.id, now);
+    } else {
+      this.stationarySince.delete(v.id);
+    }
+  }
+
+  isSafeToBlock(v: Pick<VehicleState, 'id' | 'speed' | 'ignition'>, now = Date.now()): boolean {
+    if (v.speed > SPEED_THRESHOLD) return false;
+    if (v.ignition === false) return true;
+    const since = this.stationarySince.get(v.id);
+    return since !== undefined && now - since >= STATIONARY_MS;
   }
 
   async requestBlock(vehicle: VehicleState, actor: Actor, reason: string): Promise<CommandAudit> {
-    if (!ImmobilizerService.isSafeToBlock(vehicle)) {
+    this.trackMotion(vehicle);
+    if (this.isSafeToBlock(vehicle) === false) {
       this.pending.set(vehicle.id, { actor, reason });
       this.log.warn(
         `${vehicle.id} — blocage differe demande par ${actor.email} ` +
@@ -64,8 +86,9 @@ export class ImmobilizerService {
 
   /** Appele a chaque position : execute une demande en attente des que possible. */
   async reconcile(vehicle: VehicleState): Promise<void> {
+    this.trackMotion(vehicle);
     const waiting = this.pending.get(vehicle.id);
-    if (!waiting || !ImmobilizerService.isSafeToBlock(vehicle)) return;
+    if (waiting === undefined || this.isSafeToBlock(vehicle) === false) return;
 
     this.pending.delete(vehicle.id);
     await this.applyBlock(vehicle, waiting.actor, `${waiting.reason} (execution differee)`);
@@ -128,7 +151,7 @@ export class ImmobilizerService {
       }),
     );
 
-    if (!applied) vehicle.starter = 'pending_block';
+    if (applied === false) vehicle.starter = 'pending_block';
 
     const audit: CommandAudit = {
       id: entity.id,
