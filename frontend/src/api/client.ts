@@ -28,7 +28,10 @@ export interface VehicleDirectoryEntry {
   plate: string;
   driver: string;
   imei: string;
-  model: string;
+  model: string | null;
+  simNumber: string | null;
+  initialOdometer: number | null;
+  notes: string | null;
   active: boolean;
 }
 
@@ -239,6 +242,16 @@ export const api = {
     tankAuxCapacity?: number;
     notes?: string;
   }) => request<VehicleDirectoryEntry>('/api/fleet/vehicles', { method: 'POST', body: JSON.stringify(input) }),
+
+  /** Reserve au role admin cote serveur. L'IMEI n'est volontairement pas expose ici. */
+  updateVehicle: (
+    id: string,
+    patch: { plate?: string; driver?: string; model?: string; simNumber?: string; initialOdometer?: number; notes?: string },
+  ) =>
+    request<VehicleDirectoryEntry>(`/api/fleet/vehicles/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
 
   /* --- comptes (reserve au role admin cote serveur) --- */
   users: () => request<AuthUser[]>('/api/users'),

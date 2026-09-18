@@ -47,7 +47,9 @@
     "blockedQueued": "{{id}} — blocage en file d'attente, appliqué automatiquement dès l'arrêt.",
     "blockedApplied": "{{id}} — démarreur bloqué, le boîtier a accusé réception.",
     "released": "{{id}} — démarrage réautorisé.",
-    "created": "{{id}} — ajouté au répertoire, apparaîtra dès réception de sa première position."
+    "created": "{{id}} — ajouté au répertoire, apparaîtra dès réception de sa première position.",
+    "edit": "Modifier",
+    "updated": "Camion {{id}} mis à jour"
   },
   "app": {
     "tagline": "Your fleet under control",
@@ -81,5 +83,27 @@
     "simPlaceholder": "Ex : +222 XX XX XX XX",
     "odometer": "Compteur actuel (km)",
     "odometerHint": "Kilométrage affiché au compteur du camion (utile pour un camion d'occasion)."
+  },
+  "status": {
+    "offline": "Hors ligne",
+    "blocked": "Démarrage bloqué",
+    "pendingBlock": "Blocage en attente",
+    "stopped": "À l'arrêt",
+    "idling": "Moteur au ralenti",
+    "moving": "En route"
+  },
+  "editTruck": {
+    "title": "Modifier le camion {{id}}",
+    "plate": "Immatriculation",
+    "imei": "IMEI du boîtier",
+    "imeiHint": "L'IMEI ne se modifie pas ici — le rattachement se fait via Traccar.",
+    "sim": "Numéro SIM (boîtier)",
+    "model": "Modèle",
+    "notes": "Notes",
+    "save": "Enregistrer",
+    "error": "Échec de la mise à jour",
+    "code": "Code véhicule",
+    "odometer": "Kilométrage actuel (km)",
+    "odometerHint": "Modifier cette valeur décale le kilométrage affiché et toutes les échéances d'entretien."
   }
 }

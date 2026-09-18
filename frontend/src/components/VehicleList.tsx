@@ -1,5 +1,6 @@
 import type { VehicleState } from '../lib/types';
 import { statusOf } from '../lib/status';
+import { useTranslation } from 'react-i18next';
 
 /** Somme des deux réservoirs d'un F3000 — sert uniquement à l'échelle de la
  *  barre de la vignette, jamais à un calcul métier. */
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function VehicleList({ vehicles, selectedId, onSelect }: Props) {
+  const { t } = useTranslation();
   if (vehicles.length === 0) {
     return <p className="empty">Aucun boîtier n'a encore transmis de position.</p>;
   }
@@ -55,7 +57,7 @@ export function VehicleList({ vehicles, selectedId, onSelect }: Props) {
               >
                 <div className="row">
                   <span className="vid">{v.id}</span>
-                  <span className={`badge ${status.tone}`}>{status.label}</span>
+                  <span className={`badge ${status.tone}`}>{t(`status.${status.key}`)}</span>
                 </div>
                 <div className="plate">{v.plate}</div>
                 <div className="row muted">

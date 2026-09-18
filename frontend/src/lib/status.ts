@@ -1,7 +1,10 @@
 import type { VehicleState } from './types';
 
+export type StatusKey = 'offline' | 'blocked' | 'pendingBlock' | 'stopped' | 'idling' | 'moving';
+
 export interface Status {
-  label: string;
+  /** Clé i18n : afficher via t(`status.${key}`). */
+  key: StatusKey;
   tone: 'ok' | 'warn' | 'danger' | 'idle';
 }
 
@@ -11,10 +14,10 @@ export interface Status {
  * la plus grave en premier.
  */
 export function statusOf(v: VehicleState): Status {
-  if (!v.online) return { label: 'Hors ligne', tone: 'idle' };
-  if (v.starter === 'blocked') return { label: 'Démarrage bloqué', tone: 'danger' };
-  if (v.starter === 'pending_block') return { label: 'Blocage en attente', tone: 'warn' };
-  if (!v.ignition) return { label: "À l'arrêt", tone: 'idle' };
-  if (v.speed <= 3) return { label: 'Moteur au ralenti', tone: 'warn' };
-  return { label: 'En route', tone: 'ok' };
+  if (!v.online) return { key: 'offline', tone: 'idle' };
+  if (v.starter === 'blocked') return { key: 'blocked', tone: 'danger' };
+  if (v.starter === 'pending_block') return { key: 'pendingBlock', tone: 'warn' };
+  if (!v.ignition) return { key: 'stopped', tone: 'idle' };
+  if (v.speed <= 3) return { key: 'idling', tone: 'warn' };
+  return { key: 'moving', tone: 'ok' };
 }

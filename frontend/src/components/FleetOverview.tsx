@@ -8,6 +8,7 @@ import { useAuth } from '../auth/AuthContext';
 import { StarterDialog } from './StarterDialog';
 import { VehicleHistoryDialog } from './VehicleHistoryDialog';
 import { CreateVehicleDialog } from './CreateVehicleDialog';
+import { EditVehicleDialog } from './EditVehicleDialog';
 
 interface Props {
   vehicles: VehicleState[];
@@ -42,6 +43,7 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
   const [dialogVehicleId, setDialogVehicleId] = useState<string | null>(null);
   const [historyVehicleId, setHistoryVehicleId] = useState<string | null>(null);
   const [creatingVehicle, setCreatingVehicle] = useState(false);
+  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -142,7 +144,7 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
                 />
 
                 <div className="ov-status-row">
-                  <span className={`badge ${status.tone}`}>{status.label}</span>
+                  <span className={`badge ${status.tone}`}>{t(`status.${status.key}`)}</span>
                 </div>
 
                 <div className="ov-body">
@@ -206,6 +208,11 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
                     <button className="btn ghost small" onClick={() => setHistoryVehicleId(v.id)}>
                       {t('overview.history')}
                     </button>
+                    {canManageFleet && (
+                      <button className="btn ghost small" onClick={() => setEditingVehicleId(v.id)}>
+                        {t('overview.edit')}
+                      </button>
+                    )}
                     {canControlStarter &&
                       (v.starter === 'allowed' ? (
                         <button className="btn danger small" onClick={() => setDialogVehicleId(v.id)}>
@@ -237,6 +244,17 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
           vehicleId={historyVehicle.id}
           plate={historyVehicle.plate}
           onClose={() => setHistoryVehicleId(null)}
+        />
+      )}
+
+      {editingVehicleId && (
+        <EditVehicleDialog
+          vehicleId={editingVehicleId}
+          onCancel={() => setEditingVehicleId(null)}
+          onSaved={(vehicleId) => {
+            setEditingVehicleId(null);
+            setNotice(t('overview.updated', { id: vehicleId }));
+          }}
         />
       )}
 

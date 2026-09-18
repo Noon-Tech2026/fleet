@@ -47,7 +47,9 @@
     "blockedQueued": "{{id}} — block queued, applied automatically once stopped.",
     "blockedApplied": "{{id}} — starter blocked, device acknowledged.",
     "released": "{{id}} — start re-authorized.",
-    "created": "{{id}} — added to the directory, will appear once its first position is received."
+    "created": "{{id}} — added to the directory, will appear once its first position is received.",
+    "edit": "Edit",
+    "updated": "Truck {{id}} updated"
   },
   "app": {
     "tagline": "Your fleet under control",
@@ -81,5 +83,27 @@
     "simPlaceholder": "e.g. +222 XX XX XX XX",
     "odometer": "Current odometer (km)",
     "odometerHint": "Mileage shown on the truck's dashboard (useful for a used truck)."
+  },
+  "status": {
+    "offline": "Offline",
+    "blocked": "Starter blocked",
+    "pendingBlock": "Block pending",
+    "stopped": "Stopped",
+    "idling": "Engine idling",
+    "moving": "On the road"
+  },
+  "editTruck": {
+    "title": "Edit truck {{id}}",
+    "plate": "License plate",
+    "imei": "Device IMEI",
+    "imeiHint": "IMEI cannot be changed here — device linking is done via Traccar.",
+    "sim": "SIM number (device)",
+    "model": "Model",
+    "notes": "Notes",
+    "save": "Save",
+    "error": "Update failed",
+    "code": "Vehicle code",
+    "odometer": "Current odometer (km)",
+    "odometerHint": "Changing this shifts the displayed odometer and all maintenance due dates."
   }
 }

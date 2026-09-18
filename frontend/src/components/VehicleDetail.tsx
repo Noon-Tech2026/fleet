@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { VehicleState } from '../lib/types';
 import { statusOf } from '../lib/status';
+import { useTranslation } from 'react-i18next';
 import { FuelGauge } from './FuelGauge';
 import { MaintenancePanel } from './MaintenancePanel';
 import { StarterDialog } from './StarterDialog';
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function VehicleDetail({ vehicle, simulatorMode }: Props) {
+  const { t } = useTranslation();
   const { can } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export function VehicleDetail({ vehicle, simulatorMode }: Props) {
             {vehicle.plate} · {vehicle.driver || 'Non affecté'}
           </p>
         </div>
-        <span className={`badge ${status.tone}`}>{status.label}</span>
+        <span className={`badge ${status.tone}`}>{t(`status.${status.key}`)}</span>
       </header>
 
       <dl className="stats">
