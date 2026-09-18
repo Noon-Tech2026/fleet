@@ -6,7 +6,7 @@ import { TelemetrySource, PositionHandler, RawPosition } from './telemetry.sourc
 // Relais démarreur câblé en NO : DOUT1=1 ferme le circuit (démarrage autorisé),
 // DOUT1=0 le coupe (bloqué). Inversion ici pour garder la convention interne
 // outputActive = démarreur bloqué. Passer à false si le relais est recâblé en NC (87a).
-const DOUT1_INVERTED = true;
+const DOUT1_INVERTED = false;
 
 /**
  * Connexion réelle à Traccar.
