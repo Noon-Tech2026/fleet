@@ -156,6 +156,11 @@
       "release_starter": "Starter released",
       "queued": "(queued)"
     },
-    "containers": "{{count}} container(s)"
+    "containers": "{{count}} container(s)",
+    "add": {
+      "trip": "+ Trip",
+      "expense": "+ Expense",
+      "investment": "+ Investment"
+    }
   }
 }

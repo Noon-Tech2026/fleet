@@ -3,6 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import WebSocket from 'ws';
 import { TelemetrySource, PositionHandler, RawPosition } from './telemetry.source';
 
+// Relais démarreur câblé en NO : DOUT1=1 ferme le circuit (démarrage autorisé),
+// DOUT1=0 le coupe (bloqué). Inversion ici pour garder la convention interne
+// outputActive = démarreur bloqué. Passer à false si le relais est recâblé en NC (87a).
+const DOUT1_INVERTED = true;
+
 /**
  * Connexion réelle à Traccar.
  *
@@ -204,7 +209,7 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
       course: p.course,
       ignition: Boolean(a.ignition ?? a.in1),
       buttonPressed: Boolean(a.in2),
-      outputActive: Boolean(a.out1),
+      outputActive: DOUT1_INVERTED ? Boolean(a.out1) === false : Boolean(a.out1),
       fuelMainVolts: Number(a.adc1 ?? 0),
       fuelAuxVolts: Number(a.adc2 ?? 0),
       odometer: Math.round(Number(a.totalDistance ?? 0) / 1000),
@@ -220,7 +225,8 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
     if (!deviceId) throw new Error(`Aucun boîtier associé à ${vehicleId}`);
 
     // Commande GPRS Teltonika : setdigout 1 = actif, 0 = inactif.
-    const value = active ? '1' : '0';
+    const physical = output === 1 && DOUT1_INVERTED ? active === false : active;
+    const value = physical ? '1' : '0';
     const res = await this.api('/api/commands/send', {
       method: 'POST',
       body: JSON.stringify({

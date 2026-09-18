@@ -156,6 +156,11 @@
       "release_starter": "Démarreur libéré",
       "queued": "(en attente)"
     },
-    "containers": "{{count}} conteneur(s)"
+    "containers": "{{count}} conteneur(s)",
+    "add": {
+      "trip": "+ Voyage",
+      "expense": "+ Charge",
+      "investment": "+ Investissement"
+    }
   }
 }

@@ -156,6 +156,11 @@
       "release_starter": "إلغاء الحظر",
       "queued": "(قيد الانتظار)"
     },
-    "containers": "{{count}} حاوية"
+    "containers": "{{count}} حاوية",
+    "add": {
+      "trip": "+ رحلة",
+      "expense": "+ مصروف",
+      "investment": "+ استثمار"
+    }
   }
 }
