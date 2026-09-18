@@ -9,6 +9,8 @@ import { StarterDialog } from './StarterDialog';
 import { VehicleHistoryDialog } from './VehicleHistoryDialog';
 import { CreateVehicleDialog } from './CreateVehicleDialog';
 import { EditVehicleDialog } from './EditVehicleDialog';
+import { PendingVehicleCard } from './PendingVehicleCard';
+import type { VehicleDirectoryEntry } from '../api/client';
 
 interface Props {
   vehicles: VehicleState[];
@@ -40,6 +42,15 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
 
   const [summaries, setSummaries] = useState<Record<string, { revenue: number; expenses: number; investments: number; netResult: number }>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [directory, setDirectory] = useState<VehicleDirectoryEntry[]>([]);
+  const [directoryVersion, setDirectoryVersion] = useState(0);
+
+  // Camions inscrits mais encore muets : sans cela, un camion cree depuis
+  // l'interface disparait jusqu'a sa premiere position.
+  useEffect(() => {
+    api.fleetVehicles().then(setDirectory).catch(() => setDirectory([]));
+  }, [directoryVersion]);
+  const pending = directory.filter((d) => d.active && !vehicles.some((v) => v.id === d.id));
   const [dialogVehicleId, setDialogVehicleId] = useState<string | null>(null);
   const [historyVehicleId, setHistoryVehicleId] = useState<string | null>(null);
   const [creatingVehicle, setCreatingVehicle] = useState(false);
@@ -93,7 +104,7 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
       {loadError && <p className="banner err">{loadError}</p>}
       {notice && <p className="banner ok">{notice}</p>}
 
-      {vehicles.length === 0 ? (
+      {vehicles.length === 0 && pending.length === 0 ? (
         <p className="empty">{t('overview.empty')}</p>
       ) : (
         <div className="overview-grid">
@@ -228,6 +239,9 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
               </article>
             );
           })}
+          {pending.map((d) => (
+            <PendingVehicleCard key={d.id} entry={d} canEdit={canManageFleet} onEdit={() => setEditingVehicleId(d.id)} />
+          ))}
         </div>
       )}
 
@@ -253,6 +267,7 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
           onCancel={() => setEditingVehicleId(null)}
           onSaved={(vehicleId) => {
             setEditingVehicleId(null);
+            setDirectoryVersion((n) => n + 1);
             setNotice(t('overview.updated', { id: vehicleId }));
           }}
         />
@@ -263,6 +278,7 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
           onCancel={() => setCreatingVehicle(false)}
           onCreated={(vehicleId) => {
             setCreatingVehicle(false);
+            setDirectoryVersion((n) => n + 1);
             setNotice(t('overview.created', { id: vehicleId }));
           }}
         />

@@ -49,7 +49,10 @@
     "released": "{{id}} — démarrage réautorisé.",
     "created": "{{id}} — ajouté au répertoire, apparaîtra dès réception de sa première position.",
     "edit": "Modifier",
-    "updated": "Camion {{id}} mis à jour"
+    "updated": "Camion {{id}} mis à jour",
+    "awaitingPosition": "En attente de première position",
+    "pendingHint": "Enregistré au répertoire et dans Traccar. La fiche se remplira dès la première position du boîtier.",
+    "imei": "IMEI"
   },
   "app": {
     "tagline": "Your fleet under control",

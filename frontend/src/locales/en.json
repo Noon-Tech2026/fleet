@@ -49,7 +49,10 @@
     "released": "{{id}} — start re-authorized.",
     "created": "{{id}} — added to the directory, will appear once its first position is received.",
     "edit": "Edit",
-    "updated": "Truck {{id}} updated"
+    "updated": "Truck {{id}} updated",
+    "awaitingPosition": "Awaiting first position",
+    "pendingHint": "Registered in the directory and in Traccar. The card fills in once the tracker sends its first position.",
+    "imei": "IMEI"
   },
   "app": {
     "tagline": "Your fleet under control",
