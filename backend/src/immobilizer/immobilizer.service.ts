@@ -17,11 +17,10 @@ import { CommandLog } from '../auth/entities/command-log.entity';
  *
  * Decision client (18/09/2026) : le blocage doit s'appliquer quand le camion
  * est immobile, meme moteur tournant au ralenti (le relais DOUT1 coupe
- * effectivement le moteur sur C-01). Conditions d'execution :
- *   - contact coupe  -> immediat ;
- *   - contact mis    -> vitesse <= SPEED_THRESHOLD maintenue pendant au moins
- *                       STATIONARY_MS = 10 s (un seul point GPS a 0 km/h ne suffit
- *                       pas : bruit GPS, arret bref a un feu).
+ * effectivement le moteur sur C-01). Condition d'execution :
+ *   vitesse <= SPEED_THRESHOLD maintenue pendant au moins STATIONARY_MS = 10 s,
+ *   quel que soit l'etat du contact (un seul point GPS a 0 km/h ne suffit pas :
+ *   bruit GPS, arret bref a un feu).
  * Toute demande emise hors de ces conditions est mise en file d'attente,
  * jamais executee.
  *
@@ -89,7 +88,8 @@ export class ImmobilizerService {
 
   isSafeToBlock(v: Pick<VehicleState, 'id' | 'speed' | 'ignition'>, now = Date.now()): boolean {
     if (v.speed > SPEED_THRESHOLD) return false;
-    if (v.ignition === false) return true;
+    // Pas de raccourci "contact coupe" : la lecture d'ignition n'est pas fiable
+    // sur C-01 (lue "coupe" a 14 km/h). L'immobilite stable est la seule preuve.
     const since = this.stationarySince.get(v.id);
     return since !== undefined && now - since >= STATIONARY_MS;
   }
