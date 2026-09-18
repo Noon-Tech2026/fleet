@@ -24,12 +24,14 @@ Stack : NestJS + TypeScript + TypeORM + MySQL 8 côté serveur, React + TypeScri
 
 ## Règle de sécurité — ne jamais contourner
 
-**Le système ne coupe jamais un moteur en marche.** Couper l'alimentation d'un
-ensemble de 40 tonnes en roulage supprime la direction assistée et l'assistance
-de freinage. Conséquence potentielle : mort.
+**Le système ne coupe jamais un moteur d'un véhicule en mouvement.** Couper
+l'alimentation d'un ensemble de 40 tonnes en roulage supprime la direction assistée
+et l'assistance de freinage. Conséquence potentielle : mort.
 
-La seule action autorisée est le blocage du **démarreur**, et uniquement quand
-`speed <= 3 && !ignition`. Toute demande émise dans d'autres conditions est mise
+La seule action autorisée est le blocage via le relais **DOUT1** (sur C-01 il coupe
+effectivement le moteur), et uniquement quand le camion est **immobile** :
+`speed <= 3 km/h` stable depuis ≥ 20 s si le contact est mis, immédiat si le contact
+est coupé (décision client du 18/09/2026). Toute demande émise en mouvement est mise
 en file d'attente et exécutée au prochain arrêt.
 
 Ce contrôle vit dans `backend/src/immobilizer/immobilizer.service.ts`, méthode
