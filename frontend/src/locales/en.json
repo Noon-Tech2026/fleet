@@ -106,5 +106,56 @@
     "code": "Vehicle code",
     "odometer": "Current odometer (km)",
     "odometerHint": "Changing this shifts the displayed odometer and all maintenance due dates."
+  },
+  "history": {
+    "title": "History — {{id}}",
+    "count": "{{count}} operations",
+    "loading": "Loading…",
+    "empty": "No operation in this period.",
+    "loadError": "Could not load history",
+    "from": "From",
+    "to": "To",
+    "all": "All",
+    "close": "Close",
+    "col": {
+      "date": "Date",
+      "type": "Type",
+      "detail": "Detail",
+      "by": "By",
+      "amount": "Amount"
+    },
+    "totals": {
+      "revenue": "Revenue",
+      "costs": "Costs",
+      "net": "Net"
+    },
+    "type": {
+      "trip": "Trip",
+      "expense": "Expense",
+      "investment": "Investment",
+      "maintenance": "Maintenance",
+      "command": "Starter command"
+    },
+    "expense": {
+      "fuel": "Fuel",
+      "tires": "Tires",
+      "insurance": "Insurance",
+      "toll": "Toll",
+      "salary": "Salary",
+      "fine": "Fine",
+      "other": "Other"
+    },
+    "investment": {
+      "purchase": "Purchase",
+      "equipment": "Equipment",
+      "overhaul": "Overhaul",
+      "other": "Other"
+    },
+    "command": {
+      "block_starter": "Starter blocked",
+      "release_starter": "Starter released",
+      "queued": "(queued)"
+    },
+    "containers": "{{count}} container(s)"
   }
 }

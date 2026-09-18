@@ -125,6 +125,8 @@ export const api = {
       body: JSON.stringify({ reason }),
     }),
 
+  vehicleCommands: (id: string) => request<CommandAudit[]>(`/api/vehicles/${id}/commands`),
+
   confirmDeparture: (id: string) =>
     request<VehicleState>(`/api/vehicles/${id}/departure/confirm`, { method: 'POST' }),
 

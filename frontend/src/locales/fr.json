@@ -106,5 +106,56 @@
     "code": "Code véhicule",
     "odometer": "Kilométrage actuel (km)",
     "odometerHint": "Modifier cette valeur décale le kilométrage affiché et toutes les échéances d'entretien."
+  },
+  "history": {
+    "title": "Historique — {{id}}",
+    "count": "{{count}} opérations",
+    "loading": "Chargement…",
+    "empty": "Aucune opération sur cette période.",
+    "loadError": "Chargement impossible",
+    "from": "Du",
+    "to": "Au",
+    "all": "Tout",
+    "close": "Fermer",
+    "col": {
+      "date": "Date",
+      "type": "Type",
+      "detail": "Détail",
+      "by": "Par",
+      "amount": "Montant"
+    },
+    "totals": {
+      "revenue": "Recettes",
+      "costs": "Coûts",
+      "net": "Net"
+    },
+    "type": {
+      "trip": "Voyage",
+      "expense": "Charge",
+      "investment": "Investissement",
+      "maintenance": "Entretien",
+      "command": "Commande démarreur"
+    },
+    "expense": {
+      "fuel": "Carburant",
+      "tires": "Pneus",
+      "insurance": "Assurance",
+      "toll": "Péage",
+      "salary": "Salaire",
+      "fine": "Amende",
+      "other": "Autre"
+    },
+    "investment": {
+      "purchase": "Achat",
+      "equipment": "Équipement",
+      "overhaul": "Remise en état",
+      "other": "Autre"
+    },
+    "command": {
+      "block_starter": "Démarreur bloqué",
+      "release_starter": "Démarreur libéré",
+      "queued": "(en attente)"
+    },
+    "containers": "{{count}} conteneur(s)"
   }
 }

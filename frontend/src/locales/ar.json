@@ -106,5 +106,56 @@
     "code": "رمز المركبة",
     "odometer": "العداد الحالي (كم)",
     "odometerHint": "تغيير هذه القيمة يزيح العداد المعروض وكل مواعيد الصيانة."
+  },
+  "history": {
+    "title": "السجل — {{id}}",
+    "count": "{{count}} عملية",
+    "loading": "جارٍ التحميل…",
+    "empty": "لا عمليات في هذه الفترة.",
+    "loadError": "تعذر تحميل السجل",
+    "from": "من",
+    "to": "إلى",
+    "all": "الكل",
+    "close": "إغلاق",
+    "col": {
+      "date": "التاريخ",
+      "type": "النوع",
+      "detail": "التفاصيل",
+      "by": "بواسطة",
+      "amount": "المبلغ"
+    },
+    "totals": {
+      "revenue": "الإيرادات",
+      "costs": "التكاليف",
+      "net": "الصافي"
+    },
+    "type": {
+      "trip": "رحلة",
+      "expense": "مصروف",
+      "investment": "استثمار",
+      "maintenance": "صيانة",
+      "command": "أمر المحرك"
+    },
+    "expense": {
+      "fuel": "وقود",
+      "tires": "إطارات",
+      "insurance": "تأمين",
+      "toll": "رسوم طريق",
+      "salary": "راتب",
+      "fine": "مخالفة",
+      "other": "أخرى"
+    },
+    "investment": {
+      "purchase": "شراء",
+      "equipment": "تجهيز",
+      "overhaul": "إصلاح شامل",
+      "other": "أخرى"
+    },
+    "command": {
+      "block_starter": "حظر التشغيل",
+      "release_starter": "إلغاء الحظر",
+      "queued": "(قيد الانتظار)"
+    },
+    "containers": "{{count}} حاوية"
   }
 }
