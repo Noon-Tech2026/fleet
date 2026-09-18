@@ -3,14 +3,17 @@ import type { DriverRecord } from '../lib/types';
 import { api } from '../api/client';
 
 interface Props {
+  /** Absent : création. Présent : modification de cette fiche. */
+  driver?: DriverRecord;
   onCancel: () => void;
-  onCreated: (driver: DriverRecord) => void;
+  onSaved: (driver: DriverRecord) => void;
 }
 
-export function CreateDriverDialog({ onCancel, onCreated }: Props) {
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [licenseNumber, setLicenseNumber] = useState('');
+export function DriverDialog({ driver, onCancel, onSaved }: Props) {
+  const editing = driver !== undefined;
+  const [fullName, setFullName] = useState(driver?.fullName ?? '');
+  const [phone, setPhone] = useState(driver?.phone ?? '');
+  const [licenseNumber, setLicenseNumber] = useState(driver?.licenseNumber ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,14 +30,22 @@ export function CreateDriverDialog({ onCancel, onCreated }: Props) {
     setBusy(true);
     setError(null);
     try {
-      const driver = await api.createDriver({
-        fullName: fullName.trim(),
-        phone: phone.trim() || undefined,
-        licenseNumber: licenseNumber.trim() || undefined,
-      });
-      onCreated(driver);
+      // En modification, un champ vidé part à null pour être effacé côté
+      // serveur ; omis, il resterait à son ancienne valeur.
+      const saved = editing
+        ? await api.updateDriver(driver.id, {
+            fullName: fullName.trim(),
+            phone: phone.trim() || null,
+            licenseNumber: licenseNumber.trim() || null,
+          })
+        : await api.createDriver({
+            fullName: fullName.trim(),
+            phone: phone.trim() || undefined,
+            licenseNumber: licenseNumber.trim() || undefined,
+          });
+      onSaved(saved);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Création impossible');
+      setError(err instanceof Error ? err.message : 'Enregistrement impossible');
       setBusy(false);
     }
   }
@@ -45,15 +56,15 @@ export function CreateDriverDialog({ onCancel, onCreated }: Props) {
         className="modal"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="create-driver-title"
+        aria-labelledby="driver-dialog-title"
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
       >
-        <h2 id="create-driver-title">Nouveau chauffeur</h2>
+        <h2 id="driver-dialog-title">{editing ? 'Modifier le chauffeur' : 'Nouveau chauffeur'}</h2>
 
         <label className="field">
           <span>Nom complet</span>
-          <input value={fullName} onChange={(e) => setFullName(e.target.value)} required autoFocus />
+          <input value={fullName} onChange={(e) => setFullName(e.target.value)} required minLength={2} autoFocus />
         </label>
 
         <label className="field">
@@ -73,7 +84,7 @@ export function CreateDriverDialog({ onCancel, onCreated }: Props) {
             Annuler
           </button>
           <button type="submit" className="btn primary" disabled={busy}>
-            {busy ? 'Création…' : 'Ajouter le chauffeur'}
+            {busy ? 'Enregistrement…' : editing ? 'Enregistrer' : 'Ajouter le chauffeur'}
           </button>
         </div>
       </form>

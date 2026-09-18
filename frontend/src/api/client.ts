@@ -185,10 +185,26 @@ export const api = {
   createClient: (input: { name: string; contact?: string; notes?: string }) =>
     request<ClientRecord>('/api/accounting/clients', { method: 'POST', body: JSON.stringify(input) }),
 
+  /** `null` vide un champ optionnel ; une cle absente le laisse inchange. */
+  updateClient: (
+    id: string,
+    patch: { name?: string; contact?: string | null; notes?: string | null; active?: boolean },
+  ) => request<ClientRecord>(`/api/accounting/clients/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+
+  /** Refuse (409) si le client a deja des voyages : il faut alors le desactiver. */
+  deleteClient: (id: string) => request<void>(`/api/accounting/clients/${id}`, { method: 'DELETE' }),
+
   drivers: () => request<DriverRecord[]>('/api/accounting/drivers'),
 
   createDriver: (input: { fullName: string; phone?: string; licenseNumber?: string }) =>
     request<DriverRecord>('/api/accounting/drivers', { method: 'POST', body: JSON.stringify(input) }),
+
+  updateDriver: (
+    id: string,
+    patch: { fullName?: string; phone?: string | null; licenseNumber?: string | null; active?: boolean },
+  ) => request<DriverRecord>(`/api/accounting/drivers/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+
+  deleteDriver: (id: string) => request<void>(`/api/accounting/drivers/${id}`, { method: 'DELETE' }),
 
   vehicleTrips: (id: string) => request<TripEntry[]>(`/api/vehicles/${id}/trips`),
 

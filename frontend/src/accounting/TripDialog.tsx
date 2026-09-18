@@ -24,7 +24,11 @@ const newRow = (): ContainerRow => ({ key: rowKey++, containerNumber: '', size: 
  * Consignation d'un voyage facturé. Le nombre de conteneurs n'est jamais
  * saisi directement : il découle du nombre de lignes de ce formulaire.
  */
-export function TripDialog({ vehicleId, clients, drivers, onCancel, onDone }: Props) {
+export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers, onCancel, onDone }: Props) {
+  // Désactiver un chauffeur ou un client garde ses voyages passés intacts
+  // mais le retire des nouveaux : c'est l'alternative à sa suppression.
+  const clients = allClients.filter((c) => c.active);
+  const drivers = allDrivers.filter((d) => d.active);
   const [clientId, setClientId] = useState(clients[0]?.id ?? '');
   const [driverId, setDriverId] = useState(drivers[0]?.id ?? '');
   const [startedAt, setStartedAt] = useState(() => new Date().toISOString().slice(0, 10));
@@ -97,7 +101,7 @@ export function TripDialog({ vehicleId, clients, drivers, onCancel, onDone }: Pr
           <label className="field">
             <span>Client</span>
             <select className="select" value={clientId} onChange={(e) => setClientId(e.target.value)} required>
-              {clients.length === 0 && <option value="">Aucun client au référentiel</option>}
+              {clients.length === 0 && <option value="">Aucun client actif</option>}
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -109,7 +113,7 @@ export function TripDialog({ vehicleId, clients, drivers, onCancel, onDone }: Pr
           <label className="field">
             <span>Chauffeur</span>
             <select className="select" value={driverId} onChange={(e) => setDriverId(e.target.value)} required>
-              {drivers.length === 0 && <option value="">Aucun chauffeur au référentiel</option>}
+              {drivers.length === 0 && <option value="">Aucun chauffeur actif</option>}
               {drivers.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.fullName}
@@ -121,7 +125,7 @@ export function TripDialog({ vehicleId, clients, drivers, onCancel, onDone }: Pr
 
         {(clients.length === 0 || drivers.length === 0) && (
           <p className="modal-note">
-            Ajoutez d'abord un client et un chauffeur dans l'onglet Référentiels.
+            Ajoutez ou réactivez d'abord un client et un chauffeur dans les onglets Chauffeurs et Clients.
           </p>
         )}
 

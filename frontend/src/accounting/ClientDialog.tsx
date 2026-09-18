@@ -3,13 +3,17 @@ import type { ClientRecord } from '../lib/types';
 import { api } from '../api/client';
 
 interface Props {
+  /** Absent : création. Présent : modification de cette fiche. */
+  client?: ClientRecord;
   onCancel: () => void;
-  onCreated: (client: ClientRecord) => void;
+  onSaved: (client: ClientRecord) => void;
 }
 
-export function CreateClientDialog({ onCancel, onCreated }: Props) {
-  const [name, setName] = useState('');
-  const [contact, setContact] = useState('');
+export function ClientDialog({ client, onCancel, onSaved }: Props) {
+  const editing = client !== undefined;
+  const [name, setName] = useState(client?.name ?? '');
+  const [contact, setContact] = useState(client?.contact ?? '');
+  const [notes, setNotes] = useState(client?.notes ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,13 +30,22 @@ export function CreateClientDialog({ onCancel, onCreated }: Props) {
     setBusy(true);
     setError(null);
     try {
-      const client = await api.createClient({
-        name: name.trim(),
-        contact: contact.trim() || undefined,
-      });
-      onCreated(client);
+      // En modification, un champ vidé part à null pour être effacé côté
+      // serveur ; omis, il resterait à son ancienne valeur.
+      const saved = editing
+        ? await api.updateClient(client.id, {
+            name: name.trim(),
+            contact: contact.trim() || null,
+            notes: notes.trim() || null,
+          })
+        : await api.createClient({
+            name: name.trim(),
+            contact: contact.trim() || undefined,
+            notes: notes.trim() || undefined,
+          });
+      onSaved(saved);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Création impossible');
+      setError(err instanceof Error ? err.message : 'Enregistrement impossible');
       setBusy(false);
     }
   }
@@ -43,20 +56,25 @@ export function CreateClientDialog({ onCancel, onCreated }: Props) {
         className="modal"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="create-client-title"
+        aria-labelledby="client-dialog-title"
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
       >
-        <h2 id="create-client-title">Nouveau client</h2>
+        <h2 id="client-dialog-title">{editing ? 'Modifier le client' : 'Nouveau client'}</h2>
 
         <label className="field">
           <span>Nom du client</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
+          <input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} autoFocus />
         </label>
 
         <label className="field">
           <span>Contact (téléphone ou email, optionnel)</span>
           <input value={contact} onChange={(e) => setContact(e.target.value)} />
+        </label>
+
+        <label className="field">
+          <span>Notes (optionnel)</span>
+          <input value={notes} onChange={(e) => setNotes(e.target.value)} />
         </label>
 
         {error && <p className="error">{error}</p>}
@@ -66,7 +84,7 @@ export function CreateClientDialog({ onCancel, onCreated }: Props) {
             Annuler
           </button>
           <button type="submit" className="btn primary" disabled={busy}>
-            {busy ? 'Création…' : 'Ajouter le client'}
+            {busy ? 'Enregistrement…' : editing ? 'Enregistrer' : 'Ajouter le client'}
           </button>
         </div>
       </form>

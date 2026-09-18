@@ -12,8 +12,8 @@ import { AlertFeed } from './components/AlertFeed';
 import { UsersPage } from './users/UsersPage';
 import { MaintenancePage } from './maintenance/MaintenancePage';
 import { AccountingPage } from './accounting/AccountingPage';
-import { CreateDriverDialog } from './accounting/CreateDriverDialog';
-import { CreateClientDialog } from './accounting/CreateClientDialog';
+import { DriversPage } from './accounting/DriversPage';
+import { ClientsPage } from './accounting/ClientsPage';
 
 const SIMULATOR_MODE = import.meta.env.DEV;
 
@@ -61,13 +61,11 @@ function Dashboard({
   const { vehicles, alerts } = useFleetStream();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [feedOpen, setFeedOpen] = useState(true);
-  const [view, setView] = useState<'overview' | 'fleet' | 'maintenance' | 'accounting' | 'users'>('overview');
-  const [creatingDriver, setCreatingDriver] = useState(false);
-  const [creatingClient, setCreatingClient] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [view, setView] = useState<
+    'overview' | 'fleet' | 'maintenance' | 'accounting' | 'drivers' | 'clients' | 'users'
+  >('overview');
   const { can } = useAuth();
   const isAdmin = can('admin');
-  const canManageDirectory = can('supervisor');
 
   const selected = useMemo(
     () => vehicles.find((v) => v.id === selectedId) ?? vehicles[0] ?? null,
@@ -98,20 +96,16 @@ function Dashboard({
           <button className={`nav-tab ${view === 'accounting' ? 'active' : ''}`} onClick={() => setView('accounting')}>
             {t('nav.accounting')}
           </button>
+          <button className={`nav-tab ${view === 'drivers' ? 'active' : ''}`} onClick={() => setView('drivers')}>
+            {t('nav.drivers')}
+          </button>
+          <button className={`nav-tab ${view === 'clients' ? 'active' : ''}`} onClick={() => setView('clients')}>
+            {t('nav.clients')}
+          </button>
           {isAdmin && (
             <button className={`nav-tab ${view === 'users' ? 'active' : ''}`} onClick={() => setView('users')}>
               {t('nav.users')}
             </button>
-          )}
-          {canManageDirectory && (
-            <>
-              <button className="nav-tab" onClick={() => setCreatingDriver(true)}>
-                {t('nav.addDriver')}
-              </button>
-              <button className="nav-tab" onClick={() => setCreatingClient(true)}>
-                {t('nav.addClient')}
-              </button>
-            </>
           )}
         </nav>
 
@@ -127,14 +121,16 @@ function Dashboard({
         </div>
       </header>
 
-      {notice && <p className="banner ok app-notice">{notice}</p>}
-
       {view === 'users' && isAdmin ? (
         <UsersPage />
       ) : view === 'maintenance' ? (
         <MaintenancePage vehicles={vehicles} />
       ) : view === 'accounting' ? (
         <AccountingPage />
+      ) : view === 'drivers' ? (
+        <DriversPage />
+      ) : view === 'clients' ? (
+        <ClientsPage />
       ) : view === 'overview' ? (
         <FleetOverview
           vehicles={vehicles}
@@ -175,26 +171,6 @@ function Dashboard({
             )}
           </aside>
         </main>
-      )}
-
-      {creatingDriver && (
-        <CreateDriverDialog
-          onCancel={() => setCreatingDriver(false)}
-          onCreated={(driver) => {
-            setCreatingDriver(false);
-            setNotice(t('app.driverAdded', { name: driver.fullName }));
-          }}
-        />
-      )}
-
-      {creatingClient && (
-        <CreateClientDialog
-          onCancel={() => setCreatingClient(false)}
-          onCreated={(client) => {
-            setCreatingClient(false);
-            setNotice(t('app.clientAdded', { name: client.name }));
-          }}
-        />
       )}
     </div>
   );

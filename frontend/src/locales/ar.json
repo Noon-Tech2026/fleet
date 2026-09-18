@@ -14,8 +14,8 @@
     "maintenance": "الصيانة",
     "accounting": "المحاسبة",
     "users": "المستخدمون",
-    "addDriver": "إضافة سائق",
-    "addClient": "إضافة عميل",
+    "drivers": "السائقون",
+    "clients": "العملاء",
     "logout": "تسجيل الخروج",
     "role": "مدير"
   },
@@ -58,9 +58,7 @@
     "hide": "إخفاء",
     "show": "إظهار",
     "selectVehicle": "اختر شاحنة لعرض تفاصيلها.",
-    "checkingSession": "جارٍ التحقق من الجلسة…",
-    "driverAdded": "{{name}} — أُضيف السائق إلى السجل.",
-    "clientAdded": "{{name}} — أُضيف العميل إلى السجل."
+    "checkingSession": "جارٍ التحقق من الجلسة…"
   },
   "roles": {
     "viewer": "مُطّلِع",

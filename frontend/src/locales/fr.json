@@ -14,8 +14,8 @@
     "maintenance": "Entretien",
     "accounting": "Comptabilité",
     "users": "Utilisateurs",
-    "addDriver": "Ajouter chauffeur",
-    "addClient": "Ajouter client",
+    "drivers": "Chauffeurs",
+    "clients": "Clients",
     "logout": "Se déconnecter",
     "role": "Administrateur"
   },
@@ -58,9 +58,7 @@
     "hide": "Masquer",
     "show": "Afficher",
     "selectVehicle": "Sélectionnez un camion pour voir sa fiche.",
-    "checkingSession": "Vérification de la session…",
-    "driverAdded": "{{name}} — chauffeur ajouté au référentiel.",
-    "clientAdded": "{{name}} — client ajouté au référentiel."
+    "checkingSession": "Vérification de la session…"
   },
   "roles": {
     "viewer": "Consultation",

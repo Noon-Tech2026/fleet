@@ -1557,10 +1557,6 @@ h3 {
   animation: slide-in 0.25s var(--ease);
 }
 
-.app-notice {
-  margin: var(--sp-3) var(--sp-4) 0;
-}
-
 .banner.ok {
   background: var(--mint-soft);
   border: 1px solid rgba(78, 207, 159, 0.3);

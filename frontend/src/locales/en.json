@@ -14,8 +14,8 @@
     "maintenance": "Maintenance",
     "accounting": "Accounting",
     "users": "Users",
-    "addDriver": "Add driver",
-    "addClient": "Add client",
+    "drivers": "Drivers",
+    "clients": "Clients",
     "logout": "Sign out",
     "role": "Administrator"
   },
@@ -58,9 +58,7 @@
     "hide": "Hide",
     "show": "Show",
     "selectVehicle": "Select a truck to view its details.",
-    "checkingSession": "Checking session…",
-    "driverAdded": "{{name}} — driver added to directory.",
-    "clientAdded": "{{name}} — client added to directory."
+    "checkingSession": "Checking session…"
   },
   "roles": {
     "viewer": "Viewer",
