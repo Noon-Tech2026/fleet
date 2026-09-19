@@ -209,7 +209,8 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
       course: p.course,
       ignition: Boolean(a.ignition ?? a.in1),
       buttonPressed: Boolean(a.in2),
-      outputActive: DOUT1_INVERTED ? Boolean(a.out1) === false : Boolean(a.out1),
+      // out1 absent de la trame = element I/O DOUT1 non actif dans le boitier : etat inconnu, pas "0".
+      outputActive: a.out1 === undefined ? undefined : DOUT1_INVERTED ? Boolean(a.out1) === false : Boolean(a.out1),
       fuelMainVolts: Number(a.adc1 ?? 0),
       fuelAuxVolts: Number(a.adc2 ?? 0),
       odometer: Math.round(Number(a.totalDistance ?? 0) / 1000),

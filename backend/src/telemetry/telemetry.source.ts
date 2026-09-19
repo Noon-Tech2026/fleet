@@ -16,7 +16,7 @@ export interface RawPosition {
   course: number;
   ignition: boolean; // DIN1
   buttonPressed: boolean; // DIN2 — impulsion du bouton chauffeur
-  outputActive: boolean; // DOUT1 — état réel du relais
+  outputActive: boolean | undefined; // DOUT1 — état réel du relais ; undefined si absent de la trame
   fuelMainVolts: number; // AIN1
   fuelAuxVolts: number; // AIN2
   odometer: number; // km
