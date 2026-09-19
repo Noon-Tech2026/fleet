@@ -14,26 +14,26 @@ interface Props {
 }
 
 export function VehicleDetail({ vehicle, simulatorMode }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { can } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
   const status = statusOf(vehicle);
+  const locale = i18n.language;
 
   // Masquer un bouton n'est pas une protection — le serveur refuse de
   // toute façon. C'est du confort : ne pas proposer une action qui
   // renverra 403.
   const canOperate = can('operator');
   const canControlStarter = can('supervisor');
-
-  const [sending, setSending] = useState(false);
   const locked = sending || vehicle.commandLock !== null;
 
   function explain(e: unknown): string {
     const msg = e instanceof Error ? e.message : String(e);
     return msg.includes('409') || msg.toLowerCase().includes('deja en cours')
-      ? "Une commande est déjà en cours pour ce camion (autre utilisateur). Attendez la confirmation du boîtier."
-      : `Échec de la commande : ${msg}`;
+      ? t('supervision.conflict')
+      : t('supervision.failed', { msg });
   }
 
   async function block(reason: string) {
@@ -41,11 +41,7 @@ export function VehicleDetail({ vehicle, simulatorMode }: Props) {
     try {
       const audit = await api.blockStarter(vehicle.id, reason);
       setDialogOpen(false);
-      setNotice(
-        audit.applied
-          ? 'Commande envoyée au boîtier — en attente de confirmation.'
-          : "Blocage en file d'attente. Il s'appliquera automatiquement dès que le camion sera immobile (≤ 9 km/h pendant 10 s).",
-      );
+      setNotice(audit.applied ? t('supervision.sent') : t('supervision.queued'));
     } catch (e) {
       setNotice(explain(e));
     } finally {
@@ -56,8 +52,8 @@ export function VehicleDetail({ vehicle, simulatorMode }: Props) {
   async function release() {
     setSending(true);
     try {
-      await api.releaseStarter(vehicle.id, 'Réautorisation manuelle');
-      setNotice('Commande envoyée au boîtier — en attente de confirmation.');
+      await api.releaseStarter(vehicle.id, t('supervision.releaseReason'));
+      setNotice(t('supervision.sent'));
     } catch (e) {
       setNotice(explain(e));
     } finally {
@@ -65,13 +61,20 @@ export function VehicleDetail({ vehicle, simulatorMode }: Props) {
     }
   }
 
+  const starterLabel =
+    vehicle.starter === 'allowed'
+      ? t('supervision.starterAllowed')
+      : vehicle.starter === 'pending_block'
+        ? t('supervision.starterPending')
+        : t('supervision.starterBlocked');
+
   return (
     <div className="detail">
       <header className="detail-head">
         <div>
           <h2>{vehicle.id}</h2>
           <p>
-            {vehicle.plate} · {vehicle.driver || 'Non affecté'}
+            {vehicle.plate} · {vehicle.driver || t('supervision.unassigned')}
           </p>
         </div>
         <span className={`badge ${status.tone}`}>{t(`status.${status.key}`)}</span>
@@ -79,68 +82,64 @@ export function VehicleDetail({ vehicle, simulatorMode }: Props) {
 
       <dl className="stats">
         <div>
-          <dt>Vitesse</dt>
+          <dt>{t('supervision.speed')}</dt>
           <dd>{vehicle.speed} km/h</dd>
         </div>
         <div>
-          <dt>Moteur</dt>
-          <dd>{vehicle.ignition ? 'En marche' : 'Coupé'}</dd>
+          <dt>{t('supervision.engine')}</dt>
+          <dd>{vehicle.ignition ? t('supervision.engineOn') : t('supervision.engineOff')}</dd>
         </div>
         <div>
-          <dt>Odomètre</dt>
-          <dd>{vehicle.odometer.toLocaleString('fr-FR')} km</dd>
+          <dt>{t('supervision.odometer')}</dt>
+          <dd>{vehicle.odometer.toLocaleString(locale)} km</dd>
         </div>
         <div>
-          <dt>Heures moteur</dt>
-          <dd>{vehicle.engineHours.toLocaleString('fr-FR')} h</dd>
+          <dt>{t('supervision.engineHours')}</dt>
+          <dd>{vehicle.engineHours.toLocaleString(locale)} h</dd>
         </div>
       </dl>
 
-      <h3>Carburant</h3>
+      <h3>{t('supervision.fuel')}</h3>
       <div className="fuel-row">
-        <FuelGauge liters={vehicle.fuelMain} capacity={700} label="Principal" />
-        <FuelGauge liters={vehicle.fuelAux} capacity={300} label="Auxiliaire" />
+        <FuelGauge liters={vehicle.fuelMain} capacity={700} label={t('supervision.fuelMain')} />
+        <FuelGauge liters={vehicle.fuelAux} capacity={300} label={t('supervision.fuelAux')} />
       </div>
 
-      <h3>Entretien</h3>
+      <h3>{t('supervision.maintenance')}</h3>
       <MaintenancePanel vehicleId={vehicle.id} />
 
-      <h3>Confirmation de départ</h3>
+      <h3>{t('supervision.departure')}</h3>
       <div className={`panel ${vehicle.departureConfirmed ? 'ok' : 'warn'}`}>
-        <strong>{vehicle.departureConfirmed ? 'Départ confirmé' : 'Aucune confirmation'}</strong>
-        <span>Bouton chauffeur · entrée DIN2</span>
-        {simulatorMode && canOperate && !vehicle.departureConfirmed && (
+        <strong>
+          {vehicle.departureConfirmed ? t('supervision.departureConfirmed') : t('supervision.departureNone')}
+        </strong>
+        <span>{t('supervision.departureHint')}</span>
+        {simulatorMode && canOperate && vehicle.departureConfirmed === false && (
           <button className="btn ghost full" onClick={() => void api.pressButton(vehicle.id)}>
-            Simuler l'appui du bouton
+            {t('supervision.simulateButton')}
           </button>
         )}
       </div>
 
-      <h3>Contrôle du démarreur</h3>
+      <h3>{t('supervision.starter')}</h3>
       <div
         className={`panel ${vehicle.starter === 'allowed' ? 'ok' : vehicle.starter === 'pending_block' ? 'warn' : 'danger'}`}
       >
-        <strong>
-          {vehicle.starter === 'allowed'
-            ? 'Démarrage autorisé'
-            : vehicle.starter === 'pending_block'
-              ? "Blocage en attente d'arrêt"
-              : 'Démarrage bloqué'}
-        </strong>
-        <span>Sortie DOUT1 · relais 24 V sur circuit démarreur</span>
+        <strong>{starterLabel}</strong>
+        <span>{t('supervision.starterHint')}</span>
         {vehicle.commandLock && (
-          <p className="hint">Commande en cours par {vehicle.commandLock.by} — en attente de confirmation du boîtier…</p>
+          <p className="hint">{t('supervision.commandInProgress', { by: vehicle.commandLock.by })}</p>
         )}
 
-        {!canControlStarter ? (
-          <p className="hint">Le contrôle du démarreur est réservé aux superviseurs.</p>
+        {canControlStarter === false ? (
+          <p className="hint">{t('supervision.supervisorOnly')}</p>
         ) : vehicle.starter === 'allowed' ? (
           <button className="btn danger full" disabled={locked} onClick={() => setDialogOpen(true)}>
-            Bloquer le démarrage
+            {t('supervision.blockButton')}
           </button>
         ) : (
           <button className="btn mint full" disabled={locked} onClick={() => void release()}>
-            Réautoriser le démarrage
+            {t('supervision.releaseButton')}
           </button>
         )}
       </div>
@@ -149,22 +148,22 @@ export function VehicleDetail({ vehicle, simulatorMode }: Props) {
 
       <dl className="tech">
         <div>
-          <dt>IMEI</dt>
+          <dt>{t('supervision.imei')}</dt>
           <dd>{vehicle.imei}</dd>
         </div>
         <div>
-          <dt>Position</dt>
+          <dt>{t('supervision.position')}</dt>
           <dd>
             {vehicle.lat.toFixed(5)}, {vehicle.lon.toFixed(5)}
           </dd>
         </div>
         <div>
-          <dt>Batterie</dt>
+          <dt>{t('supervision.battery')}</dt>
           <dd>{vehicle.battery} V</dd>
         </div>
         <div>
-          <dt>Dernière trame</dt>
-          <dd>{new Date(vehicle.updatedAt).toLocaleTimeString('fr-FR')}</dd>
+          <dt>{t('supervision.lastFrame')}</dt>
+          <dd>{new Date(vehicle.updatedAt).toLocaleTimeString(locale)}</dd>
         </div>
       </dl>
 

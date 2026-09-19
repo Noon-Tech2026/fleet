@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Role } from './lib/types';
 import { useFleetStream } from './api/useFleetStream';
+import type { VehicleDirectoryEntry } from './api/client';
+import { api } from './api/client';
 import { useAuth } from './auth/AuthContext';
 import { LoginPage } from './auth/LoginPage';
 import { FleetMap } from './components/FleetMap';
@@ -59,6 +61,20 @@ function Dashboard({
 }) {
   const { t } = useTranslation();
   const { vehicles, alerts } = useFleetStream();
+
+  // Répertoire des camions : ceux dont le boîtier n'a encore rien transmis
+  // apparaissent dans la liste (sans marqueur) jusqu'à leur première trame.
+  const [directory, setDirectory] = useState<VehicleDirectoryEntry[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => api.fleetVehicles().then((d) => { if (cancelled === false) setDirectory(d); }).catch(() => undefined);
+    void load();
+    const timer = setInterval(load, 60_000);
+    return () => { cancelled = true; clearInterval(timer); };
+  }, []);
+  const pendingVehicles = directory.filter(
+    (d) => d.active !== false && vehicles.some((v) => v.id === d.id) === false,
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [feedOpen, setFeedOpen] = useState(true);
   const [view, setView] = useState<
@@ -143,9 +159,9 @@ function Dashboard({
         <main className="layout">
           <aside className="col left">
             <h2 className="col-title">
-              {t('app.fleet')} <span className="count">{vehicles.length}</span>
+              {t('app.fleet')} <span className="count">{vehicles.length + pendingVehicles.length}</span>
             </h2>
-            <VehicleList vehicles={vehicles} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
+            <VehicleList vehicles={vehicles} pending={pendingVehicles} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
           </aside>
 
           <section className="col center">

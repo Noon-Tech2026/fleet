@@ -1,4 +1,5 @@
 import type { VehicleState } from '../lib/types';
+import type { VehicleDirectoryEntry } from '../api/client';
 import { statusOf } from '../lib/status';
 import { useTranslation } from 'react-i18next';
 
@@ -8,14 +9,16 @@ const TANKS_TOTAL_LITERS = 1000;
 
 interface Props {
   vehicles: VehicleState[];
+  /** Camions du répertoire dont le boîtier n'a encore rien transmis. */
+  pending?: VehicleDirectoryEntry[];
   selectedId: string | null;
   onSelect: (id: string) => void;
 }
 
-export function VehicleList({ vehicles, selectedId, onSelect }: Props) {
+export function VehicleList({ vehicles, pending = [], selectedId, onSelect }: Props) {
   const { t } = useTranslation();
-  if (vehicles.length === 0) {
-    return <p className="empty">Aucun boîtier n'a encore transmis de position.</p>;
+  if (vehicles.length === 0 && pending.length === 0) {
+    return <p className="empty">{t('supervision.empty')}</p>;
   }
 
   const moving = vehicles.filter((v) => v.online && v.speed > 3).length;
@@ -27,15 +30,15 @@ export function VehicleList({ vehicles, selectedId, onSelect }: Props) {
       <div className="fleet-summary">
         <div className="summary-cell ok">
           <b>{moving}</b>
-          <span>En route</span>
+          <span>{t('supervision.moving')}</span>
         </div>
         <div className="summary-cell idle">
           <b>{stopped}</b>
-          <span>À l'arrêt</span>
+          <span>{t('supervision.stopped')}</span>
         </div>
         <div className="summary-cell danger">
           <b>{blocked}</b>
-          <span>Bloqués</span>
+          <span>{t('supervision.blocked')}</span>
         </div>
       </div>
 
@@ -75,6 +78,21 @@ export function VehicleList({ vehicles, selectedId, onSelect }: Props) {
             </li>
           );
         })}
+
+        {pending.map((d) => (
+          <li key={d.id}>
+            <div className="vehicle-card tone-idle pending" aria-disabled="true">
+              <div className="row">
+                <span className="vid">{d.id}</span>
+                <span className="badge idle">{t('supervision.awaitingPosition')}</span>
+              </div>
+              <div className="plate">{d.plate}</div>
+              <div className="row muted">
+                <span className="metric">{t('supervision.awaitingHint')}</span>
+              </div>
+            </div>
+          </li>
+        ))}
       </ul>
     </>
   );
