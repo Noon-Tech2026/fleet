@@ -295,6 +295,34 @@
       "kind": "Nature",
       "description": "Description",
       "save": "Enregistrer l'investissement"
+    },
+    "trip": {
+      "titleNew": "Nouveau voyage — {{id}}",
+      "titleEdit": "Modifier le voyage — {{id}}",
+      "client": "Client",
+      "driver": "Chauffeur",
+      "noClient": "Aucun client actif",
+      "noDriver": "Aucun chauffeur actif",
+      "needRefs": "Ajoutez ou réactivez d'abord un client et un chauffeur dans les onglets Chauffeurs et Clients.",
+      "date": "Date du voyage",
+      "amount": "Montant facturé (MRU)",
+      "origin": "Origine",
+      "destination": "Destination",
+      "originPlaceholder": "ex. Port de Nouakchott",
+      "destinationPlaceholder": "ex. Zone industrielle",
+      "containers": "Conteneurs transportés",
+      "addContainer": "+ Ajouter un conteneur",
+      "containerNumber": "Numéro (ex. MSCU1234567)",
+      "ft20": "20 pieds",
+      "ft40": "40 pieds",
+      "loaded": "Plein",
+      "remove": "Retirer",
+      "keepOne": "Un voyage doit garder au moins un conteneur",
+      "notes": "Observations",
+      "notesPlaceholder": "ex. attente au port",
+      "save": "Enregistrer le voyage",
+      "selectRefs": "Sélectionnez un client et un chauffeur.",
+      "editLocked": "Client, chauffeur, date et conteneurs ne se modifient pas après enregistrement. Supprimez et recréez le voyage si nécessaire."
     }
   }
 }

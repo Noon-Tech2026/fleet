@@ -306,6 +306,34 @@
       "kind": "Kind",
       "description": "Description",
       "save": "Save investment"
+    },
+    "trip": {
+      "titleNew": "New trip — {{id}}",
+      "titleEdit": "Edit trip — {{id}}",
+      "client": "Client",
+      "driver": "Driver",
+      "noClient": "No active client",
+      "noDriver": "No active driver",
+      "needRefs": "First add or reactivate a client and a driver in the Drivers and Clients tabs.",
+      "date": "Trip date",
+      "amount": "Billed amount (MRU)",
+      "origin": "Origin",
+      "destination": "Destination",
+      "originPlaceholder": "e.g. Port of Nouakchott",
+      "destinationPlaceholder": "e.g. Industrial zone",
+      "containers": "Containers carried",
+      "addContainer": "+ Add container",
+      "containerNumber": "Number (e.g. MSCU1234567)",
+      "ft20": "20 ft",
+      "ft40": "40 ft",
+      "loaded": "Loaded",
+      "remove": "Remove",
+      "keepOne": "A trip must keep at least one container",
+      "notes": "Notes",
+      "notesPlaceholder": "e.g. waiting at port",
+      "save": "Save trip",
+      "selectRefs": "Select a client and a driver.",
+      "editLocked": "Client, driver, date and containers cannot be changed after recording. Delete and re-create the trip if needed."
     }
   }
 }

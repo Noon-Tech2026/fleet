@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ClientRecord, DriverRecord, VehicleExpenseEntry, VehicleInvestmentEntry } from '../lib/types';
+import type { ClientRecord, DriverRecord, TripEntry, VehicleExpenseEntry, VehicleInvestmentEntry } from '../lib/types';
 import { formatMoney } from '../lib/accounting';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
@@ -27,7 +27,7 @@ interface Operation {
   /** Identifiant brut côté API, pour modifier/supprimer. */
   rawId: string;
   /** Entrée d'origine, pour pré-remplir un formulaire de modification. */
-  raw: VehicleExpenseEntry | VehicleInvestmentEntry | null;
+  raw: TripEntry | VehicleExpenseEntry | VehicleInvestmentEntry | null;
   at: string;
   type: OpType;
   label: string;
@@ -81,7 +81,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
           ...trips.map((x) => ({
             id: `t-${x.id}`,
             rawId: x.id,
-            raw: null,
+            raw: x,
             at: x.startedAt,
             type: 'trip' as const,
             label: x.clientName,
@@ -319,7 +319,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
                 <tbody>
                   {filtered.map((o) => {
                     const isMoney = MONEY_TYPES.includes(o.type);
-                    const editable = canEditMoney && o.raw !== null;
+                    const editable = o.raw !== null && (o.type === 'trip' ? canRecord : canEditMoney);
                     return (
                       <tr key={o.id}>
                         <td>{new Date(o.at).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' })}</td>
@@ -384,6 +384,16 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
         <InvestmentDialog vehicleId={vehicleId} onCancel={() => setAdding(null)} onDone={() => onRecorded('investment')} />
       )}
 
+      {editing?.type === 'trip' && editing.raw && (
+        <TripDialog
+          vehicleId={vehicleId}
+          clients={clients}
+          drivers={drivers}
+          initial={editing.raw as TripEntry}
+          onCancel={() => setEditing(null)}
+          onDone={() => onEdited('trip')}
+        />
+      )}
       {editing?.type === 'expense' && editing.raw && (
         <ExpenseDialog
           vehicleId={vehicleId}
