@@ -249,6 +249,7 @@ export const api = {
   createZone: (input: ZoneInput) => request<Zone>('/api/zones', { method: 'POST', body: JSON.stringify(input) }),
   updateZone: (id: string, input: ZoneInput) =>
     request<Zone>(`/api/zones/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(input) }),
+  deleteZone: (id: string) => request<{ id: string; deleted: boolean }>(`/api/zones/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   deactivateZone: (id: string) => request<Zone>(`/api/zones/${encodeURIComponent(id)}/deactivate`, { method: 'POST' }),
   silencePerimeter: (id: string) =>
     request<{ vehicleId: string; silenced: boolean }>(`/api/vehicles/${encodeURIComponent(id)}/perimeter/silence`, { method: 'POST' }),

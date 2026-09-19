@@ -249,6 +249,13 @@ export function ZonesPage({ vehicles, directory, isAdmin }: Props) {
     if (editing?.id === z.id) cancel();
   }
 
+  async function removeZone(z: Zone) {
+    if (window.confirm(t('zones.confirmDelete', { name: z.name })) === false) return;
+    await api.deleteZone(z.id);
+    await load();
+    if (editing?.id === z.id) cancel();
+  }
+
   const trucks = useMemo(() => directory.filter((d) => d.active !== false), [directory]);
 
   return (
@@ -346,7 +353,8 @@ export function ZonesPage({ vehicles, directory, isAdmin }: Props) {
                 </div>
                 <div className="zone-actions">
                   <button className="btn ghost small" onClick={() => startEdit(z)}>{t('zones.edit')}</button>
-                  {z.active && <button className="btn ghost small danger" onClick={() => void deactivate(z)}>{t('zones.deactivate')}</button>}
+                  {z.active && <button className="btn ghost small" onClick={() => void deactivate(z)}>{t('zones.deactivate')}</button>}
+                  {isAdmin && <button className="btn ghost small danger" onClick={() => void removeZone(z)}>{t('zones.delete')}</button>}
                 </div>
               </li>
             ))}

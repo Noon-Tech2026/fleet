@@ -102,6 +102,17 @@ export class GeofenceService implements OnModuleInit {
     return this.update(id, { active: false });
   }
 
+  /**
+   * Suppression definitive (admin). Les positions gardent l'ancien zone_id :
+   * pas de contrainte FK, l'historique reste lisible par identifiant.
+   */
+  async remove(id: string): Promise<void> {
+    const zone = await this.repo.findOne({ where: { id } });
+    if (!zone) throw new NotFoundException('Zone inconnue');
+    await this.repo.remove(zone);
+    await this.reload();
+  }
+
   async listAll(): Promise<Zone[]> {
     return this.repo.find({ order: { name: 'ASC' } });
   }

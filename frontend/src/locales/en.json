@@ -373,6 +373,8 @@
     "needShape": "Draw the zone on the map first.",
     "error": "Could not save: {{msg}}",
     "silence": "Acknowledge alarm",
-    "silenced": "Alarm acknowledged."
+    "silenced": "Alarm acknowledged.",
+    "delete": "Delete",
+    "confirmDelete": "Permanently delete “{{name}}”? History will keep only its identifier."
   }
 }

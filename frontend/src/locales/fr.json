@@ -362,6 +362,8 @@
     "needShape": "Tracez d'abord la zone sur la carte.",
     "error": "Enregistrement impossible : {{msg}}",
     "silence": "Acquitter l'alarme",
-    "silenced": "Alarme acquittée."
+    "silenced": "Alarme acquittée.",
+    "delete": "Supprimer",
+    "confirmDelete": "Supprimer définitivement « {{name}} » ? L'historique conservera seulement son identifiant."
   }
 }

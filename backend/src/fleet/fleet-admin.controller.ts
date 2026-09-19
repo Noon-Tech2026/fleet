@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import {
   IsArray,
   IsIn,
@@ -168,6 +168,13 @@ export class FleetAdminController {
   @Patch('zones/:id')
   updateZone(@Param('id') id: string, @Body() dto: ZoneDto) {
     return this.geofence.update(id, dto);
+  }
+
+  @RequireRole(Role.Admin)
+  @Delete('zones/:id')
+  async removeZone(@Param('id') id: string) {
+    await this.geofence.remove(id);
+    return { id, deleted: true };
   }
 
   @RequireRole(Role.Supervisor)
