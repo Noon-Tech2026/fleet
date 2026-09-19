@@ -220,20 +220,24 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
     };
   }
 
-  async setDigitalOutput(vehicleId: string, output: 1 | 2, active: boolean): Promise<void> {
+  async setDigitalOutput(vehicleId: string, output: 1 | 2, active: boolean, durationSec?: number): Promise<void> {
     const deviceId = [...this.deviceToVehicle.entries()].find(([, name]) => name === vehicleId)?.[0];
     if (!deviceId) throw new Error(`Aucun boîtier associé à ${vehicleId}`);
 
     // Commande GPRS Teltonika : setdigout 1 = actif, 0 = inactif.
     const physical = output === 1 && DOUT1_INVERTED ? active === false : active;
     const value = physical ? '1' : '0';
+    // Syntaxe Teltonika : setdigout <D1><D2> [<T1> <T2>] ; '?' = sortie inchangee.
+    // Avec timeout, le boitier remet la sortie a 0 tout seul : aucune dependance au reseau.
+    const outputs = output === 1 ? `${value}?` : `?${value}`;
+    let data = `setdigout ${outputs}`;
+    if (durationSec !== undefined && durationSec > 0) {
+      data += output === 1 ? ` ${durationSec}` : ` ? ${durationSec}`;
+    }
+    this.log.log(`${vehicleId} — commande boitier : ${data}`);
     const res = await this.api('/api/commands/send', {
       method: 'POST',
-      body: JSON.stringify({
-        deviceId,
-        type: 'custom',
-        attributes: { data: `setdigout ${output === 1 ? value : '?'}${output === 2 ? value : ''}` },
-      }),
+      body: JSON.stringify({ deviceId, type: 'custom', attributes: { data } }),
     });
 
     if (!res.ok) throw new Error(`Commande refusée par Traccar (${res.status})`);

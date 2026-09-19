@@ -3,9 +3,14 @@ import { VehicleState } from '../common/types';
 import { GeofenceService } from '../geofence/geofence.service';
 import { FuelService } from '../fuel/fuel.service';
 import { AlertsService } from './alerts.service';
-import { ImmobilizerService, SYSTEM_ACTOR } from '../immobilizer/immobilizer.service';
+import { ImmobilizerService } from '../immobilizer/immobilizer.service';
 import { DeparturesService } from '../fleet/departures.service';
 import { MaintenanceService, describeDeadline } from '../maintenance/maintenance.service';
+
+/** Sortie sans confirmation : buzzer cabine, jamais de coupure moteur. */
+const BUZZ_SECONDS = 60; // duree d'une sonnerie (minuterie du boitier)
+const BUZZ_REPEAT_MS = 5 * 60_000; // rappel tant que non confirme
+const BUZZ_MAX = 3; // nombre max de sonneries par sortie
 
 /**
  * Règles métier évaluées à chaque position reçue.
@@ -14,6 +19,9 @@ import { MaintenanceService, describeDeadline } from '../maintenance/maintenance
  */
 @Injectable()
 export class RulesService {
+  /** Sorties non confirmees en cours, par vehicule. */
+  private readonly unconfirmed = new Map<string, { lastBuzz: number; count: number }>();
+
   constructor(
     private readonly geofence: GeofenceService,
     private readonly fuel: FuelService,
@@ -57,15 +65,35 @@ export class RulesService {
   /**
    * Sortie d'une station sans confirmation du chauffeur.
    *
-   * Le blocage est demandé, jamais appliqué immédiatement : le camion roule
-   * au moment de la détection. ImmobilizerService l'exécutera au prochain
-   * arrêt, contact coupé.
+   * Décision client (19/09/2026) : on ne bloque pas le camion, on déclenche
+   * le buzzer cabine (DOUT2) pour que le chauffeur appuie sur le bouton.
+   * Rappel toutes les BUZZ_REPEAT_MS, au plus BUZZ_MAX fois ; arrêt immédiat
+   * dès que le bouton est pressé. Le blocage reste une décision humaine.
    */
   private async checkDeparture(
     previous: VehicleState | undefined,
     current: VehicleState,
   ): Promise<void> {
     if (!previous) return;
+
+    // Suivi d'une sortie non confirmee deja signalee.
+    const open = this.unconfirmed.get(current.id);
+    if (open) {
+      const now = Date.now();
+      if (current.departureConfirmed) {
+        this.unconfirmed.delete(current.id);
+        await this.immobilizer.buzzerOff(current.id);
+        this.alerts.raise(current.id, 'info', 'departure_confirmed_late', 'Départ confirmé par le chauffeur après rappel');
+      } else if (now - open.lastBuzz >= BUZZ_REPEAT_MS) {
+        if (open.count >= BUZZ_MAX) {
+          this.unconfirmed.delete(current.id);
+        } else {
+          open.count += 1;
+          open.lastBuzz = now;
+          await this.immobilizer.buzzerOn(current.id, BUZZ_SECONDS);
+        }
+      }
+    }
 
     const wasAtStation = previous.zoneId !== null && !this.geofence.isForbidden(previous.zoneId);
     const hasLeft = wasAtStation && current.zoneId !== previous.zoneId;
@@ -77,13 +105,10 @@ export class RulesService {
         current.id,
         'critical',
         'departure_without_confirmation',
-        'Sortie de station sans confirmation du chauffeur — blocage programmé au prochain arrêt',
+        'Sortie de station sans confirmation du chauffeur — buzzer cabine déclenché',
       );
-      await this.immobilizer.requestBlock(
-        current,
-        SYSTEM_ACTOR,
-        'Sortie sans confirmation du chauffeur',
-      );
+      this.unconfirmed.set(current.id, { lastBuzz: Date.now(), count: 1 });
+      await this.immobilizer.buzzerOn(current.id, BUZZ_SECONDS);
     }
 
     // Une fois hors station, la confirmation est consommée : le prochain

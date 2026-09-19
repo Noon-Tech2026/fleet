@@ -39,7 +39,8 @@ export interface TelemetrySource {
    * Doit rejeter si le boîtier n'accuse pas réception — le backend
    * ne considère jamais une commande comme appliquée sans confirmation.
    */
-  setDigitalOutput(vehicleId: string, output: 1 | 2, active: boolean): Promise<void>;
+  /** durationSec : le boitier remet la sortie a 0 lui-meme apres ce delai (setdigout avec timeout). */
+  setDigitalOutput(vehicleId: string, output: 1 | 2, active: boolean, durationSec?: number): Promise<void>;
 
   /**
    * Gestion du répertoire des boîtiers côté source (Traccar). Optionnel :

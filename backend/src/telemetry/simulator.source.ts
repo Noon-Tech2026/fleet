@@ -74,7 +74,7 @@ export class SimulatorSource implements TelemetrySource, OnModuleDestroy {
     if (this.timer) clearInterval(this.timer);
   }
 
-  async setDigitalOutput(vehicleId: string, output: 1 | 2, active: boolean): Promise<void> {
+  async setDigitalOutput(vehicleId: string, output: 1 | 2, active: boolean, _durationSec?: number): Promise<void> {
     const v = this.vehicles.find((x) => x.id === vehicleId);
     if (!v) throw new Error(`Véhicule inconnu : ${vehicleId}`);
     // Latence réseau GPRS réaliste — le dashboard doit savoir attendre.

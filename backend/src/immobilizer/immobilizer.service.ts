@@ -206,6 +206,25 @@ export class ImmobilizerService {
     }
   }
 
+  // ---- Buzzer cabine (DOUT2) ------------------------------------------------
+
+  /** Declenche le buzzer pour `seconds` ; le boitier l'eteint seul a l'echeance. */
+  async buzzerOn(vehicleId: string, seconds: number): Promise<void> {
+    try {
+      await this.source.setDigitalOutput(vehicleId, 2, true, seconds);
+    } catch (e) {
+      this.log.warn(`${vehicleId} — buzzer non declenche : ${String(e)}`);
+    }
+  }
+
+  async buzzerOff(vehicleId: string): Promise<void> {
+    try {
+      await this.source.setDigitalOutput(vehicleId, 2, false);
+    } catch (e) {
+      this.log.warn(`${vehicleId} — buzzer non eteint : ${String(e)}`);
+    }
+  }
+
   isPending(vehicleId: string): boolean {
     return this.pending.has(vehicleId);
   }
