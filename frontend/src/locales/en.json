@@ -17,7 +17,8 @@
     "drivers": "Drivers",
     "clients": "Clients",
     "logout": "Sign out",
-    "role": "Administrator"
+    "role": "Administrator",
+    "zones": "Zones"
   },
   "overview": {
     "title": "Overview",
@@ -249,7 +250,9 @@
     "starter_released": "Start allowed again by {{detail}}",
     "device_offline": "Tracker offline — {{detail}}",
     "maintenance_due": "Maintenance due soon — {{detail}}",
-    "maintenance_overdue": "Maintenance overdue — {{detail}}"
+    "maintenance_overdue": "Maintenance overdue — {{detail}}",
+    "perimeter_exit": "Left the security perimeter — {{detail}}",
+    "perimeter_return": "Back inside the perimeter — {{detail}}"
   },
   "track": {
     "button": "Track",
@@ -335,5 +338,41 @@
       "selectRefs": "Select a client and a driver.",
       "editLocked": "Client, driver, date and containers cannot be changed after recording. Delete and re-create the trip if needed."
     }
+  },
+  "zones": {
+    "title": "Zones",
+    "new": "New zone",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
+    "deactivate": "Deactivate",
+    "confirmDeactivate": "Deactivate this zone?",
+    "name": "Name",
+    "kind": "Type",
+    "kinds": {
+      "station": "Loading zone",
+      "forbidden": "Forbidden zone",
+      "perimeter": "Security perimeter"
+    },
+    "alarmOnExit": "Alarm on exit (repeated buzzer + critical alert)",
+    "appliesTo": "Applies to",
+    "allTrucks": "Whole fleet",
+    "someTrucks": "Selected trucks",
+    "shape": "Shape",
+    "circle": "Circle",
+    "polygon": "Polygon",
+    "radius": "Radius",
+    "hintCircle": "Click the map to place the centre, then adjust the radius.",
+    "hintPolygon": "Click to add vertices (at least 3), then Finish.",
+    "finish": "Finish drawing",
+    "clear": "Clear drawing",
+    "points": "{{n}} vertex(es)",
+    "empty": "No zones yet. Create one from the map.",
+    "inactive": "inactive",
+    "needShape": "Draw the zone on the map first.",
+    "error": "Could not save: {{msg}}",
+    "silence": "Acknowledge alarm",
+    "silenced": "Alarm acknowledged."
   }
 }

@@ -16,6 +16,8 @@ export type AlertCode =
   | 'forbidden_zone_left'
   | 'departure_without_confirmation'
   | 'departure_confirmed_late'
+  | 'perimeter_exit'
+  | 'perimeter_return'
   | 'fuel_drop'
   | 'fuel_low'
   | 'starter_blocked'
@@ -270,3 +272,24 @@ export interface TrackPoint {
   zoneId: string | null;
   recordedAt: string;
 }
+
+export type ZoneKind = 'station' | 'forbidden' | 'perimeter';
+export type ZoneShape = 'circle' | 'polygon';
+
+export interface Zone {
+  id: string;
+  name: string;
+  kind: ZoneKind;
+  shape: ZoneShape;
+  lat: number | null;
+  lon: number | null;
+  radius: number | null;
+  /** Sommets [lat, lon]. */
+  points: [number, number][] | null;
+  alarmOnExit: boolean;
+  /** null = toute la flotte. */
+  vehicleIds: string[] | null;
+  active: boolean;
+}
+
+export type ZoneInput = Omit<Zone, 'id' | 'active'>;

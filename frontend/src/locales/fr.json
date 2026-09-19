@@ -17,7 +17,8 @@
     "drivers": "Chauffeurs",
     "clients": "Clients",
     "logout": "Se déconnecter",
-    "role": "Administrateur"
+    "role": "Administrateur",
+    "zones": "Zones"
   },
   "overview": {
     "title": "Vue d'ensemble",
@@ -238,7 +239,9 @@
     "seeTab": " — voir l'onglet Entretien."
   },
   "alerts": {
-    "empty": "Aucun événement. Les alertes apparaîtront ici dès qu'une règle se déclenche."
+    "empty": "Aucun événement. Les alertes apparaîtront ici dès qu'une règle se déclenche.",
+    "perimeter_exit": "Sortie du périmètre de sécurité — {{detail}}",
+    "perimeter_return": "Retour dans le périmètre — {{detail}}"
   },
   "track": {
     "button": "Mouvements",
@@ -324,5 +327,41 @@
       "selectRefs": "Sélectionnez un client et un chauffeur.",
       "editLocked": "Client, chauffeur, date et conteneurs ne se modifient pas après enregistrement. Supprimez et recréez le voyage si nécessaire."
     }
+  },
+  "zones": {
+    "title": "Zones",
+    "new": "Nouvelle zone",
+    "edit": "Modifier",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "deactivate": "Désactiver",
+    "confirmDeactivate": "Désactiver cette zone ?",
+    "name": "Nom",
+    "kind": "Type",
+    "kinds": {
+      "station": "Zone de chargement",
+      "forbidden": "Zone interdite",
+      "perimeter": "Périmètre de sécurité"
+    },
+    "alarmOnExit": "Alarme à la sortie (buzzer répété + alerte critique)",
+    "appliesTo": "S'applique à",
+    "allTrucks": "Toute la flotte",
+    "someTrucks": "Camions sélectionnés",
+    "shape": "Forme",
+    "circle": "Cercle",
+    "polygon": "Polygone",
+    "radius": "Rayon",
+    "hintCircle": "Cliquez sur la carte pour placer le centre, puis ajustez le rayon.",
+    "hintPolygon": "Cliquez pour ajouter des sommets (3 minimum), puis Terminer.",
+    "finish": "Terminer le tracé",
+    "clear": "Effacer le tracé",
+    "points": "{{n}} sommet(s)",
+    "empty": "Aucune zone. Créez-en une à partir de la carte.",
+    "inactive": "inactive",
+    "needShape": "Tracez d'abord la zone sur la carte.",
+    "error": "Enregistrement impossible : {{msg}}",
+    "silence": "Acquitter l'alarme",
+    "silenced": "Alarme acquittée."
   }
 }

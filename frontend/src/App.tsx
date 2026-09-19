@@ -15,6 +15,7 @@ import { AlertFeed } from './components/AlertFeed';
 import { UsersPage } from './users/UsersPage';
 import { MaintenancePage } from './maintenance/MaintenancePage';
 import { AccountingPage } from './accounting/AccountingPage';
+import { ZonesPage } from './zones/ZonesPage';
 import { DriversPage } from './accounting/DriversPage';
 import { ClientsPage } from './accounting/ClientsPage';
 
@@ -80,10 +81,11 @@ function Dashboard({
   const [trackVehicleId, setTrackVehicleId] = useState<string | null>(null);
   const [feedOpen, setFeedOpen] = useState(true);
   const [view, setView] = useState<
-    'overview' | 'fleet' | 'maintenance' | 'accounting' | 'drivers' | 'clients' | 'users'
+    'overview' | 'fleet' | 'maintenance' | 'accounting' | 'drivers' | 'clients' | 'users' | 'zones'
   >('overview');
   const { can } = useAuth();
   const isAdmin = can('admin');
+  const canManageZones = isAdmin || role === 'supervisor';
 
   const selected = useMemo(
     () => vehicles.find((v) => v.id === selectedId) ?? vehicles[0] ?? null,
@@ -120,6 +122,11 @@ function Dashboard({
           <button className={`nav-tab ${view === 'clients' ? 'active' : ''}`} onClick={() => setView('clients')}>
             {t('nav.clients')}
           </button>
+          {canManageZones && (
+            <button className={`nav-tab ${view === 'zones' ? 'active' : ''}`} onClick={() => setView('zones')}>
+              {t('nav.zones')}
+            </button>
+          )}
           {isAdmin && (
             <button className={`nav-tab ${view === 'users' ? 'active' : ''}`} onClick={() => setView('users')}>
               {t('nav.users')}
@@ -145,6 +152,8 @@ function Dashboard({
         <MaintenancePage vehicles={vehicles} />
       ) : view === 'accounting' ? (
         <AccountingPage />
+      ) : view === 'zones' ? (
+        <ZonesPage vehicles={vehicles} directory={directory} isAdmin={isAdmin} />
       ) : view === 'drivers' ? (
         <DriversPage />
       ) : view === 'clients' ? (

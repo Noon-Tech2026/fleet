@@ -1,21 +1,4 @@
-import type {
-  Alert,
-  AuthUser,
-  ClientRecord,
-  CommandAudit,
-  ContainerSize,
-  DriverRecord,
-  MaintenanceKind,
-  MaintenanceLogEntry,
-  MaintenancePlanState,
-  Role,
-  TripEntry,
-  VehicleAccountingSummary,
-  VehicleExpenseCategory,
-  VehicleExpenseEntry,
-  VehicleInvestmentEntry,
-  VehicleInvestmentKind,
-  VehicleState, TrackPoint } from '../lib/types';
+import type { Alert, AuthUser, ClientRecord, CommandAudit, ContainerSize, DriverRecord, MaintenanceKind, MaintenanceLogEntry, MaintenancePlanState, Role, TripEntry, VehicleAccountingSummary, VehicleExpenseCategory, VehicleExpenseEntry, VehicleInvestmentEntry, VehicleInvestmentKind, VehicleState, TrackPoint, Zone, ZoneInput } from '../lib/types';
 
 /**
  * Repertoire d'un vehicule (fiche administrative), independant de sa
@@ -261,6 +244,14 @@ export const api = {
 
   /* --- repertoire des vehicules --- */
   fleetVehicles: () => request<VehicleDirectoryEntry[]>('/api/fleet/vehicles'),
+  zones: () => request<Zone[]>('/api/zones'),
+  zonesAll: () => request<Zone[]>('/api/zones/all'),
+  createZone: (input: ZoneInput) => request<Zone>('/api/zones', { method: 'POST', body: JSON.stringify(input) }),
+  updateZone: (id: string, input: ZoneInput) =>
+    request<Zone>(`/api/zones/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(input) }),
+  deactivateZone: (id: string) => request<Zone>(`/api/zones/${encodeURIComponent(id)}/deactivate`, { method: 'POST' }),
+  silencePerimeter: (id: string) =>
+    request<{ vehicleId: string; silenced: boolean }>(`/api/vehicles/${encodeURIComponent(id)}/perimeter/silence`, { method: 'POST' }),
   /** Positions historisees entre deux instants (ISO). */
   vehicleTrack: (id: string, from: string, to: string) =>
     request<TrackPoint[]>(
