@@ -2643,7 +2643,6 @@ h3 {
 .track-marker.start { background: #12704F; }
 .track-marker.end { background: #c0392b; }
 .track-marker.stop { background: #d99a1c; width: 11px; height: 11px; }
-.vehicle-card + .card-actions { display: flex; justify-content: flex-end; margin-top: -6px; margin-bottom: 4px; }
 
 .track-player { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
 .track-player input[type="range"] { flex: 1 1 240px; accent-color: #e67e22; }
@@ -2651,3 +2650,8 @@ h3 {
 .track-player select { font: inherit; padding: 4px 8px; border: 1px solid var(--line, #d9d9d9); border-radius: 8px; }
 .track-player .player-info { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--muted, #6b7280); }
 .track-marker.truck { width: 18px; height: 18px; background: #e67e22; border: 3px solid #fff; box-shadow: 0 0 0 3px rgba(230,126,34,.35), 0 1px 4px rgba(0,0,0,.4); }
+
+.vehicle-card { cursor: pointer; text-align: start; width: 100%; }
+.vehicle-card:focus-visible { outline: 2px solid var(--mint, #12704F); outline-offset: 2px; }
+.vehicle-card .row.muted { align-items: center; }
+.vehicle-card .track-btn { margin-inline-start: auto; padding: 2px 8px; font-size: 12px; }

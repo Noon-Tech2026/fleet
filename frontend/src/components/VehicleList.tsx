@@ -54,9 +54,17 @@ export function VehicleList({ vehicles, pending = [], selectedId, onSelect, onTr
 
           return (
             <li key={v.id}>
-              <button
+              <div
                 className={`vehicle-card tone-${status.tone} ${v.id === selectedId ? 'active' : ''}`}
+                role="button"
+                tabIndex={0}
                 onClick={() => onSelect(v.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect(v.id);
+                  }
+                }}
                 aria-current={v.id === selectedId}
               >
                 <div className="row">
@@ -71,16 +79,22 @@ export function VehicleList({ vehicles, pending = [], selectedId, onSelect, onTr
                   <span className="metric">
                     {Math.round(total)} <u>L</u>
                   </span>
+                  {onTrack && (
+                    <button
+                      className="btn ghost small track-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onTrack(v.id);
+                      }}
+                    >
+                      {t('track.button')}
+                    </button>
+                  )}
                 </div>
                 <div className={`gauge ${gaugeTone}`}>
                   <i style={{ width: `${ratio * 100}%` }} />
                 </div>
-              </button>
-              {onTrack && (
-                <div className="card-actions">
-                  <button className="btn ghost small" onClick={() => onTrack(v.id)}>{t('track.button')}</button>
-                </div>
-              )}
+              </div>
             </li>
           );
         })}
