@@ -99,6 +99,16 @@ export class VehiclesService implements OnModuleInit {
       await this.withSource(() => this.source.updateDeviceImei?.(id, data.imei!));
     }
 
+    // Saisie d'un kilometrage compteur : on fige la lecture boitier du moment,
+    // l'odometre affiche vaudra ensuite initialOdometer + (boitier - lecture figee).
+    if (data.initialOdometer !== undefined && data.initialOdometer !== vehicle.initialOdometer) {
+      const rows: { odometer: number }[] = await this.repo.manager.query(
+        'SELECT odometer FROM positions WHERE vehicle_id = ? ORDER BY id DESC LIMIT 1',
+        [id],
+      );
+      data = { ...data, initialOdometerDeviceKm: Number(rows[0]?.odometer ?? 0) };
+    }
+
     Object.assign(vehicle, data, { id: vehicle.id });
     const saved = await this.repo.save(vehicle);
     await this.reload();

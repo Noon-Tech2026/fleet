@@ -55,6 +55,16 @@ export function useFleetStream(): FleetStream {
           setAlerts((prev) => [message.alert, ...prev].slice(0, 200));
           break;
 
+        case 'starter_lock':
+          setVehicles((prev) => {
+            const v = prev.get(message.vehicleId);
+            if (v === undefined) return prev;
+            const next = new Map(prev);
+            next.set(v.id, { ...v, commandLock: message.lock });
+            return next;
+          });
+          break;
+
         case 'command':
         case 'heartbeat':
           break;
