@@ -1,3 +1,6 @@
+import dns from 'node:dns';
+// Le proxy de dev tentait IPv6 en premier (timeouts) : forcer IPv4.
+dns.setDefaultResultOrder('ipv4first');
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 

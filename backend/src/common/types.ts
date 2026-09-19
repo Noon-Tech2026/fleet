@@ -18,6 +18,9 @@ export type AlertCode =
   | 'departure_confirmed_late'
   | 'perimeter_exit'
   | 'perimeter_return'
+  | 'exit_confirmed'
+  | 'exit_rejected'
+  | 'exit_bypassed'
   | 'fuel_drop'
   | 'fuel_low'
   | 'starter_blocked'
@@ -241,10 +244,26 @@ export interface VehicleAccountingSummary {
 
 /* --- Messages poussés sur le flux SSE ------------------------------------ */
 
+export interface ExitRequestView {
+  id: string;
+  vehicleId: string;
+  zoneId: string | null;
+  zoneName: string;
+  exitedAt: string;
+  buttonPressedAt: string | null;
+  status: 'pending' | 'confirmed' | 'bypassed';
+  rejections: number;
+  decidedBy: string | null;
+  decidedAt: string | null;
+  tripId: string | null;
+  reason: string | null;
+}
+
 export type StreamMessage =
   | { type: 'snapshot'; vehicles: VehicleState[]; alerts: Alert[] }
   | { type: 'position'; vehicle: VehicleState }
   | { type: 'alert'; alert: Alert }
   | { type: 'command'; audit: CommandAudit }
   | { type: 'starter_lock'; vehicleId: string; lock: VehicleState['commandLock'] }
+  | { type: 'exit_request'; request: ExitRequestView }
   | { type: 'heartbeat'; at: string };

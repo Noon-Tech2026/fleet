@@ -5,6 +5,7 @@ import { FuelService } from '../fuel/fuel.service';
 import { AlertsService } from './alerts.service';
 import { ImmobilizerService } from '../immobilizer/immobilizer.service';
 import { DeparturesService } from '../fleet/departures.service';
+import { ExitRequestsService } from '../fleet/exit-requests.service';
 import { MaintenanceService, describeDeadline } from '../maintenance/maintenance.service';
 
 /** Sortie sans confirmation : buzzer cabine, jamais de coupure moteur. */
@@ -34,6 +35,7 @@ export class RulesService {
     private readonly alerts: AlertsService,
     private readonly immobilizer: ImmobilizerService,
     private readonly departures: DeparturesService,
+    private readonly exitRequests: ExitRequestsService,
     private readonly maintenance: MaintenanceService,
   ) {}
 
@@ -90,6 +92,7 @@ export class RulesService {
       if (current.departureConfirmed) {
         this.unconfirmed.delete(current.id);
         await this.immobilizer.buzzerOff(current.id);
+        await this.exitRequests.markButton(current.id);
         this.alerts.raise(current.id, 'info', 'departure_confirmed_late', 'Départ confirmé par le chauffeur après rappel');
       } else if (now - open.lastBuzz >= BUZZ_REPEAT_MS) {
         if (open.count >= BUZZ_MAX) {
@@ -105,7 +108,13 @@ export class RulesService {
     const wasAtStation = previous.zoneId !== null && !this.geofence.isForbidden(previous.zoneId);
     const hasLeft = wasAtStation && current.zoneId !== previous.zoneId;
 
-    if (hasLeft) await this.departures.markDeparted(current.id);
+    if (hasLeft) {
+      await this.departures.markDeparted(current.id);
+      const zone = this.geofence.get(previous.zoneId as string);
+      if (zone?.kind === 'station') {
+        await this.exitRequests.open(current.id, { id: zone.id, name: zone.name }, current.departureConfirmed);
+      }
+    }
 
     if (hasLeft && !current.departureConfirmed) {
       this.alerts.raise(
@@ -154,6 +163,18 @@ export class RulesService {
     this.perimeterAlarm.set(current.id, { zoneId: previous.zoneId as string, lastBuzz: Date.now() });
     this.alerts.raise(current.id, 'critical', 'perimeter_exit', `Sortie du périmètre de sécurité — ${zone?.name ?? previous.zoneId}`);
     await this.immobilizer.buzzerOn(current.id, PERIMETER_BUZZ_SECONDS);
+  }
+
+  /** Apres un rejet : le chauffeur doit appuyer a nouveau ; le rappel repart. */
+  async resumeExitReminder(vehicle: VehicleState): Promise<void> {
+    vehicle.departureConfirmed = false;
+    this.unconfirmed.set(vehicle.id, { lastBuzz: Date.now(), count: 1 });
+    await this.immobilizer.buzzerOn(vehicle.id, BUZZ_SECONDS);
+  }
+
+  /** Decision prise : plus de rappel. */
+  stopExitReminder(vehicleId: string): void {
+    this.unconfirmed.delete(vehicleId);
   }
 
   /** Acquittement par un superviseur : coupe le buzzer, l'alerte reste dans le journal. */

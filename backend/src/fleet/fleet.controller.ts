@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
 import { FleetService } from './fleet.service';
 import { ImmobilizerService } from '../immobilizer/immobilizer.service';
 import { AlertsService } from '../rules/alerts.service';
 import { GeofenceService } from '../geofence/geofence.service';
 import { RulesService } from '../rules/rules.service';
+import { ExitRequestsService, toView } from './exit-requests.service';
 import { SimulatorSource } from '../telemetry/simulator.source';
 import { RequireRole } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -23,6 +24,14 @@ class CommandDto {
   reason: string;
 }
 
+class ConfirmExitDto {
+  @IsString() @MinLength(1) @MaxLength(64) tripId: string;
+}
+
+class BypassExitDto {
+  @IsString() @MinLength(2) @MaxLength(255) reason: string;
+}
+
 @Controller('api')
 export class FleetController {
   constructor(
@@ -32,6 +41,7 @@ export class FleetController {
     private readonly geofence: GeofenceService,
     private readonly simulator: SimulatorSource,
     private readonly rules: RulesService,
+    private readonly exitRequests: ExitRequestsService,
   ) {}
 
   /* --- lecture : tout utilisateur authentifie --------------------------- */
@@ -96,6 +106,47 @@ export class FleetController {
   async release(@Param('id') id: string, @Body() dto: CommandDto, @CurrentUser() user: JwtPayload) {
     const vehicle = this.fleet.get(id);
     return this.immobilizer.release(vehicle, { id: user.sub, email: user.email }, dto.reason);
+  }
+
+  /* --- demandes de sortie (chargement) ----------------------------------- */
+
+  @Get('exit-requests/open')
+  async openExitRequests() {
+    return (await this.exitRequests.openList()).map(toView);
+  }
+
+  @Get('exit-requests')
+  async exitRequestHistory(@Query('vehicleId') vehicleId?: string) {
+    return (await this.exitRequests.history(vehicleId)).map(toView);
+  }
+
+  @RequireRole(Role.Supervisor)
+  @Post('exit-requests/:id/confirm')
+  async confirmExit(@Param('id') id: string, @Body() dto: ConfirmExitDto, @CurrentUser() user: JwtPayload) {
+    const r = await this.exitRequests.confirm(id, user.email, dto.tripId);
+    this.rules.stopExitReminder(r.vehicleId);
+    await this.immobilizer.buzzerOff(r.vehicleId);
+    this.alerts.raise(r.vehicleId, 'info', 'exit_confirmed', `Sortie avec chargement confirmée par ${user.email}`);
+    return toView(r);
+  }
+
+  @RequireRole(Role.Supervisor)
+  @Post('exit-requests/:id/reject')
+  async rejectExit(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    const r = await this.exitRequests.reject(id, user.email);
+    await this.rules.resumeExitReminder(this.fleet.get(r.vehicleId));
+    this.alerts.raise(r.vehicleId, 'warning', 'exit_rejected', `Sortie rejetée par ${user.email} — le chauffeur doit confirmer à nouveau`);
+    return toView(r);
+  }
+
+  @RequireRole(Role.Supervisor)
+  @Post('exit-requests/:id/bypass')
+  async bypassExit(@Param('id') id: string, @Body() dto: BypassExitDto, @CurrentUser() user: JwtPayload) {
+    const r = await this.exitRequests.bypass(id, user.email, dto.reason);
+    this.rules.stopExitReminder(r.vehicleId);
+    await this.immobilizer.buzzerOff(r.vehicleId);
+    this.alerts.raise(r.vehicleId, 'info', 'exit_bypassed', `Sortie sans chargement validée par ${user.email} — ${dto.reason}`);
+    return toView(r);
   }
 
   /** Acquittement de l'alarme de perimetre : coupe le buzzer, garde l'alerte. */

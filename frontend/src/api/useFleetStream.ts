@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ExitRequestView } from '../lib/types';
+import { api } from './client';
 import type { Alert, StreamMessage, VehicleState } from '../lib/types';
 
 export type ConnectionState = 'connecting' | 'live' | 'lost';
@@ -6,6 +8,7 @@ export type ConnectionState = 'connecting' | 'live' | 'lost';
 export interface FleetStream {
   vehicles: VehicleState[];
   alerts: Alert[];
+  exitRequests: ExitRequestView[];
   connection: ConnectionState;
   lastMessageAt: Date | null;
 }
@@ -20,6 +23,7 @@ export interface FleetStream {
 export function useFleetStream(): FleetStream {
   const [vehicles, setVehicles] = useState<Map<string, VehicleState>>(new Map());
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [exitRequests, setExitRequests] = useState<ExitRequestView[]>([]);
   const [connection, setConnection] = useState<ConnectionState>('connecting');
   const [lastMessageAt, setLastMessageAt] = useState<Date | null>(null);
   const sourceRef = useRef<EventSource | null>(null);
@@ -28,6 +32,7 @@ export function useFleetStream(): FleetStream {
     const source = new EventSource('/api/stream');
     sourceRef.current = source;
 
+    api.exitRequestsOpen().then(setExitRequests).catch(() => undefined);
     source.onopen = () => setConnection('live');
     source.onerror = () => setConnection('lost');
 
@@ -55,6 +60,13 @@ export function useFleetStream(): FleetStream {
           setAlerts((prev) => [message.alert, ...prev].slice(0, 200));
           break;
 
+        case 'exit_request':
+          setExitRequests((prev) => {
+            const rest = prev.filter((r) => r.id !== message.request.id);
+            return message.request.status === 'pending' ? [...rest, message.request] : rest;
+          });
+          break;
+
         case 'starter_lock':
           setVehicles((prev) => {
             const v = prev.get(message.vehicleId);
@@ -77,6 +89,7 @@ export function useFleetStream(): FleetStream {
   return {
     vehicles: [...vehicles.values()].sort((a, b) => a.id.localeCompare(b.id)),
     alerts,
+    exitRequests,
     connection,
     lastMessageAt,
   };

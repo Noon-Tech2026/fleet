@@ -252,7 +252,10 @@
     "maintenance_due": "صيانة مستحقة قريباً — {{detail}}",
     "maintenance_overdue": "صيانة متأخرة — {{detail}}",
     "perimeter_exit": "خروج من دائرة الأمان — {{detail}}",
-    "perimeter_return": "عودة داخل الدائرة — {{detail}}"
+    "perimeter_return": "عودة داخل الدائرة — {{detail}}",
+    "exit_confirmed": "تم تأكيد الخروج بالحمولة من {{detail}}",
+    "exit_rejected": "رُفض الخروج من {{detail}}",
+    "exit_bypassed": "تمت الموافقة على الخروج بلا حمولة — {{detail}}"
   },
   "track": {
     "button": "مسار الحركة",
@@ -376,5 +379,18 @@
     "silenced": "تم إقرار الإنذار.",
     "delete": "حذف",
     "confirmDelete": "حذف «{{name}}» نهائياً؟ سيحتفظ السجل بمعرّفها فقط."
+  },
+  "exit": {
+    "title": "خروج بانتظار التأكيد",
+    "waitingButton": "بانتظار زر السائق",
+    "toDecide": "للتأكيد",
+    "leftZone": "خرجت من {{zone}} الساعة {{at}}",
+    "pressedAt": "الزر الساعة {{at}}",
+    "rejections": "{{n}} رفض",
+    "confirm": "تأكيد الحمولة",
+    "reject": "رفض",
+    "bypass": "بدون حمولة",
+    "confirmReject": "رفض خروج {{id}}؟ سيعود الجرس عند السائق.",
+    "bypassReason": "السبب (صيانة، نقل، توقف…):"
   }
 }

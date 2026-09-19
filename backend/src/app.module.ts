@@ -34,6 +34,8 @@ import { FleetAdminController } from './fleet/fleet-admin.controller';
 import { VehiclesService } from './fleet/vehicles.service';
 import { PositionsService } from './fleet/positions.service';
 import { DeparturesService } from './fleet/departures.service';
+import { ExitRequestsService } from './fleet/exit-requests.service';
+import { ExitRequest } from './fleet/entities/exit-request.entity';
 import { GeofenceService } from './geofence/geofence.service';
 import { FuelService } from './fuel/fuel.service';
 import { RulesService } from './rules/rules.service';
@@ -66,7 +68,7 @@ import { AccountingController } from './accounting/accounting.controller';
       TripContainer,
       VehicleExpense,
       VehicleInvestment,
-    ]),
+     ExitRequest,]),
     EventsModule,
     TelemetryModule,
   ],
@@ -82,6 +84,7 @@ import { AccountingController } from './accounting/accounting.controller';
     VehiclesService,
     PositionsService,
     DeparturesService,
+    ExitRequestsService,
     GeofenceService,
     FuelService,
     RulesService,

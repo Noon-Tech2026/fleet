@@ -252,7 +252,10 @@
     "maintenance_due": "Maintenance due soon — {{detail}}",
     "maintenance_overdue": "Maintenance overdue — {{detail}}",
     "perimeter_exit": "Left the security perimeter — {{detail}}",
-    "perimeter_return": "Back inside the perimeter — {{detail}}"
+    "perimeter_return": "Back inside the perimeter — {{detail}}",
+    "exit_confirmed": "Loaded departure confirmed by {{detail}}",
+    "exit_rejected": "Departure rejected by {{detail}}",
+    "exit_bypassed": "Departure without load validated — {{detail}}"
   },
   "track": {
     "button": "Track",
@@ -376,5 +379,18 @@
     "silenced": "Alarm acknowledged.",
     "delete": "Delete",
     "confirmDelete": "Permanently delete “{{name}}”? History will keep only its identifier."
+  },
+  "exit": {
+    "title": "Departures to validate",
+    "waitingButton": "Waiting for driver button",
+    "toDecide": "To validate",
+    "leftZone": "Left {{zone}} at {{at}}",
+    "pressedAt": "button at {{at}}",
+    "rejections": "{{n}} rejection(s)",
+    "confirm": "Confirm load",
+    "reject": "Reject",
+    "bypass": "No load",
+    "confirmReject": "Reject {{id}}'s departure? The cab buzzer will restart.",
+    "bypassReason": "Reason (maintenance, relocation, parking…):"
   }
 }

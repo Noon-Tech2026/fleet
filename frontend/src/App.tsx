@@ -11,6 +11,7 @@ import { FleetOverview } from './components/FleetOverview';
 import { VehicleList } from './components/VehicleList';
 import { VehicleDetail } from './components/VehicleDetail';
 import { TrackHistoryDialog } from './components/TrackHistoryDialog';
+import { ExitRequestsPanel } from './components/ExitRequestsPanel';
 import { AlertFeed } from './components/AlertFeed';
 import { UsersPage } from './users/UsersPage';
 import { MaintenancePage } from './maintenance/MaintenancePage';
@@ -62,7 +63,7 @@ function Dashboard({
   role: Role;
 }) {
   const { t } = useTranslation();
-  const { vehicles, alerts } = useFleetStream();
+  const { vehicles, alerts, exitRequests } = useFleetStream();
 
   // Répertoire des camions : ceux dont le boîtier n'a encore rien transmis
   // apparaissent dans la liste (sans marqueur) jusqu'à leur première trame.
@@ -109,6 +110,7 @@ function Dashboard({
           </button>
           <button className={`nav-tab ${view === 'fleet' ? 'active' : ''}`} onClick={() => setView('fleet')}>
             {t('nav.supervision')}
+            {exitRequests.length > 0 && <span className="nav-badge">{exitRequests.length}</span>}
           </button>
           <button className={`nav-tab ${view === 'maintenance' ? 'active' : ''}`} onClick={() => setView('maintenance')}>
             {t('nav.maintenance')}
@@ -169,6 +171,7 @@ function Dashboard({
       ) : (
         <main className="layout">
           <aside className="col left">
+            <ExitRequestsPanel requests={exitRequests} />
             <h2 className="col-title">
               {t('app.fleet')} <span className="count">{vehicles.length + pendingVehicles.length}</span>
             </h2>

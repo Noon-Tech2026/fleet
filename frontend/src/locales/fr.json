@@ -241,7 +241,10 @@
   "alerts": {
     "empty": "Aucun événement. Les alertes apparaîtront ici dès qu'une règle se déclenche.",
     "perimeter_exit": "Sortie du périmètre de sécurité — {{detail}}",
-    "perimeter_return": "Retour dans le périmètre — {{detail}}"
+    "perimeter_return": "Retour dans le périmètre — {{detail}}",
+    "exit_confirmed": "Sortie avec chargement confirmée par {{detail}}",
+    "exit_rejected": "Sortie rejetée par {{detail}}",
+    "exit_bypassed": "Sortie sans chargement validée — {{detail}}"
   },
   "track": {
     "button": "Mouvements",
@@ -365,5 +368,18 @@
     "silenced": "Alarme acquittée.",
     "delete": "Supprimer",
     "confirmDelete": "Supprimer définitivement « {{name}} » ? L'historique conservera seulement son identifiant."
+  },
+  "exit": {
+    "title": "Sorties à valider",
+    "waitingButton": "Attente du bouton chauffeur",
+    "toDecide": "À valider",
+    "leftZone": "Sortie de {{zone}} à {{at}}",
+    "pressedAt": "bouton à {{at}}",
+    "rejections": "{{n}} rejet(s)",
+    "confirm": "Confirmer le chargement",
+    "reject": "Rejeter",
+    "bypass": "Sans chargement",
+    "confirmReject": "Rejeter la sortie de {{id}} ? Le buzzer repartira chez le chauffeur.",
+    "bypassReason": "Motif (entretien, déplacement, stationnement…) :"
   }
 }

@@ -1,4 +1,4 @@
-import type { Alert, AuthUser, ClientRecord, CommandAudit, ContainerSize, DriverRecord, MaintenanceKind, MaintenanceLogEntry, MaintenancePlanState, Role, TripEntry, VehicleAccountingSummary, VehicleExpenseCategory, VehicleExpenseEntry, VehicleInvestmentEntry, VehicleInvestmentKind, VehicleState, TrackPoint, Zone, ZoneInput } from '../lib/types';
+import type { Alert, AuthUser, ClientRecord, CommandAudit, ContainerSize, DriverRecord, MaintenanceKind, MaintenanceLogEntry, MaintenancePlanState, Role, TripEntry, VehicleAccountingSummary, VehicleExpenseCategory, VehicleExpenseEntry, VehicleInvestmentEntry, VehicleInvestmentKind, VehicleState, TrackPoint, Zone, ZoneInput, ExitRequestView } from '../lib/types';
 
 /**
  * Repertoire d'un vehicule (fiche administrative), independant de sa
@@ -244,6 +244,12 @@ export const api = {
 
   /* --- repertoire des vehicules --- */
   fleetVehicles: () => request<VehicleDirectoryEntry[]>('/api/fleet/vehicles'),
+  exitRequestsOpen: () => request<ExitRequestView[]>('/api/exit-requests/open'),
+  confirmExit: (id: string, tripId: string) =>
+    request<ExitRequestView>(`/api/exit-requests/${encodeURIComponent(id)}/confirm`, { method: 'POST', body: JSON.stringify({ tripId }) }),
+  rejectExit: (id: string) => request<ExitRequestView>(`/api/exit-requests/${encodeURIComponent(id)}/reject`, { method: 'POST' }),
+  bypassExit: (id: string, reason: string) =>
+    request<ExitRequestView>(`/api/exit-requests/${encodeURIComponent(id)}/bypass`, { method: 'POST', body: JSON.stringify({ reason }) }),
   zones: () => request<Zone[]>('/api/zones'),
   zonesAll: () => request<Zone[]>('/api/zones/all'),
   createZone: (input: ZoneInput) => request<Zone>('/api/zones', { method: 'POST', body: JSON.stringify(input) }),
