@@ -252,8 +252,8 @@ export function ZonesPage({ vehicles, directory, isAdmin }: Props) {
   const trucks = useMemo(() => directory.filter((d) => d.active !== false), [directory]);
 
   return (
-    <div className="zones-page">
-      <aside className="zones-side">
+    <main className="layout zones-layout">
+      <aside className="col left zones-side">
         <header className="zones-head">
           <h2>{t('zones.title')}</h2>
           {formOpen === false && (
@@ -354,7 +354,7 @@ export function ZonesPage({ vehicles, directory, isAdmin }: Props) {
         )}
       </aside>
 
-      <div className={`zones-map ${formOpen ? 'drawing' : ''}`} ref={container} />
-    </div>
+      <div className={`col center zones-map ${formOpen ? 'drawing' : ''}`} ref={container} />
+    </main>
   );
 }
