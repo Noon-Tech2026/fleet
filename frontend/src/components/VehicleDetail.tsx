@@ -163,7 +163,7 @@ export function VehicleDetail({ vehicle, simulatorMode }: Props) {
         </div>
         <div>
           <dt>{t('supervision.lastFrame')}</dt>
-          <dd>{new Date(vehicle.updatedAt).toLocaleTimeString(locale)}</dd>
+          <dd>{new Date(vehicle.updatedAt).toLocaleTimeString(locale, { hour12: false })}</dd>
         </div>
       </dl>
 

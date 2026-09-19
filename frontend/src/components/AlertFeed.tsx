@@ -41,7 +41,7 @@ export function AlertFeed({ alerts }: { alerts: Alert[] }) {
       {alerts.map((a) => (
         <li key={a.id} className={LEVEL_TONE[a.level]}>
           <time dateTime={a.at}>
-            {new Date(a.at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+            {new Date(a.at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false })}
           </time>
           <span className="who">{a.vehicleId}</span>
           <span>{text(a)}</span>
