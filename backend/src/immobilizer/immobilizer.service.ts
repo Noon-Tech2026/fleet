@@ -150,6 +150,7 @@ export class ImmobilizerService {
       throw e;
     }
     vehicle.starter = 'allowed';
+    this.events.publish({ type: 'position', vehicle: { ...vehicle } });
     this.alerts.raise(vehicle.id, 'info', 'starter_released', `Demarrage reautorise par ${actor.email}`);
     return this.record(vehicle, 'release_starter', actor, reason, true);
   }
@@ -232,6 +233,7 @@ export class ImmobilizerService {
       throw e;
     }
     vehicle.starter = 'blocked';
+    this.events.publish({ type: 'position', vehicle: { ...vehicle } });
     this.alerts.raise(vehicle.id, 'critical', 'starter_blocked', `Demarreur bloque — ${reason}`);
     return this.record(vehicle, 'block_starter', actor, reason, true);
   }
