@@ -1,6 +1,7 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
-export type ZoneKind = 'station' | 'forbidden';
+/** station = zone de chargement ; forbidden = interdite ; perimeter = cercle de securite (alarme a la sortie). */
+export type ZoneKind = 'station' | 'forbidden' | 'perimeter';
 export type ZoneShape = 'circle' | 'polygon';
 
 /**
@@ -40,6 +41,14 @@ export class Zone {
   /** Sommets [lat, lon], stockes en JSON. */
   @Column({ type: 'json', nullable: true })
   points: [number, number][] | null;
+
+  /** Sortie de zone => buzzer repete + alerte critique jusqu'a retour ou acquittement. */
+  @Column({ name: 'alarm_on_exit', default: false })
+  alarmOnExit: boolean;
+
+  /** Camions concernes ; NULL = toute la flotte. */
+  @Column({ name: 'vehicle_ids', type: 'json', nullable: true })
+  vehicleIds: string[] | null;
 
   @Column({ default: true })
   active: boolean;

@@ -16,6 +16,8 @@ export type AlertCode =
   | 'forbidden_zone_left'
   | 'departure_without_confirmation'
   | 'departure_confirmed_late'
+  | 'perimeter_exit'
+  | 'perimeter_return'
   | 'fuel_drop'
   | 'fuel_low'
   | 'starter_blocked'

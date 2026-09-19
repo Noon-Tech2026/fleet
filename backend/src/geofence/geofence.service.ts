@@ -36,9 +36,21 @@ export class GeofenceService implements OnModuleInit {
     return this.cache.find((z) => z.id === id);
   }
 
-  /** Premiere zone contenant le point, ou null. */
-  locate(lat: number, lon: number): Zone | null {
-    for (const zone of this.cache) {
+  /** La zone concerne-t-elle ce camion ? (vehicleIds null = toute la flotte) */
+  appliesTo(zone: Zone, vehicleId?: string): boolean {
+    if (zone.vehicleIds === null || zone.vehicleIds === undefined || zone.vehicleIds.length === 0) return true;
+    return vehicleId !== undefined && zone.vehicleIds.includes(vehicleId);
+  }
+
+  /**
+   * Premiere zone contenant le point et concernant le camion, ou null.
+   * Les zones restreintes a des camions precis passent avant les zones
+   * generales : une zone dediee est plus specifique.
+   */
+  locate(lat: number, lon: number, vehicleId?: string): Zone | null {
+    const ordered = [...this.cache].sort((a, b) => Number(this.isGeneral(b)) - Number(this.isGeneral(a)));
+    for (const zone of ordered) {
+      if (this.appliesTo(zone, vehicleId) === false) continue;
       if (zone.shape === 'circle') {
         if (zone.lat === null || zone.lon === null || zone.radius === null) continue;
         if (haversine(lat, lon, zone.lat, zone.lon) <= zone.radius) return zone;
@@ -49,9 +61,20 @@ export class GeofenceService implements OnModuleInit {
     return null;
   }
 
+  private isGeneral(zone: Zone): boolean {
+    return zone.vehicleIds === null || zone.vehicleIds === undefined || zone.vehicleIds.length === 0;
+  }
+
   isForbidden(zoneId: string | null): boolean {
     if (!zoneId) return false;
     return this.get(zoneId)?.kind === 'forbidden';
+  }
+
+  /** Zone de securite dont la sortie declenche l'alarme. */
+  isAlarmedPerimeter(zoneId: string | null): boolean {
+    if (!zoneId) return false;
+    const z = this.get(zoneId);
+    return z !== undefined && z.kind === 'perimeter' && z.alarmOnExit === true;
   }
 
   /* --- administration --------------------------------------------------- */

@@ -4,6 +4,7 @@ import { FleetService } from './fleet.service';
 import { ImmobilizerService } from '../immobilizer/immobilizer.service';
 import { AlertsService } from '../rules/alerts.service';
 import { GeofenceService } from '../geofence/geofence.service';
+import { RulesService } from '../rules/rules.service';
 import { SimulatorSource } from '../telemetry/simulator.source';
 import { RequireRole } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -30,6 +31,7 @@ export class FleetController {
     private readonly alerts: AlertsService,
     private readonly geofence: GeofenceService,
     private readonly simulator: SimulatorSource,
+    private readonly rules: RulesService,
   ) {}
 
   /* --- lecture : tout utilisateur authentifie --------------------------- */
@@ -94,6 +96,18 @@ export class FleetController {
   async release(@Param('id') id: string, @Body() dto: CommandDto, @CurrentUser() user: JwtPayload) {
     const vehicle = this.fleet.get(id);
     return this.immobilizer.release(vehicle, { id: user.sub, email: user.email }, dto.reason);
+  }
+
+  /** Acquittement de l'alarme de perimetre : coupe le buzzer, garde l'alerte. */
+  @RequireRole(Role.Supervisor)
+  @Post('vehicles/:id/perimeter/silence')
+  async silencePerimeter(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    const vehicle = this.fleet.get(id);
+    const silenced = await this.rules.silencePerimeter(vehicle.id);
+    if (silenced) {
+      this.alerts.raise(vehicle.id, 'info', 'perimeter_return', `Alarme de périmètre acquittée par ${user.email}`);
+    }
+    return { vehicleId: vehicle.id, silenced };
   }
 
   /* --- outil de test --------------------------------------------------- */

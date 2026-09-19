@@ -12,6 +12,7 @@ import {
   Min,
   MinLength,
   ValidateNested,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { VehiclesService } from './vehicles.service';
@@ -52,7 +53,7 @@ class UpdateVehicleDto {
 
 class ZoneDto {
   @IsString() @MinLength(2) @MaxLength(120) name: string;
-  @IsIn(['station', 'forbidden']) kind: 'station' | 'forbidden';
+  @IsIn(['station', 'forbidden', 'perimeter']) kind: 'station' | 'forbidden' | 'perimeter';
   @IsIn(['circle', 'polygon']) shape: 'circle' | 'polygon';
 
   @IsOptional() @IsNumber() @Min(-90) @Max(90) lat?: number;
@@ -60,6 +61,10 @@ class ZoneDto {
   @IsOptional() @IsInt() @Min(20) @Max(200_000) radius?: number;
 
   @IsOptional() @IsArray() points?: [number, number][];
+
+  @IsOptional() @IsBoolean() alarmOnExit?: boolean;
+  /** null ou absent = toute la flotte. */
+  @IsOptional() @IsArray() @IsString({ each: true }) vehicleIds?: string[] | null;
 }
 
 class CalibrationPointDto {

@@ -12,6 +12,10 @@ const BUZZ_SECONDS = 60; // duree d'une sonnerie (minuterie du boitier)
 const BUZZ_REPEAT_MS = 5 * 60_000; // rappel tant que non confirme
 const BUZZ_MAX = 3; // nombre max de sonneries par sortie
 
+/** Sortie d'un cercle de securite : sonnerie repetee SANS limite jusqu'a retour ou acquittement. */
+const PERIMETER_BUZZ_SECONDS = 60;
+const PERIMETER_REPEAT_MS = 2 * 60_000;
+
 /**
  * Règles métier évaluées à chaque position reçue.
  * Elles vivent ici et non dans Traccar : Traccar sait détecter une entrée
@@ -21,6 +25,8 @@ const BUZZ_MAX = 3; // nombre max de sonneries par sortie
 export class RulesService {
   /** Sorties non confirmees en cours, par vehicule. */
   private readonly unconfirmed = new Map<string, { lastBuzz: number; count: number }>();
+  /** Alarmes de perimetre en cours : zone quittee + derniere sonnerie. */
+  private readonly perimeterAlarm = new Map<string, { zoneId: string; lastBuzz: number }>();
 
   constructor(
     private readonly geofence: GeofenceService,
@@ -33,6 +39,7 @@ export class RulesService {
 
   async evaluate(previous: VehicleState | undefined, current: VehicleState): Promise<void> {
     this.checkZoneTransition(previous, current);
+    await this.checkPerimeter(previous, current);
     await this.checkDeparture(previous, current);
     this.checkFuel(current);
     this.checkMaintenance(current);
@@ -114,6 +121,51 @@ export class RulesService {
     // Une fois hors station, la confirmation est consommée : le prochain
     // départ devra être confirmé à nouveau.
     if (hasLeft) current.departureConfirmed = false;
+  }
+
+  /**
+   * Cercle de securite (anti-vol). Sortie => alerte critique + buzzer repete
+   * toutes les PERIMETER_REPEAT_MS, sans limite, jusqu'au retour du camion
+   * dans la zone ou a l'acquittement par un superviseur (silencePerimeter).
+   */
+  private async checkPerimeter(previous: VehicleState | undefined, current: VehicleState): Promise<void> {
+    const alarm = this.perimeterAlarm.get(current.id);
+
+    if (alarm) {
+      if (current.zoneId === alarm.zoneId) {
+        this.perimeterAlarm.delete(current.id);
+        await this.immobilizer.buzzerOff(current.id);
+        const zone = this.geofence.get(alarm.zoneId);
+        this.alerts.raise(current.id, 'info', 'perimeter_return', `Retour dans le périmètre — ${zone?.name ?? alarm.zoneId}`);
+        return;
+      }
+      if (Date.now() - alarm.lastBuzz >= PERIMETER_REPEAT_MS) {
+        alarm.lastBuzz = Date.now();
+        await this.immobilizer.buzzerOn(current.id, PERIMETER_BUZZ_SECONDS);
+      }
+      return;
+    }
+
+    if (!previous) return;
+    const left = previous.zoneId !== null && previous.zoneId !== current.zoneId && this.geofence.isAlarmedPerimeter(previous.zoneId);
+    if (left === false) return;
+
+    const zone = this.geofence.get(previous.zoneId as string);
+    this.perimeterAlarm.set(current.id, { zoneId: previous.zoneId as string, lastBuzz: Date.now() });
+    this.alerts.raise(current.id, 'critical', 'perimeter_exit', `Sortie du périmètre de sécurité — ${zone?.name ?? previous.zoneId}`);
+    await this.immobilizer.buzzerOn(current.id, PERIMETER_BUZZ_SECONDS);
+  }
+
+  /** Acquittement par un superviseur : coupe le buzzer, l'alerte reste dans le journal. */
+  async silencePerimeter(vehicleId: string): Promise<boolean> {
+    if (this.perimeterAlarm.has(vehicleId) === false) return false;
+    this.perimeterAlarm.delete(vehicleId);
+    await this.immobilizer.buzzerOff(vehicleId);
+    return true;
+  }
+
+  hasPerimeterAlarm(vehicleId: string): boolean {
+    return this.perimeterAlarm.has(vehicleId);
   }
 
   private checkFuel(current: VehicleState): void {

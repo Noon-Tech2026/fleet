@@ -106,7 +106,7 @@ export class FleetService implements OnModuleInit {
       odometer: meta.initialOdometer + Math.max(0, raw.odometer - meta.initialOdometerDeviceKm),
       engineHours: raw.engineHours,
 
-      zoneId: this.geofence.locate(raw.lat, raw.lon)?.id ?? null,
+      zoneId: this.geofence.locate(raw.lat, raw.lon, raw.vehicleId)?.id ?? null,
       battery: Number(raw.battery.toFixed(1)),
       gsm: raw.gsm,
 
