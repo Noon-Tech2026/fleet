@@ -166,7 +166,9 @@
     "recorded": "تم تسجيل: {{type}}.",
     "delete": "حذف",
     "confirmDelete": "حذف {{type}}؟ لا يمكن التراجع.",
-    "deleted": "تم حذف: {{type}}."
+    "deleted": "تم حذف: {{type}}.",
+    "edit": "تعديل",
+    "updated": "تم تعديل: {{type}}."
   },
   "supervision": {
     "empty": "لم يرسل أي جهاز موقعاً بعد.",
@@ -275,6 +277,35 @@
     "close": "إغلاق",
     "last24h": "24 ساعة",
     "last7d": "7 أيام",
-    "today": "اليوم"
+    "today": "اليوم",
+    "play": "تشغيل",
+    "pause": "إيقاف",
+    "restart": "من البداية",
+    "playbackSpeed": "سرعة العرض"
+  },
+  "dialog": {
+    "common": {
+      "cancel": "إلغاء",
+      "saving": "جارٍ الحفظ…",
+      "error": "تعذر الحفظ",
+      "amount": "المبلغ (MRU)",
+      "date": "التاريخ"
+    },
+    "expense": {
+      "titleNew": "مصروف جديد — {{id}}",
+      "titleEdit": "تعديل المصروف — {{id}}",
+      "category": "الفئة",
+      "reference": "المرجع",
+      "referencePlaceholder": "رقم الفاتورة أو الوصل",
+      "notes": "ملاحظات",
+      "save": "حفظ المصروف"
+    },
+    "investment": {
+      "titleNew": "استثمار جديد — {{id}}",
+      "titleEdit": "تعديل الاستثمار — {{id}}",
+      "kind": "النوع",
+      "description": "الوصف",
+      "save": "حفظ الاستثمار"
+    }
   }
 }

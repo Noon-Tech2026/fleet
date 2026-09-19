@@ -115,12 +115,23 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
   const map = useRef<MapLibreMap | null>(null);
   const markers = useRef<maplibregl.Marker[]>([]);
 
+  // Lecteur : progression 0..1 sur la duree totale, facteur = secondes
+  // simulees par seconde reelle (x60 : une minute de trajet par seconde).
+  const [playing, setPlaying] = useState(false);
+  const [factor, setFactor] = useState(60);
+  const [progress, setProgress] = useState(0);
+  const truck = useRef<maplibregl.Marker | null>(null);
+  const raf = useRef<number | null>(null);
+  const lastTs = useRef<number | null>(null);
+
   async function load(f = from, tt = to) {
     setLoading(true);
     setError(null);
     try {
       const list = await api.vehicleTrack(vehicleId, new Date(f).toISOString(), new Date(tt).toISOString());
       list.sort((a, b) => Date.parse(a.recordedAt) - Date.parse(b.recordedAt));
+      setPlaying(false);
+      setProgress(0);
       setPoints(list);
     } catch {
       setError(t('track.error'));
@@ -177,12 +188,19 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
         type: 'FeatureCollection',
         features: coords.length > 1 ? [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } }] : [],
       };
+      truck.current?.remove();
+      truck.current = null;
+      const empty: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] };
       const src = m.getSource('track') as maplibregl.GeoJSONSource | undefined;
-      if (src) src.setData(data);
-      else {
+      if (src) {
+        src.setData(data);
+        (m.getSource('progress') as maplibregl.GeoJSONSource | undefined)?.setData(empty);
+      } else {
         m.addSource('track', { type: 'geojson', data });
+        m.addSource('progress', { type: 'geojson', data: empty });
         m.addLayer({ id: 'track-casing', type: 'line', source: 'track', paint: { 'line-color': '#ffffff', 'line-width': 7, 'line-opacity': 0.9 } });
-        m.addLayer({ id: 'track-line', type: 'line', source: 'track', paint: { 'line-color': '#12704F', 'line-width': 4 } });
+        m.addLayer({ id: 'track-line', type: 'line', source: 'track', paint: { 'line-color': '#12704F', 'line-width': 4, 'line-opacity': 0.55 } });
+        m.addLayer({ id: 'progress-line', type: 'line', source: 'progress', paint: { 'line-color': '#e67e22', 'line-width': 5 } });
       }
       if (coords.length === 0) return;
 
@@ -204,6 +222,77 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
     if (m.isStyleLoaded()) draw();
     else m.once('load', draw);
   }, [points, summary, t]);
+
+  const span = useMemo(() => {
+    if (points === null || points.length < 2) return null;
+    return { t0: Date.parse(points[0].recordedAt), t1: Date.parse(points[points.length - 1].recordedAt) };
+  }, [points]);
+
+  /** Position interpolee dans le temps a la progression donnee. */
+  function positionAt(prog: number): { lng: number; lat: number; idx: number; speed: number; time: number } | null {
+    if (points === null || span === null) return null;
+    const time = span.t0 + prog * (span.t1 - span.t0);
+    let idx = 0;
+    while (idx < points.length - 2 && Date.parse(points[idx + 1].recordedAt) <= time) idx++;
+    const a = points[idx];
+    const b = points[Math.min(idx + 1, points.length - 1)];
+    const ta = Date.parse(a.recordedAt);
+    const tb = Date.parse(b.recordedAt);
+    const k = tb > ta ? Math.min(1, Math.max(0, (time - ta) / (tb - ta))) : 1;
+    return { lng: a.lon + (b.lon - a.lon) * k, lat: a.lat + (b.lat - a.lat) * k, idx, speed: k < 0.5 ? a.speed : b.speed, time };
+  }
+
+  useEffect(() => {
+    if (playing === false || span === null) {
+      if (raf.current !== null) cancelAnimationFrame(raf.current);
+      raf.current = null;
+      lastTs.current = null;
+      return;
+    }
+    const total = span.t1 - span.t0;
+    const loop = (ts: number) => {
+      if (lastTs.current === null) lastTs.current = ts;
+      const dt = ts - lastTs.current;
+      lastTs.current = ts;
+      setProgress((prev) => {
+        const next = prev + (dt * factor) / total;
+        if (next >= 1) {
+          setPlaying(false);
+          return 1;
+        }
+        return next;
+      });
+      raf.current = requestAnimationFrame(loop);
+    };
+    raf.current = requestAnimationFrame(loop);
+    return () => {
+      if (raf.current !== null) cancelAnimationFrame(raf.current);
+      raf.current = null;
+      lastTs.current = null;
+    };
+  }, [playing, factor, span]);
+
+  useEffect(() => {
+    const m = map.current;
+    const pos = positionAt(progress);
+    if (m === null || pos === null || points === null || m.isStyleLoaded() === false) return;
+    if (truck.current === null) {
+      const el = document.createElement('div');
+      el.className = 'track-marker truck';
+      truck.current = new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([pos.lng, pos.lat]).addTo(m);
+    } else {
+      truck.current.setLngLat([pos.lng, pos.lat]);
+    }
+    const done = points.slice(0, pos.idx + 1).map((p) => [p.lon, p.lat]);
+    done.push([pos.lng, pos.lat]);
+    (m.getSource('progress') as maplibregl.GeoJSONSource | undefined)?.setData({
+      type: 'FeatureCollection',
+      features: done.length > 1 ? [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: done } }] : [],
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progress, points]);
+
+  const cursor = positionAt(progress);
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -239,6 +328,38 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
         {points !== null && points.length >= MAX_POINTS && <p className="notice">{t('track.tooMany', { n: MAX_POINTS })}</p>}
 
         <div className="track-map" ref={container} />
+
+        {span !== null && (
+          <div className="track-player">
+            <button className="btn mint small" onClick={() => setPlaying((v) => v === false)}>
+              {playing ? t('track.pause') : t('track.play')}
+            </button>
+            <button className="btn ghost small" onClick={() => { setPlaying(false); setProgress(0); }}>
+              {t('track.restart')}
+            </button>
+            <input
+              type="range"
+              min={0}
+              max={1000}
+              value={Math.round(progress * 1000)}
+              onChange={(e) => { setPlaying(false); setProgress(Number(e.target.value) / 1000); }}
+              aria-label={t('track.title')}
+            />
+            <label className="player-speed">
+              {t('track.playbackSpeed')}
+              <select value={factor} onChange={(e) => setFactor(Number(e.target.value))}>
+                {[5, 20, 60, 200, 600].map((f) => (
+                  <option key={f} value={f}>×{f}</option>
+                ))}
+              </select>
+            </label>
+            {cursor && (
+              <span className="player-info" dir="ltr">
+                {new Date(cursor.time).toLocaleString(locale, { hour12: false })} · {cursor.speed} km/h
+              </span>
+            )}
+          </div>
+        )}
 
         {points !== null && points.length === 0 && loading === false && <p className="empty">{t('track.empty')}</p>}
 

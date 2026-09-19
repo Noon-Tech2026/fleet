@@ -166,7 +166,9 @@
     "recorded": "{{type}} enregistré(e).",
     "delete": "Supprimer",
     "confirmDelete": "Supprimer ce/cette {{type}} ? Action irréversible.",
-    "deleted": "{{type}} supprimé(e)."
+    "deleted": "{{type}} supprimé(e).",
+    "edit": "Modifier",
+    "updated": "{{type}} modifié(e)."
   },
   "supervision": {
     "empty": "Aucun boîtier n'a encore transmis de position.",
@@ -264,6 +266,35 @@
     "close": "Fermer",
     "last24h": "24 h",
     "last7d": "7 j",
-    "today": "Aujourd'hui"
+    "today": "Aujourd'hui",
+    "play": "Lire",
+    "pause": "Pause",
+    "restart": "Début",
+    "playbackSpeed": "Vitesse de lecture"
+  },
+  "dialog": {
+    "common": {
+      "cancel": "Annuler",
+      "saving": "Enregistrement…",
+      "error": "Enregistrement impossible",
+      "amount": "Montant (MRU)",
+      "date": "Date"
+    },
+    "expense": {
+      "titleNew": "Nouvelle charge — {{id}}",
+      "titleEdit": "Modifier la charge — {{id}}",
+      "category": "Catégorie",
+      "reference": "Référence",
+      "referencePlaceholder": "n° facture ou quittance",
+      "notes": "Observations",
+      "save": "Enregistrer la charge"
+    },
+    "investment": {
+      "titleNew": "Nouvel investissement — {{id}}",
+      "titleEdit": "Modifier l'investissement — {{id}}",
+      "kind": "Nature",
+      "description": "Description",
+      "save": "Enregistrer l'investissement"
+    }
   }
 }

@@ -166,7 +166,9 @@
     "recorded": "{{type}} recorded.",
     "delete": "Delete",
     "confirmDelete": "Delete this {{type}}? This cannot be undone.",
-    "deleted": "{{type}} deleted."
+    "deleted": "{{type}} deleted.",
+    "edit": "Edit",
+    "updated": "{{type}} updated."
   },
   "supervision": {
     "empty": "No tracker has sent a position yet.",
@@ -275,6 +277,35 @@
     "close": "Close",
     "last24h": "24 h",
     "last7d": "7 d",
-    "today": "Today"
+    "today": "Today",
+    "play": "Play",
+    "pause": "Pause",
+    "restart": "Restart",
+    "playbackSpeed": "Playback speed"
+  },
+  "dialog": {
+    "common": {
+      "cancel": "Cancel",
+      "saving": "Saving…",
+      "error": "Could not save",
+      "amount": "Amount (MRU)",
+      "date": "Date"
+    },
+    "expense": {
+      "titleNew": "New expense — {{id}}",
+      "titleEdit": "Edit expense — {{id}}",
+      "category": "Category",
+      "reference": "Reference",
+      "referencePlaceholder": "invoice or receipt no.",
+      "notes": "Notes",
+      "save": "Save expense"
+    },
+    "investment": {
+      "titleNew": "New investment — {{id}}",
+      "titleEdit": "Edit investment — {{id}}",
+      "kind": "Kind",
+      "description": "Description",
+      "save": "Save investment"
+    }
   }
 }

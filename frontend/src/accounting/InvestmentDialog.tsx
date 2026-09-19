@@ -1,21 +1,24 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { VehicleInvestmentEntry, VehicleInvestmentKind } from '../lib/types';
-import { INVESTMENT_KIND_LABEL } from '../lib/accounting';
 import { api } from '../api/client';
 
 interface Props {
   vehicleId: string;
+  /** Présent = modification d'un investissement existant. */
+  initial?: VehicleInvestmentEntry;
   onCancel: () => void;
   onDone: (investment: VehicleInvestmentEntry) => void;
 }
 
-const KINDS = Object.keys(INVESTMENT_KIND_LABEL) as VehicleInvestmentKind[];
+const KINDS: VehicleInvestmentKind[] = ['purchase', 'equipment', 'overhaul', 'other'];
 
-export function InvestmentDialog({ vehicleId, onCancel, onDone }: Props) {
-  const [kind, setKind] = useState<VehicleInvestmentKind>('purchase');
-  const [amount, setAmount] = useState('');
-  const [at, setAt] = useState(() => new Date().toISOString().slice(0, 10));
-  const [description, setDescription] = useState('');
+export function InvestmentDialog({ vehicleId, initial, onCancel, onDone }: Props) {
+  const { t } = useTranslation();
+  const [kind, setKind] = useState<VehicleInvestmentKind>(initial?.kind ?? 'purchase');
+  const [amount, setAmount] = useState(initial ? String(initial.amount) : '');
+  const [at, setAt] = useState(() => (initial ? initial.at : new Date().toISOString()).slice(0, 10));
+  const [description, setDescription] = useState(initial?.description ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,16 +34,19 @@ export function InvestmentDialog({ vehicleId, onCancel, onDone }: Props) {
     e.preventDefault();
     setBusy(true);
     setError(null);
+    const payload = {
+      kind,
+      amount: Number(amount),
+      at: new Date(`${at}T12:00:00`).toISOString(),
+      description: description.trim() || undefined,
+    };
     try {
-      const investment = await api.addInvestment(vehicleId, {
-        kind,
-        amount: Number(amount),
-        at: new Date(`${at}T12:00:00`).toISOString(),
-        description: description.trim() || undefined,
-      });
+      const investment = initial
+        ? await api.updateInvestment(initial.id, payload)
+        : await api.addInvestment(vehicleId, payload);
       onDone(investment);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Enregistrement impossible');
+      setError(err instanceof Error ? err.message : t('dialog.common.error'));
       setBusy(false);
     }
   }
@@ -55,53 +61,44 @@ export function InvestmentDialog({ vehicleId, onCancel, onDone }: Props) {
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
       >
-        <h2 id="investment-dialog-title">Nouvel investissement — {vehicleId}</h2>
-
-        <p className="modal-note">
-          Comptabilisé tel quel, sans amortissement : le montant s'ajoute en une fois au total du
-          véhicule.
-        </p>
+        <h2 id="investment-dialog-title">{t(initial ? 'dialog.investment.titleEdit' : 'dialog.investment.titleNew', { id: vehicleId })}</h2>
 
         <div className="field-grid">
           <label className="field">
-            <span>Type</span>
+            <span>{t('dialog.investment.kind')}</span>
             <select className="select" value={kind} onChange={(e) => setKind(e.target.value as VehicleInvestmentKind)}>
               {KINDS.map((k) => (
-                <option key={k} value={k}>
-                  {INVESTMENT_KIND_LABEL[k]}
-                </option>
+                <option key={k} value={k}>{t(`history.investment.${k}`)}</option>
               ))}
             </select>
           </label>
 
           <label className="field">
-            <span>Montant (MRU)</span>
+            <span>{t('dialog.common.amount')}</span>
             <input type="number" min={0} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
           </label>
         </div>
 
-        <label className="field">
-          <span>Date</span>
-          <input type="date" value={at} onChange={(e) => setAt(e.target.value)} required />
-        </label>
+        <div className="field-grid">
+          <label className="field">
+            <span>{t('dialog.common.date')}</span>
+            <input type="date" value={at} onChange={(e) => setAt(e.target.value)} required />
+          </label>
 
-        <label className="field">
-          <span>Description</span>
-          <input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="ex. achat camion C-06"
-          />
-        </label>
+          <label className="field">
+            <span>{t('dialog.investment.description')}</span>
+            <input value={description} onChange={(e) => setDescription(e.target.value)} />
+          </label>
+        </div>
 
         {error && <p className="error">{error}</p>}
 
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onCancel} disabled={busy}>
-            Annuler
+            {t('dialog.common.cancel')}
           </button>
           <button type="submit" className="btn primary" disabled={busy}>
-            {busy ? 'Enregistrement…' : "Enregistrer l'investissement"}
+            {busy ? t('dialog.common.saving') : t('dialog.investment.save')}
           </button>
         </div>
       </form>

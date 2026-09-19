@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ClientRecord, DriverRecord } from '../lib/types';
+import type { ClientRecord, DriverRecord, VehicleExpenseEntry, VehicleInvestmentEntry } from '../lib/types';
 import { formatMoney } from '../lib/accounting';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
@@ -33,6 +33,8 @@ interface Operation {
   amount: number | null;
   /** Identifiant brut, pour modifier/supprimer. */
   rawId: string;
+  /** Entrée d'origine, pour pré-remplir le formulaire de modification. */
+  raw: VehicleExpenseEntry | VehicleInvestmentEntry | null;
 }
 
 function toInputDate(d: Date): string {
@@ -49,6 +51,9 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
   const { can } = useAuth();
   const canRecord = can('operator');
   const canDelete = can('admin');
+  const canEditMoney = can('supervisor');
+  const showActions = canDelete || canEditMoney;
+  const [editing, setEditing] = useState<Operation | null>(null);
 
   const [ops, setOps] = useState<Operation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -144,11 +149,17 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       // Un formulaire ouvert gère lui-même Échap : ne pas fermer le journal en dessous.
-      if (e.key === 'Escape' && !adding) onClose();
+      if (e.key === 'Escape' && !adding && !editing) onClose();
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose, adding]);
+  }, [onClose, adding, editing]);
+
+  function onEdited(type: OpType) {
+    setEditing(null);
+    setNotice(t('history.updated', { type: t(`history.type.${type}`) }));
+    load();
+  }
 
   async function remove(o: Operation) {
     const label = t(`history.type.${o.type}`);
@@ -294,7 +305,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
                     <th>{t('history.col.detail')}</th>
                     <th>{t('history.col.by')}</th>
                     <th>{t('history.col.amount')}</th>
-                    {canDelete && <th />}
+                    {showActions && <th />}
                   </tr>
                 </thead>
                 <tbody>
@@ -320,12 +331,19 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
                           </strong>
                         )}
                       </td>
-                      {canDelete && (
+                      {showActions && (
                         <td>
+                          {canEditMoney && (o.type === 'expense' || o.type === 'investment') && (
+                            <button className="btn ghost small" onClick={() => setEditing(o)} style={{ marginInlineEnd: 6 }}>
+                              {t('history.edit')}
+                            </button>
+                          )}
                           {(o.type === 'trip' || o.type === 'expense' || o.type === 'investment') && (
+{canDelete && (o.type === 'trip' || o.type === 'expense' || o.type === 'investment') && (
                             <button className="btn danger small" onClick={() => void remove(o)}>
                               {t('history.delete')}
                             </button>
+                          )}
                           )}
                         </td>
                       )}
@@ -352,6 +370,12 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
       )}
       {adding === 'investment' && (
         <InvestmentDialog vehicleId={vehicleId} onCancel={() => setAdding(null)} onDone={() => onRecorded('investment')} />
+      )}
+      {editing?.type === 'expense' && editing.raw && (
+        <ExpenseDialog vehicleId={vehicleId} initial={editing.raw as VehicleExpenseEntry} onCancel={() => setEditing(null)} onDone={() => onEdited('expense')} />
+      )}
+      {editing?.type === 'investment' && editing.raw && (
+        <InvestmentDialog vehicleId={vehicleId} initial={editing.raw as VehicleInvestmentEntry} onCancel={() => setEditing(null)} onDone={() => onEdited('investment')} />
       )}
     </div>
   );
