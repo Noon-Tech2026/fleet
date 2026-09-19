@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommandAudit, VehicleState } from '../common/types';
@@ -29,8 +29,9 @@ import { CommandLog } from '../auth/entities/command-log.entity';
  * ============================================================================
  */
 
-const SPEED_THRESHOLD = 3; // km/h — tolerance sur le bruit GPS
-const STATIONARY_MS = 10_000; // duree d'immobilite requise, contact mis
+const SPEED_THRESHOLD = 9; // km/h — decision client 19/09/2026 (la vitesse GPS saute de 9 a 0 ; 3 km/h etait juge trop strict)
+const STATIONARY_MS = 10_000; // duree d'immobilite requise
+const ACK_TIMEOUT_MS = 15_000; // delai max pour que le boitier confirme DOUT1
 
 export interface Actor {
   id: string | null;
@@ -48,6 +49,11 @@ export class ImmobilizerService {
   private readonly stationarySince = new Map<string, number>();
   /** Verification planifiee par vehicule, pour ne pas attendre la trame GPS suivante. */
   private readonly timers = new Map<string, NodeJS.Timeout>();
+  /** Commande envoyee au boitier, pas encore confirmee par une trame out1. */
+  private readonly inFlight = new Map<
+    string,
+    { expectOutput: boolean; previousStarter: VehicleState['starter']; timer: NodeJS.Timeout }
+  >();
 
   constructor(
     @Inject(TELEMETRY_SOURCE) private readonly source: TelemetrySource,
@@ -95,6 +101,7 @@ export class ImmobilizerService {
   }
 
   async requestBlock(vehicle: VehicleState, actor: Actor, reason: string): Promise<CommandAudit> {
+    this.assertNotLocked(vehicle);
     this.trackMotion(vehicle);
     if (this.isSafeToBlock(vehicle) === false) {
       this.pending.set(vehicle.id, { actor, reason });
@@ -109,8 +116,10 @@ export class ImmobilizerService {
   }
 
   /** Appele a chaque position : execute une demande en attente des que possible. */
-  async reconcile(vehicle: VehicleState): Promise<void> {
+  async reconcile(vehicle: VehicleState, outputActive?: boolean): Promise<void> {
     this.trackMotion(vehicle);
+    if (outputActive !== undefined) this.acknowledge(vehicle, outputActive);
+    if (this.inFlight.has(vehicle.id)) return; // on attend la confirmation avant toute autre action
     const waiting = this.pending.get(vehicle.id);
     if (waiting === undefined) return;
     if (this.isSafeToBlock(vehicle) === false) {
@@ -124,12 +133,65 @@ export class ImmobilizerService {
   }
 
   async release(vehicle: VehicleState, actor: Actor, reason: string): Promise<CommandAudit> {
+    this.assertNotLocked(vehicle);
     this.pending.delete(vehicle.id);
     this.cancelCheck(vehicle.id);
-    await this.source.setDigitalOutput(vehicle.id, 1, false);
+    this.lock(vehicle, actor, 'release', false);
+    try {
+      await this.source.setDigitalOutput(vehicle.id, 1, false);
+    } catch (e) {
+      this.unlock(vehicle, 'echec envoi');
+      throw e;
+    }
     vehicle.starter = 'allowed';
     this.alerts.raise(vehicle.id, 'info', 'starter_released', `Demarrage reautorise par ${actor.email}`);
     return this.record(vehicle, 'release_starter', actor, reason, true);
+  }
+
+  // ---- Verrou de commande -------------------------------------------------
+
+  private assertNotLocked(vehicle: VehicleState): void {
+    if (vehicle.commandLock) {
+      throw new ConflictException(
+        `Commande deja en cours pour ${vehicle.id} (par ${vehicle.commandLock.by}) — attendez la confirmation du boitier`,
+      );
+    }
+  }
+
+  private lock(vehicle: VehicleState, actor: Actor, action: 'block' | 'release', expectOutput: boolean): void {
+    const timer = setTimeout(() => {
+      const f = this.inFlight.get(vehicle.id);
+      if (f === undefined) return;
+      this.log.warn(`${vehicle.id} — pas de confirmation du boitier apres ${ACK_TIMEOUT_MS / 1000} s`);
+      vehicle.starter = f.previousStarter;
+      this.unlock(vehicle, 'timeout');
+    }, ACK_TIMEOUT_MS);
+    this.inFlight.set(vehicle.id, { expectOutput, previousStarter: vehicle.starter, timer });
+    vehicle.commandLock = { by: actor.email, action, since: new Date().toISOString() };
+    this.events.publish({ type: 'starter_lock', vehicleId: vehicle.id, lock: vehicle.commandLock });
+  }
+
+  private unlock(vehicle: VehicleState, why: string): void {
+    const f = this.inFlight.get(vehicle.id);
+    if (f !== undefined) clearTimeout(f.timer);
+    this.inFlight.delete(vehicle.id);
+    vehicle.commandLock = null;
+    this.log.log(`${vehicle.id} — verrou de commande leve (${why})`);
+    this.events.publish({ type: 'starter_lock', vehicleId: vehicle.id, lock: null });
+  }
+
+  /** Une trame confirme l'etat reel de DOUT1 : leve le verrou si elle correspond. */
+  private acknowledge(vehicle: VehicleState, outputActive: boolean): void {
+    const f = this.inFlight.get(vehicle.id);
+    if (f === undefined) return;
+    if (outputActive === f.expectOutput) {
+      vehicle.starter = outputActive ? 'blocked' : 'allowed';
+      this.unlock(vehicle, 'confirme par le boitier');
+    }
+  }
+
+  isLocked(vehicleId: string): boolean {
+    return this.inFlight.has(vehicleId);
   }
 
   isPending(vehicleId: string): boolean {
@@ -150,7 +212,13 @@ export class ImmobilizerService {
     actor: Actor,
     reason: string,
   ): Promise<CommandAudit> {
-    await this.source.setDigitalOutput(vehicle.id, 1, true);
+    this.lock(vehicle, actor, 'block', true);
+    try {
+      await this.source.setDigitalOutput(vehicle.id, 1, true);
+    } catch (e) {
+      this.unlock(vehicle, 'echec envoi');
+      throw e;
+    }
     vehicle.starter = 'blocked';
     this.alerts.raise(vehicle.id, 'critical', 'starter_blocked', `Demarreur bloque — ${reason}`);
     return this.record(vehicle, 'block_starter', actor, reason, true);

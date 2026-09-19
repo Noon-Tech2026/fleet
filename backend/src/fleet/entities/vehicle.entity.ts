@@ -45,6 +45,10 @@ export class Vehicle {
   @Column({ name: 'initial_odometer', default: 0 })
   initialOdometer: number;
 
+  /** Lecture totalDistance du boitier (km) au moment de la saisie de initial_odometer. */
+  @Column({ name: 'initial_odometer_device_km', default: 0 })
+  initialOdometerDeviceKm: number;
+
   @Column({ default: true })
   active: boolean;
 

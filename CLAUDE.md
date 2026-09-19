@@ -30,7 +30,7 @@ et l'assistance de freinage. Conséquence potentielle : mort.
 
 La seule action autorisée est le blocage via le relais **DOUT1** (sur C-01 il coupe
 effectivement le moteur), et uniquement quand le camion est **immobile** :
-`speed <= 3 km/h` stable depuis ≥ 10 s, quel que soit l'état du contact (lecture ignition non fiable)
+`speed <= 9 km/h` stable depuis ≥ 10 s (seuil 9 : décision client du 19/09/2026), quel que soit l'état du contact (lecture ignition non fiable)
 est coupé (décision client du 18/09/2026). Toute demande émise en mouvement est mise
 en file d'attente et exécutée au prochain arrêt.
 

@@ -98,11 +98,12 @@ export class FleetService implements OnModuleInit {
       // jusqu'a la sortie de station (voir RulesService.checkDeparture).
       departureConfirmed: raw.buttonPressed || (previous?.departureConfirmed ?? false),
       starter: previous?.starter ?? (raw.outputActive ? 'blocked' : 'allowed'),
+      commandLock: previous?.commandLock ?? null,
 
       fuelMain: this.fuel.toLiters(raw.vehicleId, 'main', raw.fuelMainVolts),
       fuelAux: this.fuel.toLiters(raw.vehicleId, 'aux', raw.fuelAuxVolts),
 
-      odometer: raw.odometer,
+      odometer: meta.initialOdometer + Math.max(0, raw.odometer - meta.initialOdometerDeviceKm),
       engineHours: raw.engineHours,
 
       zoneId: this.geofence.locate(raw.lat, raw.lon)?.id ?? null,
@@ -119,7 +120,7 @@ export class FleetService implements OnModuleInit {
     if (raw.buttonPressed) await this.departures.markConfirmed(current.id);
 
     await this.rules.evaluate(previous, current);
-    await this.immobilizer.reconcile(current);
+    await this.immobilizer.reconcile(current, raw.outputActive);
     await this.positions.record(current);
 
     this.events.publish({ type: 'position', vehicle: { ...current } });

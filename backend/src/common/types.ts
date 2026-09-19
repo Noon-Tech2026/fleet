@@ -37,6 +37,8 @@ export interface VehicleState {
   ignition: boolean; // DIN1 — fil d'allumage
   departureConfirmed: boolean; // DIN2 — bouton chauffeur
   starter: StarterState; // DOUT1 — relais démarreur
+  /** Commande démarreur envoyée, en attente de confirmation du boîtier ; null sinon. */
+  commandLock: { by: string; action: 'block' | 'release'; since: string } | null;
 
   fuelMain: number; // litres, réservoir 700 L (AIN1)
   fuelAux: number; // litres, réservoir 300 L (AIN2)
@@ -241,4 +243,5 @@ export type StreamMessage =
   | { type: 'position'; vehicle: VehicleState }
   | { type: 'alert'; alert: Alert }
   | { type: 'command'; audit: CommandAudit }
+  | { type: 'starter_lock'; vehicleId: string; lock: VehicleState['commandLock'] }
   | { type: 'heartbeat'; at: string };
