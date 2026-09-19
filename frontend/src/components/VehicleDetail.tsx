@@ -26,19 +26,43 @@ export function VehicleDetail({ vehicle, simulatorMode }: Props) {
   const canOperate = can('operator');
   const canControlStarter = can('supervisor');
 
+  const [sending, setSending] = useState(false);
+  const locked = sending || vehicle.commandLock !== null;
+
+  function explain(e: unknown): string {
+    const msg = e instanceof Error ? e.message : String(e);
+    return msg.includes('409') || msg.toLowerCase().includes('deja en cours')
+      ? "Une commande est déjà en cours pour ce camion (autre utilisateur). Attendez la confirmation du boîtier."
+      : `Échec de la commande : ${msg}`;
+  }
+
   async function block(reason: string) {
-    const audit = await api.blockStarter(vehicle.id, reason);
-    setDialogOpen(false);
-    setNotice(
-      audit.applied
-        ? 'Démarreur bloqué. Le boîtier a accusé réception.'
-        : "Blocage en file d'attente. Il s'appliquera automatiquement dès l'arrêt du camion, contact coupé.",
-    );
+    setSending(true);
+    try {
+      const audit = await api.blockStarter(vehicle.id, reason);
+      setDialogOpen(false);
+      setNotice(
+        audit.applied
+          ? 'Commande envoyée au boîtier — en attente de confirmation.'
+          : "Blocage en file d'attente. Il s'appliquera automatiquement dès que le camion sera immobile (≤ 9 km/h pendant 10 s).",
+      );
+    } catch (e) {
+      setNotice(explain(e));
+    } finally {
+      setSending(false);
+    }
   }
 
   async function release() {
-    await api.releaseStarter(vehicle.id, 'Réautorisation manuelle');
-    setNotice('Démarrage réautorisé.');
+    setSending(true);
+    try {
+      await api.releaseStarter(vehicle.id, 'Réautorisation manuelle');
+      setNotice('Commande envoyée au boîtier — en attente de confirmation.');
+    } catch (e) {
+      setNotice(explain(e));
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -104,15 +128,18 @@ export function VehicleDetail({ vehicle, simulatorMode }: Props) {
               : 'Démarrage bloqué'}
         </strong>
         <span>Sortie DOUT1 · relais 24 V sur circuit démarreur</span>
+        {vehicle.commandLock && (
+          <p className="hint">Commande en cours par {vehicle.commandLock.by} — en attente de confirmation du boîtier…</p>
+        )}
 
         {!canControlStarter ? (
           <p className="hint">Le contrôle du démarreur est réservé aux superviseurs.</p>
         ) : vehicle.starter === 'allowed' ? (
-          <button className="btn danger full" onClick={() => setDialogOpen(true)}>
+          <button className="btn danger full" disabled={locked} onClick={() => setDialogOpen(true)}>
             Bloquer le démarrage
           </button>
         ) : (
-          <button className="btn mint full" onClick={() => void release()}>
+          <button className="btn mint full" disabled={locked} onClick={() => void release()}>
             Réautoriser le démarrage
           </button>
         )}
