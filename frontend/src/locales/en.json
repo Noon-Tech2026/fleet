@@ -204,6 +204,45 @@
     "imei": "IMEI",
     "position": "Position",
     "battery": "Battery",
-    "lastFrame": "Last frame"
+    "lastFrame": "Last frame",
+    "legendMoving": "Moving",
+    "legendStopped": "Stopped",
+    "legendBlocked": "Start blocked",
+    "capacity": "capacity {{capacity}} L"
+  },
+  "maintenance": {
+    "status": {
+      "unknown": "Never done",
+      "ok": "Up to date",
+      "soon": "Due soon",
+      "overdue": "Overdue"
+    },
+    "kmLeft": "{{n}} km left",
+    "kmOver": "{{n}} km over",
+    "hLeft": "{{n}} h left",
+    "hOver": "{{n}} h over",
+    "dLeft": "{{n}} d left",
+    "dOver": "{{n}} d late",
+    "none": "No reference reading",
+    "unavailable": "Maintenance schedule unavailable.",
+    "loading": "Loading…",
+    "empty": "No maintenance tracked on this truck.",
+    "more": "{{n}} more tracked operation(s)",
+    "due": " · {{n}} due",
+    "seeTab": " — see the Maintenance tab."
+  },
+  "alerts": {
+    "empty": "No events yet. Alerts will appear here as soon as a rule fires.",
+    "forbidden_zone_entered": "Entered forbidden zone — {{detail}}",
+    "forbidden_zone_left": "Left forbidden zone — {{detail}}",
+    "departure_without_confirmation": "Left station without driver confirmation — cab buzzer triggered",
+    "departure_confirmed_late": "Departure confirmed by the driver after reminder",
+    "fuel_drop": "Abnormal fuel drop — {{detail}}",
+    "fuel_low": "Low fuel — {{detail}}",
+    "starter_blocked": "Starter blocked — {{detail}}",
+    "starter_released": "Start allowed again by {{detail}}",
+    "device_offline": "Tracker offline — {{detail}}",
+    "maintenance_due": "Maintenance due soon — {{detail}}",
+    "maintenance_overdue": "Maintenance overdue — {{detail}}"
   }
 }

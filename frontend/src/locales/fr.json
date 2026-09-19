@@ -204,6 +204,34 @@
     "imei": "IMEI",
     "position": "Position",
     "battery": "Batterie",
-    "lastFrame": "Dernière trame"
+    "lastFrame": "Dernière trame",
+    "legendMoving": "En route",
+    "legendStopped": "À l'arrêt",
+    "legendBlocked": "Démarrage bloqué",
+    "capacity": "capacité {{capacity}} L"
+  },
+  "maintenance": {
+    "status": {
+      "unknown": "Jamais effectué",
+      "ok": "À jour",
+      "soon": "À prévoir",
+      "overdue": "Dépassé"
+    },
+    "kmLeft": "{{n}} km restants",
+    "kmOver": "{{n}} km de dépassement",
+    "hLeft": "{{n}} h restantes",
+    "hOver": "{{n}} h de dépassement",
+    "dLeft": "{{n}} j restants",
+    "dOver": "{{n}} j de retard",
+    "none": "Aucun relevé de référence",
+    "unavailable": "Échéances d'entretien indisponibles.",
+    "loading": "Chargement…",
+    "empty": "Aucune échéance suivie sur ce camion.",
+    "more": "{{n}} autre(s) opération(s) suivie(s)",
+    "due": " · {{n}} échéance(s) à traiter",
+    "seeTab": " — voir l'onglet Entretien."
+  },
+  "alerts": {
+    "empty": "Aucun événement. Les alertes apparaîtront ici dès qu'une règle se déclenche."
   }
 }

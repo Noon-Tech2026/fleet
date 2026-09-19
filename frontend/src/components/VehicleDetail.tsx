@@ -74,7 +74,7 @@ export function VehicleDetail({ vehicle, simulatorMode }: Props) {
         <div>
           <h2>{vehicle.id}</h2>
           <p>
-            {vehicle.plate} · {vehicle.driver || t('supervision.unassigned')}
+            <bdi dir="ltr">{vehicle.plate}</bdi> · {vehicle.driver || t('supervision.unassigned')}
           </p>
         </div>
         <span className={`badge ${status.tone}`}>{t(`status.${status.key}`)}</span>

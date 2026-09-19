@@ -62,7 +62,7 @@ export function VehicleList({ vehicles, pending = [], selectedId, onSelect }: Pr
                   <span className="vid">{v.id}</span>
                   <span className={`badge ${status.tone}`}>{t(`status.${status.key}`)}</span>
                 </div>
-                <div className="plate">{v.plate}</div>
+                <div className="plate" dir="ltr">{v.plate}</div>
                 <div className="row muted">
                   <span className="metric">
                     {v.speed} <u>km/h</u>
@@ -86,7 +86,7 @@ export function VehicleList({ vehicles, pending = [], selectedId, onSelect }: Pr
                 <span className="vid">{d.id}</span>
                 <span className="badge idle">{t('supervision.awaitingPosition')}</span>
               </div>
-              <div className="plate">{d.plate}</div>
+              <div className="plate" dir="ltr">{d.plate}</div>
               <div className="row muted">
                 <span className="metric">{t('supervision.awaitingHint')}</span>
               </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { MaintenancePlanState } from '../lib/types';
-import { MAINTENANCE_STATUS_LABEL, MAINTENANCE_STATUS_TONE, deadlineText } from '../lib/maintenance';
+import { MAINTENANCE_STATUS_TONE, deadlineText } from '../lib/maintenance';
 import { api } from '../api/client';
 
 const SHOWN = 4;
@@ -13,8 +14,10 @@ const SHOWN = 4;
  * échéance d'entretien bouge de quelques kilomètres par heure.
  */
 export function MaintenancePanel({ vehicleId }: { vehicleId: string }) {
+  const { t, i18n } = useTranslation();
   const [plans, setPlans] = useState<MaintenancePlanState[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const tr = (key: string, vars?: Record<string, unknown>) => t(`maintenance.${key}`, vars);
 
   useEffect(() => {
     let cancelled = false;
@@ -24,10 +27,10 @@ export function MaintenancePanel({ vehicleId }: { vehicleId: string }) {
     api
       .vehicleMaintenance(vehicleId)
       .then((list) => {
-        if (!cancelled) setPlans(list);
+        if (cancelled === false) setPlans(list);
       })
       .catch(() => {
-        if (!cancelled) setFailed(true);
+        if (cancelled === false) setFailed(true);
       });
 
     return () => {
@@ -35,9 +38,9 @@ export function MaintenancePanel({ vehicleId }: { vehicleId: string }) {
     };
   }, [vehicleId]);
 
-  if (failed) return <p className="hint">Échéances d'entretien indisponibles.</p>;
-  if (!plans) return <p className="hint">Chargement…</p>;
-  if (plans.length === 0) return <p className="hint">Aucune échéance suivie sur ce camion.</p>;
+  if (failed) return <p className="hint">{t('maintenance.unavailable')}</p>;
+  if (plans === null) return <p className="hint">{t('maintenance.loading')}</p>;
+  if (plans.length === 0) return <p className="hint">{t('maintenance.empty')}</p>;
 
   const due = plans.filter((p) => p.status === 'overdue' || p.status === 'soon').length;
 
@@ -49,17 +52,18 @@ export function MaintenancePanel({ vehicleId }: { vehicleId: string }) {
           <div key={plan.id} className={`maint-row ${tone}`}>
             <div>
               <strong>{plan.label}</strong>
-              <span>{deadlineText(plan)}</span>
+              <span>{deadlineText(plan, tr, i18n.language)}</span>
             </div>
-            <span className={`badge ${tone}`}>{MAINTENANCE_STATUS_LABEL[plan.status]}</span>
+            <span className={`badge ${tone}`}>{t(`maintenance.status.${plan.status}`)}</span>
           </div>
         );
       })}
 
       {plans.length > SHOWN && (
         <p className="hint">
-          {plans.length - SHOWN} autre(s) opération(s) suivie(s)
-          {due > 0 ? ` · ${due} échéance(s) à traiter` : ''} — voir l'onglet Entretien.
+          {t('maintenance.more', { n: plans.length - SHOWN })}
+          {due > 0 ? t('maintenance.due', { n: due }) : ''}
+          {t('maintenance.seeTab')}
         </p>
       )}
     </div>

@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 interface Props {
   liters: number;
   capacity: number;
@@ -9,6 +11,7 @@ interface Props {
  * c'est la lecture séparée qui rend un siphonnage visible.
  */
 export function FuelGauge({ liters, capacity, label }: Props) {
+  const { t } = useTranslation();
   const ratio = Math.max(0, Math.min(1, liters / capacity));
   const tone = ratio < 0.15 ? 'var(--red)' : ratio < 0.3 ? 'var(--amber)' : 'var(--mint)';
 
@@ -25,7 +28,7 @@ export function FuelGauge({ liters, capacity, label }: Props) {
         {Math.round(liters)} <span>L</span>
       </div>
       <div className="fuel-label">{label}</div>
-      <div className="fuel-cap">capacité {capacity} L</div>
+      <div className="fuel-cap">{t('supervision.capacity', { capacity })}</div>
     </div>
   );
 }

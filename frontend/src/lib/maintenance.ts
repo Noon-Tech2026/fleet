@@ -1,5 +1,19 @@
 import type { MaintenancePlanState, MaintenanceStatus } from './types';
 
+/** Traducteur optionnel : (cle sous `maintenance.`, variables) → texte. Sans lui, francais. */
+export type Tr = (key: string, vars?: Record<string, unknown>) => string;
+
+const FR_TEXT: Record<string, string> = {
+  kmLeft: '{{n}} km restants',
+  kmOver: '{{n}} km de dépassement',
+  hLeft: '{{n}} h restantes',
+  hOver: '{{n}} h de dépassement',
+  dLeft: '{{n}} j restants',
+  dOver: '{{n}} j de retard',
+  none: 'Aucun relevé de référence',
+};
+const frTr: Tr = (key, vars) => (FR_TEXT[key] ?? key).replace('{{n}}', String(vars?.n ?? ''));
+
 export const MAINTENANCE_STATUS_LABEL: Record<MaintenanceStatus, string> = {
   unknown: 'Jamais effectué',
   ok: 'À jour',
@@ -24,14 +38,14 @@ export const MAINTENANCE_STATUS_TONE: Record<MaintenanceStatus, 'ok' | 'warn' | 
  * fil d'événements, l'autre dans un tableau, et les deux évolueront
  * séparément.
  */
-export function deadlineText(state: MaintenancePlanState): string {
-  const axes = deadlineAxes(state);
-  if (axes.length === 0) return 'Aucun relevé de référence';
+export function deadlineText(state: MaintenancePlanState, tr: Tr = frTr, locale = 'fr-FR'): string {
+  const axes = deadlineAxes(state, tr, locale);
+  if (axes.length === 0) return tr('none');
   return axes[0].text;
 }
 
 /** Tous les axes suivis, du plus urgent au plus lointain. */
-export function deadlineAxes(state: MaintenancePlanState): { ratio: number; text: string }[] {
+export function deadlineAxes(state: MaintenancePlanState, tr: Tr = frTr, locale = 'fr-FR'): { ratio: number; text: string }[] {
   const axes: { ratio: number; text: string }[] = [];
 
   if (state.remainingKm !== null && state.intervalKm) {
@@ -39,8 +53,8 @@ export function deadlineAxes(state: MaintenancePlanState): { ratio: number; text
       ratio: state.remainingKm / state.intervalKm,
       text:
         state.remainingKm >= 0
-          ? `${format(state.remainingKm)} km restants`
-          : `${format(-state.remainingKm)} km de dépassement`,
+          ? tr('kmLeft', { n: format(state.remainingKm, locale) })
+          : tr('kmOver', { n: format(-state.remainingKm, locale) }),
     });
   }
 
@@ -49,8 +63,8 @@ export function deadlineAxes(state: MaintenancePlanState): { ratio: number; text
       ratio: state.remainingHours / state.intervalHours,
       text:
         state.remainingHours >= 0
-          ? `${format(state.remainingHours)} h restantes`
-          : `${format(-state.remainingHours)} h de dépassement`,
+          ? tr('hLeft', { n: format(state.remainingHours, locale) })
+          : tr('hOver', { n: format(-state.remainingHours, locale) }),
     });
   }
 
@@ -59,8 +73,8 @@ export function deadlineAxes(state: MaintenancePlanState): { ratio: number; text
       ratio: state.remainingDays / state.intervalDays,
       text:
         state.remainingDays >= 0
-          ? `${state.remainingDays} j restants`
-          : `${-state.remainingDays} j de retard`,
+          ? tr('dLeft', { n: state.remainingDays })
+          : tr('dOver', { n: -state.remainingDays }),
     });
   }
 
@@ -89,6 +103,6 @@ export function lastServiceText(state: MaintenancePlanState): string {
   return parts.join(' · ');
 }
 
-function format(value: number): string {
-  return Math.round(value).toLocaleString('fr-FR');
+function format(value: number, locale = 'fr-FR'): string {
+  return Math.round(value).toLocaleString(locale);
 }

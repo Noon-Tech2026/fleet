@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState } from 'react';
 import maplibregl, { Map as MapLibreMap, Marker, StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -32,6 +33,7 @@ interface Props {
 }
 
 export function FleetMap({ vehicles, selectedId, onSelect }: Props) {
+  const { t } = useTranslation();
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
   // Etat et non ref : les positions arrivent souvent avant la fin du
@@ -189,13 +191,13 @@ export function FleetMap({ vehicles, selectedId, onSelect }: Props) {
       <div ref={container} className="map" />
       <div className="map-legend">
         <span>
-          <i className="swatch amber" /> En route
+          <i className="swatch amber" /> {t('supervision.legendMoving')}
         </span>
         <span>
-          <i className="swatch dim" /> À l'arrêt
+          <i className="swatch dim" /> {t('supervision.legendStopped')}
         </span>
         <span>
-          <i className="swatch red" /> Démarrage bloqué
+          <i className="swatch red" /> {t('supervision.legendBlocked')}
         </span>
         {!MAP_STYLE && <em>Fond hors ligne · VITE_MAP_STYLE non défini</em>}
       </div>

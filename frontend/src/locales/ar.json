@@ -204,6 +204,45 @@
     "imei": "IMEI",
     "position": "الموقع",
     "battery": "البطارية",
-    "lastFrame": "آخر إطار"
+    "lastFrame": "آخر إطار",
+    "legendMoving": "في الطريق",
+    "legendStopped": "متوقفة",
+    "legendBlocked": "التشغيل محظور",
+    "capacity": "السعة {{capacity}} لتر"
+  },
+  "maintenance": {
+    "status": {
+      "unknown": "لم تُنفَّذ أبداً",
+      "ok": "محدَّثة",
+      "soon": "قريباً",
+      "overdue": "متأخرة"
+    },
+    "kmLeft": "متبقٍ {{n}} كم",
+    "kmOver": "تجاوز بـ {{n}} كم",
+    "hLeft": "متبقٍ {{n}} ساعة",
+    "hOver": "تجاوز بـ {{n}} ساعة",
+    "dLeft": "متبقٍ {{n}} يوم",
+    "dOver": "تأخير {{n}} يوم",
+    "none": "لا توجد قراءة مرجعية",
+    "unavailable": "مواعيد الصيانة غير متاحة.",
+    "loading": "جارٍ التحميل…",
+    "empty": "لا صيانة متابَعة على هذه الشاحنة.",
+    "more": "{{n}} عملية أخرى متابَعة",
+    "due": " · {{n}} موعد يستحق المعالجة",
+    "seeTab": " — انظر تبويب الصيانة."
+  },
+  "alerts": {
+    "empty": "لا أحداث بعد. ستظهر التنبيهات هنا عند تفعّل أي قاعدة.",
+    "forbidden_zone_entered": "دخول منطقة محظورة — {{detail}}",
+    "forbidden_zone_left": "الخروج من منطقة محظورة — {{detail}}",
+    "departure_without_confirmation": "خروج من المحطة بلا تأكيد السائق — تم تشغيل جرس المقصورة",
+    "departure_confirmed_late": "أكد السائق الانطلاق بعد التذكير",
+    "fuel_drop": "انخفاض غير طبيعي في الوقود — {{detail}}",
+    "fuel_low": "مستوى وقود منخفض — {{detail}}",
+    "starter_blocked": "تم حظر المشغّل — {{detail}}",
+    "starter_released": "أُعيد السماح بالتشغيل من {{detail}}",
+    "device_offline": "الجهاز غير متصل — {{detail}}",
+    "maintenance_due": "صيانة مستحقة قريباً — {{detail}}",
+    "maintenance_overdue": "صيانة متأخرة — {{detail}}"
   }
 }

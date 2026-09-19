@@ -18,6 +18,9 @@ type OpType = 'trip' | 'expense' | 'investment' | 'maintenance' | 'command';
 const ALL_TYPES: OpType[] = ['trip', 'expense', 'investment', 'maintenance', 'command'];
 type Adding = 'trip' | 'expense' | 'investment' | null;
 
+/** Boutons du bandeau vert : fond clair pour rester lisibles. */
+const HEAD_BTN: React.CSSProperties = { background: '#fff', color: '#12704F', border: '1px solid #fff', fontWeight: 600 };
+
 /** Ligne unifiée du journal : toute opération rattachée au camion. */
 interface Operation {
   id: string;
@@ -204,9 +207,9 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {canRecord && (
               <>
-                <button className="btn primary small" onClick={() => setAdding('trip')}>{t('history.add.trip')}</button>
-                <button className="btn ghost small" onClick={() => setAdding('expense')}>{t('history.add.expense')}</button>
-                <button className="btn ghost small" onClick={() => setAdding('investment')}>{t('history.add.investment')}</button>
+                <button className="btn small" style={HEAD_BTN} onClick={() => setAdding('trip')}>{t('history.add.trip')}</button>
+                <button className="btn small" style={HEAD_BTN} onClick={() => setAdding('expense')}>{t('history.add.expense')}</button>
+                <button className="btn small" style={HEAD_BTN} onClick={() => setAdding('investment')}>{t('history.add.investment')}</button>
               </>
             )}
             <button className="modal-close" onClick={onClose} aria-label={t('history.close')}>
