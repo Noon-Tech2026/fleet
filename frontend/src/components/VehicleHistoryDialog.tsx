@@ -31,6 +31,8 @@ interface Operation {
   by: string;
   /** Signé : recette positive, coût négatif, null si sans montant. */
   amount: number | null;
+  /** Identifiant brut, pour modifier/supprimer. */
+  rawId: string;
 }
 
 function toInputDate(d: Date): string {
@@ -46,6 +48,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
   const { t, i18n } = useTranslation();
   const { can } = useAuth();
   const canRecord = can('operator');
+  const canDelete = can('admin');
 
   const [ops, setOps] = useState<Operation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +72,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
         const rows: Operation[] = [
           ...trips.map((x) => ({
             id: `t-${x.id}`,
+            rawId: x.id,
             at: x.startedAt,
             type: 'trip' as const,
             label: x.clientName,
@@ -78,6 +82,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
           })),
           ...expenses.map((x) => ({
             id: `e-${x.id}`,
+            rawId: x.id,
             at: x.at,
             type: 'expense' as const,
             label: t(`history.expense.${x.category}`),
@@ -87,6 +92,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
           })),
           ...investments.map((x) => ({
             id: `i-${x.id}`,
+            rawId: x.id,
             at: x.at,
             type: 'investment' as const,
             label: t(`history.investment.${x.kind}`),
@@ -96,6 +102,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
           })),
           ...maintenance.map((x) => ({
             id: `m-${x.id}`,
+            rawId: x.id,
             at: x.at,
             type: 'maintenance' as const,
             label: x.label,
@@ -107,6 +114,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
           })),
           ...commands.map((x) => ({
             id: `c-${x.id}`,
+            rawId: x.id,
             at: x.at,
             type: 'command' as const,
             label: t(`history.command.${x.action}`) + (x.applied ? '' : ` ${t('history.command.queued')}`),
@@ -141,6 +149,21 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose, adding]);
+
+  async function remove(o: Operation) {
+    const label = t(`history.type.${o.type}`);
+    if (!window.confirm(t('history.confirmDelete', { type: label }))) return;
+    try {
+      if (o.type === 'trip') await api.deleteTrip(o.rawId);
+      else if (o.type === 'expense') await api.deleteExpense(o.rawId);
+      else if (o.type === 'investment') await api.deleteInvestment(o.rawId);
+      else return;
+      setNotice(t('history.deleted', { type: label }));
+      load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('history.loadError'));
+    }
+  }
 
   function onRecorded(type: Adding) {
     setAdding(null);
@@ -271,6 +294,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
                     <th>{t('history.col.detail')}</th>
                     <th>{t('history.col.by')}</th>
                     <th>{t('history.col.amount')}</th>
+                    {canDelete && <th />}
                   </tr>
                 </thead>
                 <tbody>
@@ -296,6 +320,15 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
                           </strong>
                         )}
                       </td>
+                      {canDelete && (
+                        <td>
+                          {(o.type === 'trip' || o.type === 'expense' || o.type === 'investment') && (
+                            <button className="btn danger small" onClick={() => void remove(o)}>
+                              {t('history.delete')}
+                            </button>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

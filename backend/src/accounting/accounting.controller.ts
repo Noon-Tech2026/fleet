@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import {
   ArrayMinSize,
   IsArray,
@@ -36,6 +36,21 @@ const EXPENSE_CATEGORIES: VehicleExpenseCategory[] = [
 ];
 const INVESTMENT_KINDS: VehicleInvestmentKind[] = ['purchase', 'equipment', 'overhaul', 'other'];
 const CONTAINER_SIZES: ContainerSize[] = ['20', '40'];
+
+class UpdateExpenseDto {
+  @IsOptional() @IsIn(EXPENSE_CATEGORIES) category?: VehicleExpenseCategory;
+  @IsOptional() @IsNumber() @Min(0) amount?: number;
+  @IsOptional() @IsString() at?: string;
+  @IsOptional() @IsString() @MaxLength(120) reference?: string;
+  @IsOptional() @IsString() @MaxLength(2000) notes?: string;
+}
+
+class UpdateInvestmentDto {
+  @IsOptional() @IsIn(INVESTMENT_KINDS) kind?: VehicleInvestmentKind;
+  @IsOptional() @IsNumber() @Min(0) amount?: number;
+  @IsOptional() @IsString() at?: string;
+  @IsOptional() @IsString() @MaxLength(2000) description?: string;
+}
 
 class ClientDto {
   @IsString() @MinLength(2) @MaxLength(160) name: string;
@@ -275,5 +290,54 @@ export class AccountingController {
       },
       user.email,
     );
+  }
+  /* --- modification / suppression ------------------------------------------ */
+
+  @RequireRole(Role.Supervisor)
+  @Patch('accounting/expenses/:id')
+  updateExpense(@Param('id') id: string, @Body() dto: UpdateExpenseDto) {
+    return this.accounting.updateExpense(id, {
+      category: dto.category,
+      amount: dto.amount,
+      at: dto.at !== undefined ? new Date(dto.at) : undefined,
+      reference: dto.reference,
+      notes: dto.notes,
+    });
+  }
+
+  @RequireRole(Role.Supervisor)
+  @Patch('accounting/investments/:id')
+  updateInvestment(@Param('id') id: string, @Body() dto: UpdateInvestmentDto) {
+    return this.accounting.updateInvestment(id, {
+      kind: dto.kind,
+      amount: dto.amount,
+      at: dto.at !== undefined ? new Date(dto.at) : undefined,
+      description: dto.description,
+    });
+  }
+
+  /**
+   * Suppression : admin uniquement. Une écriture comptable effacée ne laisse
+   * aucune trace — c'est volontairement le geste le plus restreint.
+   */
+  @RequireRole(Role.Admin)
+  @Delete('accounting/trips/:id')
+  async deleteTrip(@Param('id') id: string) {
+    await this.accounting.deleteTrip(id);
+    return { ok: true };
+  }
+
+  @RequireRole(Role.Admin)
+  @Delete('accounting/expenses/:id')
+  async deleteExpense(@Param('id') id: string) {
+    await this.accounting.deleteExpense(id);
+    return { ok: true };
+  }
+
+  @RequireRole(Role.Admin)
+  @Delete('accounting/investments/:id')
+  async deleteInvestment(@Param('id') id: string) {
+    await this.accounting.deleteInvestment(id);
+    return { ok: true };
   }
 }

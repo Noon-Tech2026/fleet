@@ -13,9 +13,10 @@ interface Props {
   pending?: VehicleDirectoryEntry[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onTrack?: (id: string) => void;
 }
 
-export function VehicleList({ vehicles, pending = [], selectedId, onSelect }: Props) {
+export function VehicleList({ vehicles, pending = [], selectedId, onSelect, onTrack }: Props) {
   const { t } = useTranslation();
   if (vehicles.length === 0 && pending.length === 0) {
     return <p className="empty">{t('supervision.empty')}</p>;
@@ -75,6 +76,11 @@ export function VehicleList({ vehicles, pending = [], selectedId, onSelect }: Pr
                   <i style={{ width: `${ratio * 100}%` }} />
                 </div>
               </button>
+              {onTrack && (
+                <div className="card-actions">
+                  <button className="btn ghost small" onClick={() => onTrack(v.id)}>{t('track.button')}</button>
+                </div>
+              )}
             </li>
           );
         })}

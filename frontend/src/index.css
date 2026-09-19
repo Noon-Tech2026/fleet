@@ -2626,3 +2626,21 @@ h3 {
 .nav-lang { position: static; display: flex; gap: 4px; }
 .nav-lang .lang-btn { background: var(--on-navy-wash); color: var(--on-navy-dim); border: 1px solid var(--on-navy-wash-strong); border-radius: 7px; padding: 4px 9px; font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
 .nav-lang .lang-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+
+/* --- historique des mouvements ------------------------------------------ */
+.modal.wide { max-width: 1100px; width: min(96vw, 1100px); }
+.track-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 12px 0; }
+.track-controls label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted, #6b7280); }
+.track-controls input { font: inherit; padding: 8px 10px; border: 1px solid var(--line, #d9d9d9); border-radius: 8px; }
+.track-controls .presets { display: flex; gap: 6px; margin-inline-start: auto; }
+.track-map { height: 420px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line, #e5e5e5); }
+.track-stats { margin-top: 12px; grid-template-columns: repeat(3, 1fr); }
+.track-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+.track-table th, .track-table td { padding: 6px 8px; border-bottom: 1px solid var(--line, #eee); text-align: start; }
+.track-scroll { max-height: 260px; overflow: auto; }
+.track-marker { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+.track-marker.start { background: #12704F; }
+.track-marker.end { background: #c0392b; }
+.track-marker.stop { background: #d99a1c; width: 11px; height: 11px; }
+.vehicle-card + .card-actions { display: flex; justify-content: flex-end; margin-top: -6px; margin-bottom: 4px; }

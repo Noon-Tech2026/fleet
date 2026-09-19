@@ -253,3 +253,20 @@ export interface AuthUser {
   active: boolean;
   lastLoginAt: string | null;
 }
+
+/** Position historisee (table positions) telle que renvoyee par /history. */
+export interface TrackPoint {
+  id: string;
+  vehicleId: string;
+  lat: number;
+  lon: number;
+  speed: number;
+  course: number;
+  ignition: boolean;
+  fuelMain: number;
+  fuelAux: number;
+  odometer: number;
+  engineHours: number;
+  zoneId: string | null;
+  recordedAt: string;
+}

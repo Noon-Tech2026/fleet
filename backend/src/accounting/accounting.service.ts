@@ -271,6 +271,64 @@ export class AccountingService {
     return toInvestmentEntry(saved);
   }
 
+  async updateExpense(
+    id: string,
+    patch: {
+      category?: VehicleExpenseCategory;
+      amount?: number;
+      at?: Date;
+      reference?: string | null;
+      notes?: string | null;
+    },
+  ): Promise<VehicleExpenseEntry> {
+    const row = await this.expensesRepo.findOne({ where: { id } });
+    if (!row) throw new NotFoundException('Charge inconnue');
+    if (patch.category !== undefined) row.category = patch.category;
+    if (patch.at !== undefined) row.at = patch.at;
+    if (patch.reference !== undefined) row.reference = patch.reference;
+    if (patch.notes !== undefined) row.notes = patch.notes;
+    if (patch.amount !== undefined) {
+      if (patch.amount < 0) throw new BadRequestException('Le montant ne peut pas être négatif');
+      row.amount = patch.amount.toFixed(2);
+    }
+    return toExpenseEntry(await this.expensesRepo.save(row));
+  }
+
+  /** Suppression définitive — réservée à l'admin côté contrôleur. */
+  async deleteExpense(id: string): Promise<void> {
+    const result = await this.expensesRepo.delete({ id });
+    if (!result.affected) throw new NotFoundException('Charge inconnue');
+  }
+
+  async updateInvestment(
+    id: string,
+    patch: { kind?: VehicleInvestmentKind; amount?: number; at?: Date; description?: string | null },
+  ): Promise<VehicleInvestmentEntry> {
+    const row = await this.investmentsRepo.findOne({ where: { id } });
+    if (!row) throw new NotFoundException('Investissement inconnu');
+    if (patch.kind !== undefined) row.kind = patch.kind;
+    if (patch.at !== undefined) row.at = patch.at;
+    if (patch.description !== undefined) row.description = patch.description;
+    if (patch.amount !== undefined) {
+      if (patch.amount < 0) throw new BadRequestException('Le montant ne peut pas être négatif');
+      row.amount = patch.amount.toFixed(2);
+    }
+    return toInvestmentEntry(await this.investmentsRepo.save(row));
+  }
+
+  async deleteInvestment(id: string): Promise<void> {
+    const result = await this.investmentsRepo.delete({ id });
+    if (!result.affected) throw new NotFoundException('Investissement inconnu');
+  }
+
+  /** Les conteneurs partent avec le voyage : ils n'ont pas de sens seuls. */
+  async deleteTrip(id: string): Promise<void> {
+    const trip = await this.tripsRepo.findOne({ where: { id } });
+    if (!trip) throw new NotFoundException('Voyage inconnu');
+    await this.containersRepo.delete({ tripId: id });
+    await this.tripsRepo.delete({ id });
+  }
+
   /* --- synthèse ------------------------------------------------------------ */
 
   async summaryFor(vehicleId: string): Promise<VehicleAccountingSummary> {

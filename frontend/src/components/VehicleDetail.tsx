@@ -11,9 +11,10 @@ import { useAuth } from '../auth/AuthContext';
 interface Props {
   vehicle: VehicleState;
   simulatorMode: boolean;
+  onTrack?: () => void;
 }
 
-export function VehicleDetail({ vehicle, simulatorMode }: Props) {
+export function VehicleDetail({ vehicle, simulatorMode, onTrack }: Props) {
   const { t, i18n } = useTranslation();
   const { can } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -77,7 +78,12 @@ export function VehicleDetail({ vehicle, simulatorMode }: Props) {
             <bdi dir="ltr">{vehicle.plate}</bdi> · {vehicle.driver || t('supervision.unassigned')}
           </p>
         </div>
-        <span className={`badge ${status.tone}`}>{t(`status.${status.key}`)}</span>
+        <div className="head-actions">
+          <span className={`badge ${status.tone}`}>{t(`status.${status.key}`)}</span>
+          {onTrack && (
+            <button className="btn ghost small" onClick={onTrack}>{t('track.button')}</button>
+          )}
+        </div>
       </header>
 
       <dl className="stats">

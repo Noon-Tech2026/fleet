@@ -122,7 +122,8 @@
       "type": "النوع",
       "detail": "التفاصيل",
       "by": "بواسطة",
-      "amount": "المبلغ"
+      "amount": "المبلغ",
+      "actions": ""
     },
     "totals": {
       "revenue": "الإيرادات",
@@ -162,7 +163,10 @@
       "expense": "+ مصروف",
       "investment": "+ استثمار"
     },
-    "recorded": "تم تسجيل: {{type}}."
+    "recorded": "تم تسجيل: {{type}}.",
+    "delete": "حذف",
+    "confirmDelete": "حذف {{type}}؟ لا يمكن التراجع.",
+    "deleted": "تم حذف: {{type}}."
   },
   "supervision": {
     "empty": "لم يرسل أي جهاز موقعاً بعد.",
@@ -244,5 +248,33 @@
     "device_offline": "الجهاز غير متصل — {{detail}}",
     "maintenance_due": "صيانة مستحقة قريباً — {{detail}}",
     "maintenance_overdue": "صيانة متأخرة — {{detail}}"
+  },
+  "track": {
+    "button": "مسار الحركة",
+    "title": "سجل الحركة",
+    "from": "من",
+    "to": "إلى",
+    "load": "عرض",
+    "loading": "جارٍ التحميل…",
+    "empty": "لا مواقع مسجّلة في هذه الفترة.",
+    "error": "السجل غير متاح.",
+    "tooMany": "الفترة طويلة جداً: تُعرض أول {{n}} نقطة فقط.",
+    "distance": "المسافة",
+    "maxSpeed": "السرعة القصوى",
+    "moving": "في الحركة",
+    "stopped": "متوقفة",
+    "points": "نقطة",
+    "stops": "التوقفات (≥ 5 دقائق)",
+    "start": "البداية",
+    "end": "النهاية",
+    "time": "الوقت",
+    "speed": "السرعة",
+    "position": "الموقع",
+    "showPoints": "عرض النقاط",
+    "hidePoints": "إخفاء النقاط",
+    "close": "إغلاق",
+    "last24h": "24 ساعة",
+    "last7d": "7 أيام",
+    "today": "اليوم"
   }
 }

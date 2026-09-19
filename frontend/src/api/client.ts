@@ -15,8 +15,7 @@ import type {
   VehicleExpenseEntry,
   VehicleInvestmentEntry,
   VehicleInvestmentKind,
-  VehicleState,
-} from '../lib/types';
+  VehicleState, TrackPoint } from '../lib/types';
 
 /**
  * Repertoire d'un vehicule (fiche administrative), independant de sa
@@ -223,6 +222,21 @@ export const api = {
     containers: { containerNumber?: string; size: ContainerSize; loaded?: boolean; notes?: string }[];
   }) => request<TripEntry>('/api/accounting/trips', { method: 'POST', body: JSON.stringify(input) }),
 
+  updateTrip: (id: string, patch: { endedAt?: string; origin?: string; destination?: string; amount?: number; notes?: string }) =>
+    request<TripEntry>(`/api/accounting/trips/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+
+  deleteTrip: (id: string) => request<{ ok: true }>(`/api/accounting/trips/${id}`, { method: 'DELETE' }),
+
+  updateExpense: (id: string, patch: { category?: VehicleExpenseCategory; amount?: number; at?: string; reference?: string; notes?: string }) =>
+    request<VehicleExpenseEntry>(`/api/accounting/expenses/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+
+  deleteExpense: (id: string) => request<{ ok: true }>(`/api/accounting/expenses/${id}`, { method: 'DELETE' }),
+
+  updateInvestment: (id: string, patch: { kind?: VehicleInvestmentKind; amount?: number; at?: string; description?: string }) =>
+    request<VehicleInvestmentEntry>(`/api/accounting/investments/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+
+  deleteInvestment: (id: string) => request<{ ok: true }>(`/api/accounting/investments/${id}`, { method: 'DELETE' }),
+
   vehicleExpenses: (id: string) => request<VehicleExpenseEntry[]>(`/api/vehicles/${id}/expenses`),
 
   addExpense: (
@@ -247,6 +261,11 @@ export const api = {
 
   /* --- repertoire des vehicules --- */
   fleetVehicles: () => request<VehicleDirectoryEntry[]>('/api/fleet/vehicles'),
+  /** Positions historisees entre deux instants (ISO). */
+  vehicleTrack: (id: string, from: string, to: string) =>
+    request<TrackPoint[]>(
+      `/api/vehicles/${encodeURIComponent(id)}/history?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    ),
 
   /** Reserve au role admin cote serveur. */
   createVehicle: (input: {

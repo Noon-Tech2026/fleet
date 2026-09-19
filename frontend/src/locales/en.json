@@ -122,7 +122,8 @@
       "type": "Type",
       "detail": "Detail",
       "by": "By",
-      "amount": "Amount"
+      "amount": "Amount",
+      "actions": ""
     },
     "totals": {
       "revenue": "Revenue",
@@ -162,7 +163,10 @@
       "expense": "+ Expense",
       "investment": "+ Investment"
     },
-    "recorded": "{{type}} recorded."
+    "recorded": "{{type}} recorded.",
+    "delete": "Delete",
+    "confirmDelete": "Delete this {{type}}? This cannot be undone.",
+    "deleted": "{{type}} deleted."
   },
   "supervision": {
     "empty": "No tracker has sent a position yet.",
@@ -244,5 +248,33 @@
     "device_offline": "Tracker offline — {{detail}}",
     "maintenance_due": "Maintenance due soon — {{detail}}",
     "maintenance_overdue": "Maintenance overdue — {{detail}}"
+  },
+  "track": {
+    "button": "Track",
+    "title": "Movement history",
+    "from": "From",
+    "to": "To",
+    "load": "Show",
+    "loading": "Loading…",
+    "empty": "No position recorded in this period.",
+    "error": "History unavailable.",
+    "tooMany": "Period too long: only the first {{n}} positions are shown.",
+    "distance": "Distance",
+    "maxSpeed": "Max speed",
+    "moving": "Moving",
+    "stopped": "Stopped",
+    "points": "positions",
+    "stops": "Stops (≥ 5 min)",
+    "start": "Start",
+    "end": "End",
+    "time": "Time",
+    "speed": "Speed",
+    "position": "Position",
+    "showPoints": "Show positions",
+    "hidePoints": "Hide positions",
+    "close": "Close",
+    "last24h": "24 h",
+    "last7d": "7 d",
+    "today": "Today"
   }
 }

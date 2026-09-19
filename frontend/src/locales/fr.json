@@ -122,7 +122,8 @@
       "type": "Type",
       "detail": "Détail",
       "by": "Par",
-      "amount": "Montant"
+      "amount": "Montant",
+      "actions": ""
     },
     "totals": {
       "revenue": "Recettes",
@@ -162,7 +163,10 @@
       "expense": "+ Charge",
       "investment": "+ Investissement"
     },
-    "recorded": "{{type}} enregistré(e)."
+    "recorded": "{{type}} enregistré(e).",
+    "delete": "Supprimer",
+    "confirmDelete": "Supprimer ce/cette {{type}} ? Action irréversible.",
+    "deleted": "{{type}} supprimé(e)."
   },
   "supervision": {
     "empty": "Aucun boîtier n'a encore transmis de position.",
@@ -233,5 +237,33 @@
   },
   "alerts": {
     "empty": "Aucun événement. Les alertes apparaîtront ici dès qu'une règle se déclenche."
+  },
+  "track": {
+    "button": "Mouvements",
+    "title": "Historique des mouvements",
+    "from": "Du",
+    "to": "Au",
+    "load": "Afficher",
+    "loading": "Chargement…",
+    "empty": "Aucune position enregistrée sur cette période.",
+    "error": "Historique indisponible.",
+    "tooMany": "Période trop longue : seules les {{n}} premières positions sont affichées.",
+    "distance": "Distance",
+    "maxSpeed": "Vitesse max",
+    "moving": "En mouvement",
+    "stopped": "À l'arrêt",
+    "points": "positions",
+    "stops": "Arrêts (≥ 5 min)",
+    "start": "Départ",
+    "end": "Arrivée",
+    "time": "Heure",
+    "speed": "Vitesse",
+    "position": "Position",
+    "showPoints": "Voir les positions",
+    "hidePoints": "Masquer les positions",
+    "close": "Fermer",
+    "last24h": "24 h",
+    "last7d": "7 j",
+    "today": "Aujourd'hui"
   }
 }

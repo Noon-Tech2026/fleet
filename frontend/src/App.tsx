@@ -10,6 +10,7 @@ import { FleetMap } from './components/FleetMap';
 import { FleetOverview } from './components/FleetOverview';
 import { VehicleList } from './components/VehicleList';
 import { VehicleDetail } from './components/VehicleDetail';
+import { TrackHistoryDialog } from './components/TrackHistoryDialog';
 import { AlertFeed } from './components/AlertFeed';
 import { UsersPage } from './users/UsersPage';
 import { MaintenancePage } from './maintenance/MaintenancePage';
@@ -76,6 +77,7 @@ function Dashboard({
     (d) => d.active !== false && vehicles.some((v) => v.id === d.id) === false,
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [trackVehicleId, setTrackVehicleId] = useState<string | null>(null);
   const [feedOpen, setFeedOpen] = useState(true);
   const [view, setView] = useState<
     'overview' | 'fleet' | 'maintenance' | 'accounting' | 'drivers' | 'clients' | 'users'
@@ -161,7 +163,7 @@ function Dashboard({
             <h2 className="col-title">
               {t('app.fleet')} <span className="count">{vehicles.length + pendingVehicles.length}</span>
             </h2>
-            <VehicleList vehicles={vehicles} pending={pendingVehicles} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
+            <VehicleList vehicles={vehicles} pending={pendingVehicles} selectedId={selected?.id ?? null} onSelect={setSelectedId} onTrack={setTrackVehicleId} />
           </aside>
 
           <section className="col center">
@@ -181,12 +183,19 @@ function Dashboard({
 
           <aside className="col right">
             {selected ? (
-              <VehicleDetail vehicle={selected} simulatorMode={SIMULATOR_MODE} />
+              <VehicleDetail vehicle={selected} simulatorMode={SIMULATOR_MODE} onTrack={() => setTrackVehicleId(selected.id)} />
             ) : (
               <p className="empty">{t('app.selectVehicle')}</p>
             )}
           </aside>
         </main>
+      )}
+      {trackVehicleId && (
+        <TrackHistoryDialog
+          vehicleId={trackVehicleId}
+          plate={vehicles.find((v) => v.id === trackVehicleId)?.plate ?? directory.find((d) => d.id === trackVehicleId)?.plate ?? ''}
+          onClose={() => setTrackVehicleId(null)}
+        />
       )}
     </div>
   );
