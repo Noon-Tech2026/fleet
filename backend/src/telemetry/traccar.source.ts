@@ -169,6 +169,12 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
       try {
         const payload = JSON.parse(raw.toString()) as { positions?: TraccarPosition[]; events?: TraccarEvent[] };
         for (const p of payload.positions ?? []) {
+          // Traccar range la reponse a une commande (getio) dans une position, attribut `result`.
+          const result = p.attributes?.result;
+          if (typeof result === 'string' && /D[IO]\d\s*:/.test(result)) {
+            this.handleCommandResult({ id: 0, type: 'commandResult', deviceId: p.deviceId, eventTime: p.deviceTime, attributes: { result } });
+            continue;
+          }
           const mapped = this.map(p);
           if (mapped) onPosition(mapped);
         }
