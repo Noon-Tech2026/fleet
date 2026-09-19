@@ -42,6 +42,8 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
   const canManageFleet = can('admin');
 
   const [summaries, setSummaries] = useState<Record<string, { revenue: number; expenses: number; investments: number; netResult: number }>>({});
+  // Incrémenté à la fermeture du journal : les montants ont pu changer.
+  const [summaryVersion, setSummaryVersion] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [directory, setDirectory] = useState<VehicleDirectoryEntry[]>([]);
   const [directoryVersion, setDirectoryVersion] = useState(0);
@@ -67,7 +69,7 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
         setLoadError(null);
       })
       .catch((err) => setLoadError(err instanceof Error ? err.message : t('overview.loadError')));
-  }, [t]);
+  }, [t, summaryVersion]);
 
   const dialogVehicle = useMemo(
     () => vehicles.find((v) => v.id === dialogVehicleId) ?? null,
@@ -264,7 +266,10 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
         <VehicleHistoryDialog
           vehicleId={historyVehicle.id}
           plate={historyVehicle.plate}
-          onClose={() => setHistoryVehicleId(null)}
+          onClose={() => {
+            setHistoryVehicleId(null);
+            setSummaryVersion((n) => n + 1);
+          }}
         />
       )}
 
