@@ -180,6 +180,10 @@ export class AccountingService {
   async updateTrip(
     id: string,
     patch: {
+      driverId?: string;
+      clientId?: string;
+      startedAt?: Date;
+      containers?: ContainerInput[];
       endedAt?: Date | null;
       origin?: string | null;
       destination?: string | null;
@@ -190,6 +194,15 @@ export class AccountingService {
     const trip = await this.tripsRepo.findOne({ where: { id } });
     if (!trip) throw new NotFoundException('Voyage inconnu');
 
+    if (patch.clientId !== undefined) {
+      if (!(await this.clientsRepo.findOne({ where: { id: patch.clientId } }))) throw new BadRequestException('Client inconnu');
+      trip.clientId = patch.clientId;
+    }
+    if (patch.driverId !== undefined) {
+      if (!(await this.driversRepo.findOne({ where: { id: patch.driverId } }))) throw new BadRequestException('Chauffeur inconnu');
+      trip.driverId = patch.driverId;
+    }
+    if (patch.startedAt !== undefined) trip.startedAt = patch.startedAt;
     if (patch.endedAt !== undefined) trip.endedAt = patch.endedAt;
     if (patch.origin !== undefined) trip.origin = patch.origin;
     if (patch.destination !== undefined) trip.destination = patch.destination;
@@ -200,6 +213,24 @@ export class AccountingService {
     }
 
     const saved = await this.tripsRepo.save(trip);
+
+    // Les conteneurs sont remplacés en bloc : la liste du formulaire fait foi.
+    if (patch.containers !== undefined) {
+      if (patch.containers.length === 0) throw new BadRequestException('Un voyage doit porter au moins un conteneur');
+      await this.containersRepo.delete({ tripId: id });
+      await this.containersRepo.save(
+        patch.containers.map((c) =>
+          this.containersRepo.create({
+            tripId: id,
+            containerNumber: c.containerNumber ?? null,
+            size: c.size,
+            loaded: c.loaded ?? true,
+            notes: c.notes ?? null,
+          }),
+        ),
+      );
+    }
+
     const [entry] = await this.toEntries([saved]);
     return entry;
   }

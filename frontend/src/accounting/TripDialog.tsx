@@ -75,10 +75,18 @@ export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers
     try {
       const trip = initial
         ? await api.updateTrip(initial.id, {
+            clientId,
+            driverId,
+            startedAt: new Date(`${startedAt}T08:00:00`).toISOString(),
             origin: origin.trim() || undefined,
             destination: destination.trim() || undefined,
             amount: Number(amount),
             notes: notes.trim() || undefined,
+            containers: rows.map((r) => ({
+              containerNumber: r.containerNumber.trim() || undefined,
+              size: r.size,
+              loaded: r.loaded,
+            })),
           })
         : await api.createTrip({
             vehicleId,
@@ -114,12 +122,10 @@ export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers
       >
         <h2 id="trip-dialog-title">{t(editing ? 'dialog.trip.titleEdit' : 'dialog.trip.titleNew', { id: vehicleId })}</h2>
 
-        {editing && <p className="modal-note">{t('dialog.trip.editLocked')}</p>}
-
         <div className="field-grid">
           <label className="field">
             <span>{t('dialog.trip.client')}</span>
-            <select className="select" value={clientId} onChange={(e) => setClientId(e.target.value)} required disabled={editing}>
+            <select className="select" value={clientId} onChange={(e) => setClientId(e.target.value)} required>
               {clients.length === 0 && <option value="">{t('dialog.trip.noClient')}</option>}
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -129,7 +135,7 @@ export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers
 
           <label className="field">
             <span>{t('dialog.trip.driver')}</span>
-            <select className="select" value={driverId} onChange={(e) => setDriverId(e.target.value)} required disabled={editing}>
+            <select className="select" value={driverId} onChange={(e) => setDriverId(e.target.value)} required>
               {drivers.length === 0 && <option value="">{t('dialog.trip.noDriver')}</option>}
               {drivers.map((d) => (
                 <option key={d.id} value={d.id}>{d.fullName}</option>
@@ -138,14 +144,14 @@ export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers
           </label>
         </div>
 
-        {!editing && (clients.length === 0 || drivers.length === 0) && (
+        {(clients.length === 0 || drivers.length === 0) && (
           <p className="modal-note">{t('dialog.trip.needRefs')}</p>
         )}
 
         <div className="field-grid">
           <label className="field">
             <span>{t('dialog.trip.date')}</span>
-            <input type="date" value={startedAt} onChange={(e) => setStartedAt(e.target.value)} required disabled={editing} />
+            <input type="date" value={startedAt} onChange={(e) => setStartedAt(e.target.value)} required />
           </label>
 
           <label className="field">
@@ -169,11 +175,9 @@ export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers
         <div className="repeatable">
           <div className="repeatable-head">
             <span>{t('dialog.trip.containers')}</span>
-            {!editing && (
-              <button type="button" className="btn ghost small" onClick={() => setRows((list) => [...list, newRow()])}>
-                {t('dialog.trip.addContainer')}
-              </button>
-            )}
+            <button type="button" className="btn ghost small" onClick={() => setRows((list) => [...list, newRow()])}>
+              {t('dialog.trip.addContainer')}
+            </button>
           </div>
 
           {rows.map((row) => (
@@ -182,13 +186,13 @@ export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers
                 placeholder={t('dialog.trip.containerNumber')}
                 value={row.containerNumber}
                 onChange={(e) => updateRow(row.key, { containerNumber: e.target.value })}
-                disabled={editing}
+               
               />
               <select
                 className="select"
                 value={row.size}
                 onChange={(e) => updateRow(row.key, { size: e.target.value as ContainerSize })}
-                disabled={editing}
+               
               >
                 <option value="20">{t('dialog.trip.ft20')}</option>
                 <option value="40">{t('dialog.trip.ft40')}</option>
@@ -198,11 +202,11 @@ export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers
                   type="checkbox"
                   checked={row.loaded}
                   onChange={(e) => updateRow(row.key, { loaded: e.target.checked })}
-                  disabled={editing}
+                 
                 />
                 {t('dialog.trip.loaded')}
               </label>
-              {!editing && (
+              {(
                 <button
                   type="button"
                   className="btn ghost small"
@@ -228,7 +232,7 @@ export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers
           <button type="button" className="btn ghost" onClick={onCancel} disabled={busy}>
             {t('dialog.common.cancel')}
           </button>
-          <button type="submit" className="btn primary" disabled={busy || (!editing && (clients.length === 0 || drivers.length === 0))}>
+          <button type="submit" className="btn primary" disabled={busy || clients.length === 0 || drivers.length === 0}>
             {busy ? t('dialog.common.saving') : t('dialog.trip.save')}
           </button>
         </div>

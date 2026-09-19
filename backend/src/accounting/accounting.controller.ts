@@ -104,11 +104,21 @@ class CreateTripDto {
 }
 
 class UpdateTripDto {
+  @IsOptional() @IsString() driverId?: string;
+  @IsOptional() @IsString() clientId?: string;
+  @IsOptional() @IsDateString() startedAt?: string;
   @IsOptional() @IsDateString() endedAt?: string;
   @IsOptional() @IsString() @MaxLength(160) origin?: string;
   @IsOptional() @IsString() @MaxLength(160) destination?: string;
   @IsOptional() @IsNumber() @Min(0) @Max(1_000_000) amount?: number;
   @IsOptional() @IsString() @MaxLength(2000) notes?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => ContainerDto)
+  containers?: ContainerDto[];
 }
 
 class ExpenseDto {
@@ -251,11 +261,20 @@ export class AccountingController {
   @Patch('accounting/trips/:id')
   updateTrip(@Param('id') id: string, @Body() dto: UpdateTripDto) {
     return this.accounting.updateTrip(id, {
+      driverId: dto.driverId,
+      clientId: dto.clientId,
+      startedAt: dto.startedAt !== undefined ? new Date(dto.startedAt) : undefined,
       endedAt: dto.endedAt !== undefined ? new Date(dto.endedAt) : undefined,
       origin: dto.origin,
       destination: dto.destination,
       amount: dto.amount,
       notes: dto.notes,
+      containers: dto.containers?.map((c) => ({
+        containerNumber: c.containerNumber ?? null,
+        size: c.size,
+        loaded: c.loaded ?? true,
+        notes: c.notes ?? null,
+      })),
     });
   }
 

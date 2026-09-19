@@ -222,7 +222,7 @@ export const api = {
     containers: { containerNumber?: string; size: ContainerSize; loaded?: boolean; notes?: string }[];
   }) => request<TripEntry>('/api/accounting/trips', { method: 'POST', body: JSON.stringify(input) }),
 
-  updateTrip: (id: string, patch: { endedAt?: string; origin?: string; destination?: string; amount?: number; notes?: string }) =>
+  updateTrip: (id: string, patch: { driverId?: string; clientId?: string; startedAt?: string; endedAt?: string; origin?: string; destination?: string; amount?: number; notes?: string; containers?: { containerNumber?: string; size: ContainerSize; loaded?: boolean; notes?: string }[] }) =>
     request<TripEntry>(`/api/accounting/trips/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
 
   deleteTrip: (id: string) => request<{ ok: true }>(`/api/accounting/trips/${id}`, { method: 'DELETE' }),
