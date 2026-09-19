@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import WebSocket from 'ws';
-import { TelemetrySource, PositionHandler, RawPosition } from './telemetry.source';
+import { TelemetrySource, PositionHandler, RawPosition, IoReport, IoReportHandler } from './telemetry.source';
 
 // Relais démarreur câblé en NO : DOUT1=1 ferme le circuit (démarrage autorisé),
 // DOUT1=0 le coupe (bloqué). Inversion ici pour garder la convention interne
@@ -23,6 +23,7 @@ const DOUT1_INVERTED = true;
 export class TraccarSource implements TelemetrySource, OnModuleDestroy {
   private readonly log = new Logger(TraccarSource.name);
   private ws?: WebSocket;
+  private readonly ioHandlers: IoReportHandler[] = [];
   private cookie = '';
   private deviceToVehicle = new Map<number, string>();
   private reconnectDelay = 2000;
@@ -166,10 +167,13 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
 
     this.ws.on('message', (raw: WebSocket.RawData) => {
       try {
-        const payload = JSON.parse(raw.toString()) as { positions?: TraccarPosition[] };
+        const payload = JSON.parse(raw.toString()) as { positions?: TraccarPosition[]; events?: TraccarEvent[] };
         for (const p of payload.positions ?? []) {
           const mapped = this.map(p);
           if (mapped) onPosition(mapped);
+        }
+        for (const e of payload.events ?? []) {
+          if (e.type === 'commandResult') this.handleCommandResult(e);
         }
       } catch (err) {
         this.log.error(`Trame illisible : ${String(err)}`);
@@ -221,6 +225,58 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
     };
   }
 
+  /* --- interrogation d'etat (getio) ------------------------------------ */
+
+  onIoReport(handler: IoReportHandler): void {
+    this.ioHandlers.push(handler);
+  }
+
+  /** Envoie `getio` ; le boitier repond par un texte "DI1:0 DI2:1 ... DO1:1 DO2:0" recu comme commandResult. */
+  async queryIo(vehicleId: string): Promise<void> {
+    const deviceId = [...this.deviceToVehicle.entries()].find(([, name]) => name === vehicleId)?.[0];
+    if (!deviceId) return;
+    const res = await this.api('/api/commands/send', {
+      method: 'POST',
+      body: JSON.stringify({ deviceId, type: 'custom', attributes: { data: 'getio' } }),
+    });
+    if (!res.ok) this.log.warn(`${vehicleId} — getio refuse par Traccar (${res.status})`);
+  }
+
+  async queryIoAll(): Promise<void> {
+    for (const vehicleId of this.deviceToVehicle.values()) {
+      try {
+        await this.queryIo(vehicleId);
+      } catch (e) {
+        this.log.warn(`${vehicleId} — getio impossible : ${String(e)}`);
+      }
+    }
+  }
+
+  private handleCommandResult(e: TraccarEvent): void {
+    const vehicleId = this.deviceToVehicle.get(e.deviceId);
+    const text = String(e.attributes?.result ?? '');
+    if (!vehicleId || /D[IO]\d\s*:/.test(text) === false) return;
+    const din: Record<number, boolean> = {};
+    const dout: Record<number, boolean> = {};
+    for (const m of text.matchAll(/D([IO])(\d)\s*:\s*(\d)/g)) {
+      const n = Number(m[2]);
+      const v = m[3] === '1';
+      if (m[1] === 'I') din[n] = v;
+      else dout[n] = v;
+    }
+    const phys1 = dout[1];
+    const report: IoReport = {
+      vehicleId,
+      din,
+      dout,
+      starterBlocked: phys1 === undefined ? undefined : DOUT1_INVERTED ? phys1 === false : phys1,
+      raw: text,
+      at: new Date(e.eventTime ?? Date.now()),
+    };
+    this.log.log(`${vehicleId} — etat boitier : ${text}`);
+    for (const h of this.ioHandlers) h(report);
+  }
+
   async setDigitalOutput(vehicleId: string, output: 1 | 2, active: boolean, durationSec?: number): Promise<void> {
     const deviceId = [...this.deviceToVehicle.entries()].find(([, name]) => name === vehicleId)?.[0];
     if (!deviceId) throw new Error(`Aucun boîtier associé à ${vehicleId}`);
@@ -243,6 +299,14 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
 
     if (!res.ok) throw new Error(`Commande refusée par Traccar (${res.status})`);
   }
+}
+
+interface TraccarEvent {
+  id: number;
+  type: string;
+  deviceId: number;
+  eventTime?: string;
+  attributes?: Record<string, unknown>;
 }
 
 interface TraccarDevice {

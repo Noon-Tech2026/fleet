@@ -36,6 +36,7 @@ import { PositionsService } from './fleet/positions.service';
 import { DeparturesService } from './fleet/departures.service';
 import { ExitRequestsService } from './fleet/exit-requests.service';
 import { ExitRequest } from './fleet/entities/exit-request.entity';
+import { StarterState } from './immobilizer/starter-state.entity';
 import { GeofenceService } from './geofence/geofence.service';
 import { FuelService } from './fuel/fuel.service';
 import { RulesService } from './rules/rules.service';
@@ -68,7 +69,7 @@ import { AccountingController } from './accounting/accounting.controller';
       TripContainer,
       VehicleExpense,
       VehicleInvestment,
-     ExitRequest,]),
+     ExitRequest, StarterState]),
     EventsModule,
     TelemetryModule,
   ],

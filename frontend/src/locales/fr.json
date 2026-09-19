@@ -244,7 +244,8 @@
     "perimeter_return": "Retour dans le périmètre — {{detail}}",
     "exit_confirmed": "Sortie avec chargement confirmée par {{detail}}",
     "exit_rejected": "Sortie rejetée par {{detail}}",
-    "exit_bypassed": "Sortie sans chargement validée — {{detail}}"
+    "exit_bypassed": "Sortie sans chargement validée — {{detail}}",
+    "starter_mismatch": "État du démarreur différent de l'état voulu — {{detail}}"
   },
   "track": {
     "button": "Mouvements",

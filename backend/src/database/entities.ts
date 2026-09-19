@@ -5,6 +5,7 @@ import { Vehicle } from '../fleet/entities/vehicle.entity';
 import { Position } from '../fleet/entities/position.entity';
 import { Departure } from '../fleet/entities/departure.entity';
 import { ExitRequest } from '../fleet/entities/exit-request.entity';
+import { StarterState } from '../immobilizer/starter-state.entity';
 import { Zone } from '../geofence/entities/zone.entity';
 import { FuelCalibration } from '../fuel/entities/fuel-calibration.entity';
 import { MaintenancePlan } from '../maintenance/entities/maintenance-plan.entity';
@@ -29,6 +30,7 @@ export const ENTITIES = [
   Position,
   Departure,
   ExitRequest,
+  StarterState,
   Zone,
   FuelCalibration,
   MaintenancePlan,

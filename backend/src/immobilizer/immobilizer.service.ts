@@ -1,8 +1,9 @@
-import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommandAudit, VehicleState } from '../common/types';
-import { TELEMETRY_SOURCE, TelemetrySource } from '../telemetry/telemetry.source';
+import { IoReport, TELEMETRY_SOURCE, TelemetrySource } from '../telemetry/telemetry.source';
+import { StarterState } from './starter-state.entity';
 import { EventsService } from '../events/events.service';
 import { AlertsService } from '../rules/alerts.service';
 import { CommandLog } from '../auth/entities/command-log.entity';
@@ -42,13 +43,70 @@ export interface Actor {
 export const SYSTEM_ACTOR: Actor = { id: null, email: 'system' };
 
 @Injectable()
-export class ImmobilizerService {
+export class ImmobilizerService implements OnModuleInit {
   private readonly log = new Logger(ImmobilizerService.name);
   private readonly pending = new Map<string, { actor: Actor; reason: string }>();
+  /** Etat voulu par camion (copie memoire de starter_states). */
+  private readonly desired = new Map<string, 'blocked' | 'allowed'>();
+
+  /** Restaure les blocages differes et les etats voulus apres un redemarrage. */
+  async onModuleInit(): Promise<void> {
+    const rows = await this.states.find();
+    let pending = 0;
+    for (const r of rows) {
+      this.desired.set(r.vehicleId, r.desired);
+      if (r.pending) {
+        this.pending.set(r.vehicleId, { actor: { id: null, email: r.requestedBy }, reason: `${r.reason} (restaure apres redemarrage)` });
+        pending += 1;
+      }
+    }
+    const blocked = rows.filter((r) => r.desired === 'blocked').length;
+    this.log.log(`${rows.length} etat(s) demarreur restaure(s) : ${blocked} bloque(s), ${pending} en attente`);
+  }
+
+  /** Etat initial a afficher avant confirmation du boitier. */
+  initialStarter(vehicleId: string, outputActive: boolean | undefined): VehicleState['starter'] {
+    if (this.pending.has(vehicleId)) return 'pending_block';
+    if (outputActive !== undefined) return outputActive ? 'blocked' : 'allowed';
+    return this.desired.get(vehicleId) ?? 'allowed';
+  }
+
+  private async persist(vehicleId: string, desired: 'blocked' | 'allowed', pending: boolean, actor: Actor, reason: string): Promise<void> {
+    this.desired.set(vehicleId, desired);
+    try {
+      await this.states.save(this.states.create({ vehicleId, desired, pending, requestedBy: actor.email, reason: reason.slice(0, 255) }));
+    } catch (e) {
+      this.log.warn(`${vehicleId} — etat demarreur non persiste : ${String(e)}`);
+    }
+  }
+
+  /** Reponse du boitier a getio : source de verite, quelle que soit la trame. */
+  applyIoReport(vehicle: VehicleState, report: IoReport): void {
+    if (report.starterBlocked === undefined) return;
+    const actual = report.starterBlocked;
+    const f = this.inFlight.get(vehicle.id);
+    if (f !== undefined) {
+      if (actual === f.expectOutput) {
+        vehicle.starter = actual ? 'blocked' : 'allowed';
+        vehicle.commandLock = null;
+        this.unlock(vehicle.id, 'confirme par getio');
+      }
+      return;
+    }
+    vehicle.starter = this.pending.has(vehicle.id) ? 'pending_block' : actual ? 'blocked' : 'allowed';
+    const wanted = this.desired.get(vehicle.id);
+    if (wanted !== undefined && this.pending.has(vehicle.id) === false && (wanted === 'blocked') !== actual) {
+      this.log.warn(`${vehicle.id} — etat boitier (${actual ? 'bloque' : 'autorise'}) different de l'etat voulu (${wanted})`);
+      this.alerts.raise(vehicle.id, 'warning', 'starter_mismatch', `Démarreur ${actual ? 'bloqué' : 'autorisé'} sur le boîtier alors que l'état voulu est « ${wanted === 'blocked' ? 'bloqué' : 'autorisé'} »`);
+    }
+  }
+
   /** Instant (ms) depuis lequel chaque vehicule est immobile ; absent = en mouvement. */
   private readonly stationarySince = new Map<string, number>();
   /** Verification planifiee par vehicule, pour ne pas attendre la trame GPS suivante. */
   private readonly timers = new Map<string, NodeJS.Timeout>();
+  /** Horodatage du dernier setdigout par vehicule : les trames plus anciennes ne font pas foi. */
+  private readonly lastCommandAt = new Map<string, number>();
   /** Commande envoyee au boitier, pas encore confirmee par une trame out1. */
   private readonly inFlight = new Map<
     string,
@@ -58,6 +116,7 @@ export class ImmobilizerService {
   constructor(
     @Inject(TELEMETRY_SOURCE) private readonly source: TelemetrySource,
     @InjectRepository(CommandLog) private readonly logs: Repository<CommandLog>,
+    @InjectRepository(StarterState) private readonly states: Repository<StarterState>,
     private readonly events: EventsService,
     private readonly alerts: AlertsService,
   ) {}
@@ -110,6 +169,7 @@ export class ImmobilizerService {
           `(${vehicle.speed} km/h, contact ${vehicle.ignition ? 'mis' : 'coupe'})`,
       );
       this.scheduleCheck(vehicle);
+      await this.persist(vehicle.id, 'blocked', true, actor, reason);
       return this.record(vehicle, 'block_starter', actor, reason, false);
     }
     return this.applyBlock(vehicle, actor, reason);
@@ -121,8 +181,9 @@ export class ImmobilizerService {
     if (outputActive !== undefined) this.acknowledge(vehicle, outputActive);
     if (this.inFlight.has(vehicle.id)) return; // on attend la confirmation avant toute autre action
 
-    // Hors commande en cours, l'etat affiche suit l'etat reel du relais.
-    if (outputActive !== undefined) {
+    // Hors commande en cours, l'etat affiche suit l'etat reel du relais —
+    // seulement pour une trame posterieure au dernier ordre (livraison differee).
+    if (outputActive !== undefined && this.frameIsFresh(vehicle)) {
       vehicle.starter = this.pending.has(vehicle.id) ? 'pending_block' : outputActive ? 'blocked' : 'allowed';
     }
     const waiting = this.pending.get(vehicle.id);
@@ -150,6 +211,7 @@ export class ImmobilizerService {
       throw e;
     }
     vehicle.starter = 'allowed';
+    await this.persist(vehicle.id, 'allowed', false, actor, reason);
     this.events.publish({ type: 'position', vehicle: { ...vehicle } });
     this.alerts.raise(vehicle.id, 'info', 'starter_released', `Demarrage reautorise par ${actor.email}`);
     return this.record(vehicle, 'release_starter', actor, reason, true);
@@ -183,6 +245,8 @@ export class ImmobilizerService {
       this.unlock(vehicle.id, 'timeout — etat resynchronise a la prochaine trame');
     }, ACK_TIMEOUT_MS);
     this.inFlight.set(vehicle.id, { expectOutput, lock, timer });
+    this.lastCommandAt.set(vehicle.id, Date.now());
+    setTimeout(() => void this.source.queryIo?.(vehicle.id).catch(() => undefined), 2500);
     vehicle.commandLock = lock;
     this.events.publish({ type: 'starter_lock', vehicleId: vehicle.id, lock });
   }
@@ -196,9 +260,13 @@ export class ImmobilizerService {
   }
 
   /** Une trame confirme l'etat reel de DOUT1 : leve le verrou si elle correspond. */
+  private frameIsFresh(vehicle: VehicleState): boolean {
+    return Date.parse(vehicle.updatedAt) > (this.lastCommandAt.get(vehicle.id) ?? 0);
+  }
+
   private acknowledge(vehicle: VehicleState, outputActive: boolean): void {
     const f = this.inFlight.get(vehicle.id);
-    if (f === undefined) return;
+    if (f === undefined || this.frameIsFresh(vehicle) === false) return;
     if (outputActive === f.expectOutput) {
       vehicle.starter = outputActive ? 'blocked' : 'allowed';
       vehicle.commandLock = null;
@@ -252,6 +320,7 @@ export class ImmobilizerService {
       throw e;
     }
     vehicle.starter = 'blocked';
+    await this.persist(vehicle.id, 'blocked', false, actor, reason);
     this.events.publish({ type: 'position', vehicle: { ...vehicle } });
     this.alerts.raise(vehicle.id, 'critical', 'starter_blocked', `Demarreur bloque — ${reason}`);
     return this.record(vehicle, 'block_starter', actor, reason, true);

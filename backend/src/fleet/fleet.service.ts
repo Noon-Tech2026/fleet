@@ -39,6 +39,16 @@ export class FleetService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
+    // Reponses getio : etat reel des sorties, applique au camion concerne.
+    this.source.onIoReport?.((report) => {
+      const v = this.state.get(report.vehicleId);
+      if (v === undefined) return;
+      this.immobilizer.applyIoReport(v, report);
+      this.events.publish({ type: 'position', vehicle: { ...v } });
+    });
+    // Au boot : interroger tous les boitiers (ceux hors ligne repondront a leur reveil).
+    setTimeout(() => void this.source.queryIoAll?.().catch(() => undefined), 8000);
+
     await this.source.start((raw) => {
       void this.ingest(raw).catch((err) => this.log.error(`Ingestion : ${String(err)}`));
     });
@@ -73,6 +83,7 @@ export class FleetService implements OnModuleInit {
    */
   private async ingest(raw: RawPosition): Promise<void> {
     const previous = this.state.get(raw.vehicleId);
+    if (previous === undefined) void this.source.queryIo?.(raw.vehicleId).catch(() => undefined);
     const meta = this.vehicles.peek(raw.vehicleId);
 
     // Un boitier inconnu au repertoire est signale une fois, puis ignore.
@@ -97,7 +108,7 @@ export class FleetService implements OnModuleInit {
       // L'appui bouton est une impulsion : on garde l'etat confirme
       // jusqu'a la sortie de station (voir RulesService.checkDeparture).
       departureConfirmed: raw.buttonPressed || (previous?.departureConfirmed ?? false),
-      starter: previous?.starter ?? (raw.outputActive === undefined ? 'allowed' : raw.outputActive ? 'blocked' : 'allowed'),
+      starter: previous?.starter ?? this.immobilizer.initialStarter(raw.vehicleId, raw.outputActive),
       commandLock: this.immobilizer.lockOf(raw.vehicleId),
 
       fuelMain: this.fuel.toLiters(raw.vehicleId, 'main', raw.fuelMainVolts),

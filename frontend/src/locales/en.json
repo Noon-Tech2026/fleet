@@ -255,7 +255,8 @@
     "perimeter_return": "Back inside the perimeter — {{detail}}",
     "exit_confirmed": "Loaded departure confirmed by {{detail}}",
     "exit_rejected": "Departure rejected by {{detail}}",
-    "exit_bypassed": "Departure without load validated — {{detail}}"
+    "exit_bypassed": "Departure without load validated — {{detail}}",
+    "starter_mismatch": "Starter state differs from the requested state — {{detail}}"
   },
   "track": {
     "button": "Track",

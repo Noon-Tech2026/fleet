@@ -28,6 +28,19 @@ export interface RawPosition {
 
 export type PositionHandler = (position: RawPosition) => void;
 
+/** Reponse du boitier a une interrogation d'etat (commande getio). */
+export interface IoReport {
+  vehicleId: string;
+  din: Record<number, boolean>;
+  /** Valeurs physiques des sorties (avant inversion eventuelle). */
+  dout: Record<number, boolean>;
+  /** DOUT1 traduite dans la convention interne : true = demarreur bloque. */
+  starterBlocked: boolean | undefined;
+  raw: string;
+  at: Date;
+}
+export type IoReportHandler = (report: IoReport) => void;
+
 export const TELEMETRY_SOURCE = Symbol('TELEMETRY_SOURCE');
 
 export interface TelemetrySource {
@@ -47,6 +60,11 @@ export interface TelemetrySource {
    * le simulateur n'en a pas besoin. Doit rejeter si la source refuse,
    * pour que le répertoire local ne diverge jamais de celui de Traccar.
    */
+  /** Demande au boitier l'etat de ses entrees/sorties ; la reponse arrive via onIoReport. */
+  queryIo?(vehicleId: string): Promise<void>;
+  queryIoAll?(): Promise<void>;
+  onIoReport?(handler: IoReportHandler): void;
+
   registerDevice?(vehicleId: string, imei: string): Promise<void>;
   updateDeviceImei?(vehicleId: string, imei: string): Promise<void>;
   setDeviceEnabled?(vehicleId: string, enabled: boolean): Promise<void>;

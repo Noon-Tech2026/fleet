@@ -25,6 +25,7 @@ export type AlertCode =
   | 'fuel_low'
   | 'starter_blocked'
   | 'starter_released'
+  | 'starter_mismatch'
   | 'device_offline'
   | 'maintenance_due'
   | 'maintenance_overdue';

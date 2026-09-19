@@ -255,7 +255,8 @@
     "perimeter_return": "عودة داخل الدائرة — {{detail}}",
     "exit_confirmed": "تم تأكيد الخروج بالحمولة من {{detail}}",
     "exit_rejected": "رُفض الخروج من {{detail}}",
-    "exit_bypassed": "تمت الموافقة على الخروج بلا حمولة — {{detail}}"
+    "exit_bypassed": "تمت الموافقة على الخروج بلا حمولة — {{detail}}",
+    "starter_mismatch": "حالة المشغّل تخالف الحالة المطلوبة — {{detail}}"
   },
   "track": {
     "button": "مسار الحركة",
