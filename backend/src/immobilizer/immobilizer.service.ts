@@ -52,7 +52,7 @@ export class ImmobilizerService {
   /** Commande envoyee au boitier, pas encore confirmee par une trame out1. */
   private readonly inFlight = new Map<
     string,
-    { expectOutput: boolean; previousStarter: VehicleState['starter']; timer: NodeJS.Timeout }
+    { expectOutput: boolean; lock: NonNullable<VehicleState['commandLock']>; timer: NodeJS.Timeout }
   >();
 
   constructor(
@@ -120,6 +120,11 @@ export class ImmobilizerService {
     this.trackMotion(vehicle);
     if (outputActive !== undefined) this.acknowledge(vehicle, outputActive);
     if (this.inFlight.has(vehicle.id)) return; // on attend la confirmation avant toute autre action
+
+    // Hors commande en cours, l'etat affiche suit l'etat reel du relais.
+    if (outputActive !== undefined) {
+      vehicle.starter = this.pending.has(vehicle.id) ? 'pending_block' : outputActive ? 'blocked' : 'allowed';
+    }
     const waiting = this.pending.get(vehicle.id);
     if (waiting === undefined) return;
     if (this.isSafeToBlock(vehicle) === false) {
@@ -140,7 +145,8 @@ export class ImmobilizerService {
     try {
       await this.source.setDigitalOutput(vehicle.id, 1, false);
     } catch (e) {
-      this.unlock(vehicle, 'echec envoi');
+      vehicle.commandLock = null;
+      this.unlock(vehicle.id, 'echec envoi');
       throw e;
     }
     vehicle.starter = 'allowed';
@@ -150,34 +156,42 @@ export class ImmobilizerService {
 
   // ---- Verrou de commande -------------------------------------------------
 
+  /** Verrou courant d'un vehicule — source de verite lue par FleetService a chaque trame. */
+  lockOf(vehicleId: string): VehicleState['commandLock'] {
+    return this.inFlight.get(vehicleId)?.lock ?? null;
+  }
+
+  isLocked(vehicleId: string): boolean {
+    return this.inFlight.has(vehicleId);
+  }
+
   private assertNotLocked(vehicle: VehicleState): void {
-    if (vehicle.commandLock) {
+    const lock = this.lockOf(vehicle.id);
+    if (lock !== null) {
       throw new ConflictException(
-        `Commande deja en cours pour ${vehicle.id} (par ${vehicle.commandLock.by}) — attendez la confirmation du boitier`,
+        `Commande deja en cours pour ${vehicle.id} (par ${lock.by}) — attendez la confirmation du boitier`,
       );
     }
   }
 
   private lock(vehicle: VehicleState, actor: Actor, action: 'block' | 'release', expectOutput: boolean): void {
+    const lock = { by: actor.email, action, since: new Date().toISOString() };
     const timer = setTimeout(() => {
-      const f = this.inFlight.get(vehicle.id);
-      if (f === undefined) return;
+      if (this.inFlight.has(vehicle.id) === false) return;
       this.log.warn(`${vehicle.id} — pas de confirmation du boitier apres ${ACK_TIMEOUT_MS / 1000} s`);
-      vehicle.starter = f.previousStarter;
-      this.unlock(vehicle, 'timeout');
+      this.unlock(vehicle.id, 'timeout — etat resynchronise a la prochaine trame');
     }, ACK_TIMEOUT_MS);
-    this.inFlight.set(vehicle.id, { expectOutput, previousStarter: vehicle.starter, timer });
-    vehicle.commandLock = { by: actor.email, action, since: new Date().toISOString() };
-    this.events.publish({ type: 'starter_lock', vehicleId: vehicle.id, lock: vehicle.commandLock });
+    this.inFlight.set(vehicle.id, { expectOutput, lock, timer });
+    vehicle.commandLock = lock;
+    this.events.publish({ type: 'starter_lock', vehicleId: vehicle.id, lock });
   }
 
-  private unlock(vehicle: VehicleState, why: string): void {
-    const f = this.inFlight.get(vehicle.id);
+  private unlock(vehicleId: string, why: string): void {
+    const f = this.inFlight.get(vehicleId);
     if (f !== undefined) clearTimeout(f.timer);
-    this.inFlight.delete(vehicle.id);
-    vehicle.commandLock = null;
-    this.log.log(`${vehicle.id} — verrou de commande leve (${why})`);
-    this.events.publish({ type: 'starter_lock', vehicleId: vehicle.id, lock: null });
+    this.inFlight.delete(vehicleId);
+    this.log.log(`${vehicleId} — verrou de commande leve (${why})`);
+    this.events.publish({ type: 'starter_lock', vehicleId, lock: null });
   }
 
   /** Une trame confirme l'etat reel de DOUT1 : leve le verrou si elle correspond. */
@@ -186,12 +200,9 @@ export class ImmobilizerService {
     if (f === undefined) return;
     if (outputActive === f.expectOutput) {
       vehicle.starter = outputActive ? 'blocked' : 'allowed';
-      this.unlock(vehicle, 'confirme par le boitier');
+      vehicle.commandLock = null;
+      this.unlock(vehicle.id, 'confirme par le boitier');
     }
-  }
-
-  isLocked(vehicleId: string): boolean {
-    return this.inFlight.has(vehicleId);
   }
 
   isPending(vehicleId: string): boolean {
@@ -216,7 +227,8 @@ export class ImmobilizerService {
     try {
       await this.source.setDigitalOutput(vehicle.id, 1, true);
     } catch (e) {
-      this.unlock(vehicle, 'echec envoi');
+      vehicle.commandLock = null;
+      this.unlock(vehicle.id, 'echec envoi');
       throw e;
     }
     vehicle.starter = 'blocked';

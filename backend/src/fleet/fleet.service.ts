@@ -98,7 +98,7 @@ export class FleetService implements OnModuleInit {
       // jusqu'a la sortie de station (voir RulesService.checkDeparture).
       departureConfirmed: raw.buttonPressed || (previous?.departureConfirmed ?? false),
       starter: previous?.starter ?? (raw.outputActive ? 'blocked' : 'allowed'),
-      commandLock: previous?.commandLock ?? null,
+      commandLock: this.immobilizer.lockOf(raw.vehicleId),
 
       fuelMain: this.fuel.toLiters(raw.vehicleId, 'main', raw.fuelMainVolts),
       fuelAux: this.fuel.toLiters(raw.vehicleId, 'aux', raw.fuelAuxVolts),
