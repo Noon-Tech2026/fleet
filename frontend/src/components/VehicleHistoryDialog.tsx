@@ -24,6 +24,10 @@ const HEAD_BTN: React.CSSProperties = { background: '#fff', color: '#12704F', bo
 /** Ligne unifiée du journal : toute opération rattachée au camion. */
 interface Operation {
   id: string;
+  /** Identifiant brut côté API, pour modifier/supprimer. */
+  rawId: string;
+  /** Entrée d'origine, pour pré-remplir un formulaire de modification. */
+  raw: VehicleExpenseEntry | VehicleInvestmentEntry | null;
   at: string;
   type: OpType;
   label: string;
@@ -31,11 +35,9 @@ interface Operation {
   by: string;
   /** Signé : recette positive, coût négatif, null si sans montant. */
   amount: number | null;
-  /** Identifiant brut, pour modifier/supprimer. */
-  rawId: string;
-  /** Entrée d'origine, pour pré-remplir le formulaire de modification. */
-  raw: VehicleExpenseEntry | VehicleInvestmentEntry | null;
 }
+
+const MONEY_TYPES: OpType[] = ['trip', 'expense', 'investment'];
 
 function toInputDate(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -44,26 +46,27 @@ function toInputDate(d: Date): string {
 /**
  * Journal complet d'un camion, ouvert depuis la vue d'ensemble. Agrège
  * voyages, charges, investissements, entretiens et commandes démarreur,
- * et permet la saisie directe (mêmes formulaires que l'onglet Comptabilité).
+ * et permet la saisie/modification directe (mêmes formulaires que
+ * l'onglet Comptabilité). La suppression est réservée à l'admin.
  */
 export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
   const { t, i18n } = useTranslation();
   const { can } = useAuth();
   const canRecord = can('operator');
-  const canDelete = can('admin');
   const canEditMoney = can('supervisor');
-  const showActions = canDelete || canEditMoney;
-  const [editing, setEditing] = useState<Operation | null>(null);
+  const canDelete = can('admin');
+  const showActions = canEditMoney || canDelete;
 
   const [ops, setOps] = useState<Operation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [types, setTypes] = useState<Set<OpType>>(new Set(ALL_TYPES));
   const [adding, setAdding] = useState<Adding>(null);
+  const [editing, setEditing] = useState<Operation | null>(null);
   const [clients, setClients] = useState<ClientRecord[]>([]);
   const [drivers, setDrivers] = useState<DriverRecord[]>([]);
-  const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(() => {
     Promise.all([
@@ -78,6 +81,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
           ...trips.map((x) => ({
             id: `t-${x.id}`,
             rawId: x.id,
+            raw: null,
             at: x.startedAt,
             type: 'trip' as const,
             label: x.clientName,
@@ -88,6 +92,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
           ...expenses.map((x) => ({
             id: `e-${x.id}`,
             rawId: x.id,
+            raw: x,
             at: x.at,
             type: 'expense' as const,
             label: t(`history.expense.${x.category}`),
@@ -98,6 +103,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
           ...investments.map((x) => ({
             id: `i-${x.id}`,
             rawId: x.id,
+            raw: x,
             at: x.at,
             type: 'investment' as const,
             label: t(`history.investment.${x.kind}`),
@@ -108,6 +114,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
           ...maintenance.map((x) => ({
             id: `m-${x.id}`,
             rawId: x.id,
+            raw: null,
             at: x.at,
             type: 'maintenance' as const,
             label: x.label,
@@ -120,6 +127,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
           ...commands.map((x) => ({
             id: `c-${x.id}`,
             rawId: x.id,
+            raw: null,
             at: x.at,
             type: 'command' as const,
             label: t(`history.command.${x.action}`) + (x.applied ? '' : ` ${t('history.command.queued')}`),
@@ -139,7 +147,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
     load();
   }, [load]);
 
-  // Référentiel clients/chauffeurs, chargé une seule fois, seulement si on peut saisir.
+  // Référentiel clients/chauffeurs, chargé une fois, seulement si on peut saisir.
   useEffect(() => {
     if (!canRecord) return;
     api.clients().then(setClients).catch(() => setClients([]));
@@ -154,6 +162,12 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose, adding, editing]);
+
+  function onRecorded(type: OpType) {
+    setAdding(null);
+    setNotice(t('history.recorded', { type: t(`history.type.${type}`) }));
+    load();
+  }
 
   function onEdited(type: OpType) {
     setEditing(null);
@@ -174,12 +188,6 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
     } catch (err) {
       setError(err instanceof Error ? err.message : t('history.loadError'));
     }
-  }
-
-  function onRecorded(type: Adding) {
-    setAdding(null);
-    setNotice(t('history.recorded', { type: t(`history.type.${type}`) }));
-    load();
   }
 
   const filtered = useMemo(() => {
@@ -309,46 +317,50 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((o) => (
-                    <tr key={o.id}>
-                      <td>{new Date(o.at).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' })}</td>
-                      <td>
-                        <span className={`badge ${o.type === 'trip' ? 'ok' : o.type === 'command' ? 'warn' : 'idle'}`}>
-                          {t(`history.type.${o.type}`)}
-                        </span>
-                      </td>
-                      <td>
-                        <strong>{o.label}</strong>
-                        {o.detail && <div className="cell-muted">{o.detail}</div>}
-                      </td>
-                      <td className="cell-muted">{o.by}</td>
-                      <td>
-                        {o.amount == null ? (
-                          '—'
-                        ) : (
-                          <strong style={{ color: o.amount >= 0 ? 'var(--mint)' : 'var(--red)' }}>
-                            {o.amount >= 0 ? '+' : '−'}{formatMoney(Math.abs(o.amount))}
-                          </strong>
-                        )}
-                      </td>
-                      {showActions && (
+                  {filtered.map((o) => {
+                    const isMoney = MONEY_TYPES.includes(o.type);
+                    const editable = canEditMoney && o.raw !== null;
+                    return (
+                      <tr key={o.id}>
+                        <td>{new Date(o.at).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' })}</td>
                         <td>
-                          {canEditMoney && (o.type === 'expense' || o.type === 'investment') && (
-                            <button className="btn ghost small" onClick={() => setEditing(o)} style={{ marginInlineEnd: 6 }}>
-                              {t('history.edit')}
-                            </button>
-                          )}
-                          {(o.type === 'trip' || o.type === 'expense' || o.type === 'investment') && (
-{canDelete && (o.type === 'trip' || o.type === 'expense' || o.type === 'investment') && (
-                            <button className="btn danger small" onClick={() => void remove(o)}>
-                              {t('history.delete')}
-                            </button>
-                          )}
+                          <span className={`badge ${o.type === 'trip' ? 'ok' : o.type === 'command' ? 'warn' : 'idle'}`}>
+                            {t(`history.type.${o.type}`)}
+                          </span>
+                        </td>
+                        <td>
+                          <strong>{o.label}</strong>
+                          {o.detail && <div className="cell-muted">{o.detail}</div>}
+                        </td>
+                        <td className="cell-muted">{o.by}</td>
+                        <td>
+                          {o.amount == null ? (
+                            '—'
+                          ) : (
+                            <strong style={{ color: o.amount >= 0 ? 'var(--mint)' : 'var(--red)' }}>
+                              {o.amount >= 0 ? '+' : '−'}{formatMoney(Math.abs(o.amount))}
+                            </strong>
                           )}
                         </td>
-                      )}
-                    </tr>
-                  ))}
+                        {showActions && (
+                          <td>
+                            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                              {editable && (
+                                <button className="btn ghost small" onClick={() => setEditing(o)}>
+                                  {t('history.edit')}
+                                </button>
+                              )}
+                              {canDelete && isMoney && (
+                                <button className="btn danger small" onClick={() => void remove(o)}>
+                                  {t('history.delete')}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -371,11 +383,22 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
       {adding === 'investment' && (
         <InvestmentDialog vehicleId={vehicleId} onCancel={() => setAdding(null)} onDone={() => onRecorded('investment')} />
       )}
+
       {editing?.type === 'expense' && editing.raw && (
-        <ExpenseDialog vehicleId={vehicleId} initial={editing.raw as VehicleExpenseEntry} onCancel={() => setEditing(null)} onDone={() => onEdited('expense')} />
+        <ExpenseDialog
+          vehicleId={vehicleId}
+          initial={editing.raw as VehicleExpenseEntry}
+          onCancel={() => setEditing(null)}
+          onDone={() => onEdited('expense')}
+        />
       )}
       {editing?.type === 'investment' && editing.raw && (
-        <InvestmentDialog vehicleId={vehicleId} initial={editing.raw as VehicleInvestmentEntry} onCancel={() => setEditing(null)} onDone={() => onEdited('investment')} />
+        <InvestmentDialog
+          vehicleId={vehicleId}
+          initial={editing.raw as VehicleInvestmentEntry}
+          onCancel={() => setEditing(null)}
+          onDone={() => onEdited('investment')}
+        />
       )}
     </div>
   );
