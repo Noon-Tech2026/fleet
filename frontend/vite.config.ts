@@ -1,4 +1,7 @@
 import dns from 'node:dns';
+import net from 'node:net';
+// Happy Eyeballs de Node (250 ms par tentative) echoue sur les liaisons a forte latence : desactiver.
+net.setDefaultAutoSelectFamily(false);
 // Le proxy de dev tentait IPv6 en premier (timeouts) : forcer IPv4.
 dns.setDefaultResultOrder('ipv4first');
 import { defineConfig } from 'vite';
