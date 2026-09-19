@@ -1,7 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ClientRecord, DriverRecord } from '../lib/types';
 import { formatMoney } from '../lib/accounting';
 import { api } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
+import { TripDialog } from '../accounting/TripDialog';
+import { ExpenseDialog } from '../accounting/ExpenseDialog';
+import { InvestmentDialog } from '../accounting/InvestmentDialog';
 
 interface Props {
   vehicleId: string;
@@ -11,6 +16,7 @@ interface Props {
 
 type OpType = 'trip' | 'expense' | 'investment' | 'maintenance' | 'command';
 const ALL_TYPES: OpType[] = ['trip', 'expense', 'investment', 'maintenance', 'command'];
+type Adding = 'trip' | 'expense' | 'investment' | null;
 
 /** Ligne unifiée du journal : toute opération rattachée au camion. */
 interface Operation {
@@ -29,19 +35,26 @@ function toInputDate(d: Date): string {
 }
 
 /**
- * Journal complet d'un camion, en lecture seule, ouvert depuis la vue
- * d'ensemble. Agrège voyages, charges, investissements, entretiens et
- * commandes démarreur ; la saisie reste dans les onglets dédiés.
+ * Journal complet d'un camion, ouvert depuis la vue d'ensemble. Agrège
+ * voyages, charges, investissements, entretiens et commandes démarreur,
+ * et permet la saisie directe (mêmes formulaires que l'onglet Comptabilité).
  */
 export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
   const { t, i18n } = useTranslation();
+  const { can } = useAuth();
+  const canRecord = can('operator');
+
   const [ops, setOps] = useState<Operation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [types, setTypes] = useState<Set<OpType>>(new Set(ALL_TYPES));
+  const [adding, setAdding] = useState<Adding>(null);
+  const [clients, setClients] = useState<ClientRecord[]>([]);
+  const [drivers, setDrivers] = useState<DriverRecord[]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     Promise.all([
       api.vehicleTrips(vehicleId),
       api.vehicleExpenses(vehicleId),
@@ -101,17 +114,36 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
         ];
         rows.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
         setOps(rows);
+        setError(null);
       })
       .catch((err) => setError(err instanceof Error ? err.message : t('history.loadError')));
   }, [vehicleId, t]);
 
   useEffect(() => {
+    load();
+  }, [load]);
+
+  // Référentiel clients/chauffeurs, chargé une seule fois, seulement si on peut saisir.
+  useEffect(() => {
+    if (!canRecord) return;
+    api.clients().then(setClients).catch(() => setClients([]));
+    api.drivers().then(setDrivers).catch(() => setDrivers([]));
+  }, [canRecord]);
+
+  useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      // Un formulaire ouvert gère lui-même Échap : ne pas fermer le journal en dessous.
+      if (e.key === 'Escape' && !adding) onClose();
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, adding]);
+
+  function onRecorded(type: Adding) {
+    setAdding(null);
+    setNotice(t('history.recorded', { type: t(`history.type.${type}`) }));
+    load();
+  }
 
   const filtered = useMemo(() => {
     if (!ops) return null;
@@ -169,13 +201,23 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
               {filtered && ` · ${t('history.count', { count: filtered.length })}`}
             </p>
           </div>
-          <button className="modal-close" onClick={onClose} aria-label={t('history.close')}>
-            ✕
-          </button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {canRecord && (
+              <>
+                <button className="btn primary small" onClick={() => setAdding('trip')}>{t('history.add.trip')}</button>
+                <button className="btn ghost small" onClick={() => setAdding('expense')}>{t('history.add.expense')}</button>
+                <button className="btn ghost small" onClick={() => setAdding('investment')}>{t('history.add.investment')}</button>
+              </>
+            )}
+            <button className="modal-close" onClick={onClose} aria-label={t('history.close')}>
+              ✕
+            </button>
+          </div>
         </header>
 
         <div className="modal-full-body">
           {error && <p className="banner err">{error}</p>}
+          {notice && <p className="banner ok">{notice}</p>}
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'end', marginBottom: 16 }}>
             <label className="field" style={{ margin: 0 }}>
@@ -259,6 +301,22 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
           )}
         </div>
       </div>
+
+      {adding === 'trip' && (
+        <TripDialog
+          vehicleId={vehicleId}
+          clients={clients}
+          drivers={drivers}
+          onCancel={() => setAdding(null)}
+          onDone={() => onRecorded('trip')}
+        />
+      )}
+      {adding === 'expense' && (
+        <ExpenseDialog vehicleId={vehicleId} onCancel={() => setAdding(null)} onDone={() => onRecorded('expense')} />
+      )}
+      {adding === 'investment' && (
+        <InvestmentDialog vehicleId={vehicleId} onCancel={() => setAdding(null)} onDone={() => onRecorded('investment')} />
+      )}
     </div>
   );
 }

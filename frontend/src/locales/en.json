@@ -161,6 +161,7 @@
       "trip": "+ Trip",
       "expense": "+ Expense",
       "investment": "+ Investment"
-    }
+    },
+    "recorded": "{{type}} recorded."
   }
 }

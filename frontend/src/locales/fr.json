@@ -161,6 +161,7 @@
       "trip": "+ Voyage",
       "expense": "+ Charge",
       "investment": "+ Investissement"
-    }
+    },
+    "recorded": "{{type}} enregistré(e)."
   }
 }
