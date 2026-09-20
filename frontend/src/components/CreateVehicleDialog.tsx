@@ -14,6 +14,8 @@ export function CreateVehicleDialog({ onCancel, onCreated }: Props) {
   const [imei, setImei] = useState('');
   const [simNumber, setSimNumber] = useState('');
   const [initialOdometer, setInitialOdometer] = useState('');
+  const [tankMain, setTankMain] = useState('700');
+  const [tankAux, setTankAux] = useState('300');
   const [model, setModel] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +39,8 @@ export function CreateVehicleDialog({ onCancel, onCreated }: Props) {
         imei: imei.trim(),
         simNumber: simNumber.trim() || undefined,
         initialOdometer: initialOdometer ? Number(initialOdometer) : undefined,
+        tankMainCapacity: tankMain ? Number(tankMain) : undefined,
+        tankAuxCapacity: tankAux ? Number(tankAux) : undefined,
         model: model.trim() || undefined,
       });
       onCreated(vehicle.id);
@@ -83,6 +87,16 @@ export function CreateVehicleDialog({ onCancel, onCreated }: Props) {
           <input type="number" min="0" value={initialOdometer} onChange={(e) => setInitialOdometer(e.target.value)} placeholder="0" />
           <p className="hint">{t('vehicle.odometerHint')}</p>
         </label>
+        <div className="field-row">
+          <label>
+            <span>{t('vehicle.tankMain')}</span>
+            <input type="number" min="1" max="2000" value={tankMain} onChange={(e) => setTankMain(e.target.value)} />
+          </label>
+          <label>
+            <span>{t('vehicle.tankAux')}</span>
+            <input type="number" min="0" max="2000" value={tankAux} onChange={(e) => setTankAux(e.target.value)} />
+          </label>
+        </div>
 
         <label className="field">
           <span>{t('vehicle.model')}</span>

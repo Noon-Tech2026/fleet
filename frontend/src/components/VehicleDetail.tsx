@@ -107,8 +107,8 @@ export function VehicleDetail({ vehicle, simulatorMode, onTrack }: Props) {
 
       <h3>{t('supervision.fuel')}</h3>
       <div className="fuel-row">
-        <FuelGauge liters={vehicle.fuelMain} capacity={700} label={t('supervision.fuelMain')} />
-        <FuelGauge liters={vehicle.fuelAux} capacity={300} label={t('supervision.fuelAux')} />
+        <FuelGauge liters={vehicle.fuelMain} capacity={vehicle.tankMainCapacity} label={t('supervision.fuelMain')} />
+        <FuelGauge liters={vehicle.fuelAux} capacity={vehicle.tankAuxCapacity} label={t('supervision.fuelAux')} />
       </div>
 
       <h3>{t('supervision.maintenance')}</h3>

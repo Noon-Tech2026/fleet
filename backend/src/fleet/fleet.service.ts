@@ -105,6 +105,8 @@ export class FleetService implements OnModuleInit {
       plate: meta.plate,
       driver: meta.driver,
       imei: meta.imei,
+      tankMainCapacity: Number(meta.tankMainCapacity ?? 700),
+      tankAuxCapacity: Number(meta.tankAuxCapacity ?? 300),
 
       lat: raw.lat,
       lon: raw.lon,

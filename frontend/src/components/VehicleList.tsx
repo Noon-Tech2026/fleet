@@ -47,7 +47,7 @@ export function VehicleList({ vehicles, pending = [], selectedId, onSelect, onTr
         {vehicles.map((v) => {
           const status = statusOf(v);
           const total = v.fuelMain + v.fuelAux;
-          const ratio = Math.min(1, total / TANKS_TOTAL_LITERS);
+          const ratio = Math.min(1, total / Math.max(1, (v.tankMainCapacity || 0) + (v.tankAuxCapacity || 0) || TANKS_TOTAL_LITERS));
           // Le niveau se lit d'abord à la couleur : sur une liste de vingt
           // vignettes, personne ne compare des largeurs de barres.
           const gaugeTone = ratio < 0.15 ? 'danger' : ratio < 0.3 ? 'warn' : 'ok';

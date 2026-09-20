@@ -15,6 +15,8 @@ export function EditVehicleDialog({ vehicleId, onCancel, onSaved }: Props) {
   const [imei, setImei] = useState('');
   const [simNumber, setSimNumber] = useState('');
   const [odometer, setOdometer] = useState('');
+  const [tankMain, setTankMain] = useState('700');
+  const [tankAux, setTankAux] = useState('300');
   const [model, setModel] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +32,8 @@ export function EditVehicleDialog({ vehicleId, onCancel, onSaved }: Props) {
         setImei(row.imei);
         setSimNumber(row.simNumber ?? '');
         setOdometer(row.initialOdometer != null ? String(row.initialOdometer) : '');
+        setTankMain(String(row.tankMainCapacity ?? 700));
+        setTankAux(String(row.tankAuxCapacity ?? 300));
         setModel(row.model ?? '');
       })
       .catch((err) => setError(err instanceof Error ? err.message : t('editTruck.error')))
@@ -53,6 +57,8 @@ export function EditVehicleDialog({ vehicleId, onCancel, onSaved }: Props) {
         plate: plate.trim(),
         simNumber: simNumber.trim() || undefined,
         initialOdometer: odometer !== '' ? Number(odometer) : undefined,
+        tankMainCapacity: tankMain !== '' ? Number(tankMain) : undefined,
+        tankAuxCapacity: tankAux !== '' ? Number(tankAux) : undefined,
         model: model.trim() || undefined,
       });
       onSaved(vehicleId);
@@ -100,6 +106,16 @@ export function EditVehicleDialog({ vehicleId, onCancel, onSaved }: Props) {
           <input type="number" min="0" value={odometer} onChange={(e) => setOdometer(e.target.value)} placeholder="0" disabled={loading} />
           <p className="hint">{t('editTruck.odometerHint')}</p>
         </label>
+        <div className="field-row">
+          <label>
+            <span>{t('vehicle.tankMain')}</span>
+            <input type="number" min="1" max="2000" value={tankMain} onChange={(e) => setTankMain(e.target.value)} disabled={loading} />
+          </label>
+          <label>
+            <span>{t('vehicle.tankAux')}</span>
+            <input type="number" min="0" max="2000" value={tankAux} onChange={(e) => setTankAux(e.target.value)} disabled={loading} />
+          </label>
+        </div>
 
         <label className="field">
           <span>{t('editTruck.model')}</span>

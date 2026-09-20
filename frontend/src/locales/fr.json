@@ -84,7 +84,9 @@
     "sim": "Numéro SIM (boîtier)",
     "simPlaceholder": "Ex : +222 XX XX XX XX",
     "odometer": "Compteur actuel (km)",
-    "odometerHint": "Kilométrage affiché au compteur du camion (utile pour un camion d'occasion)."
+    "odometerHint": "Kilométrage affiché au compteur du camion (utile pour un camion d'occasion).",
+    "tankMain": "Réservoir principal (L)",
+    "tankAux": "Réservoir auxiliaire (L)"
   },
   "status": {
     "offline": "Hors ligne",

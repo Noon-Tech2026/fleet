@@ -36,6 +36,8 @@ export interface VehicleState {
   plate: string;
   driver: string;
   imei: string;
+  tankMainCapacity: number; // L
+  tankAuxCapacity: number; // L
 
   lat: number;
   lon: number;

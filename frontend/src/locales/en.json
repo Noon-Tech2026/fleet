@@ -84,7 +84,9 @@
     "sim": "SIM number (device)",
     "simPlaceholder": "e.g. +222 XX XX XX XX",
     "odometer": "Current odometer (km)",
-    "odometerHint": "Mileage shown on the truck's dashboard (useful for a used truck)."
+    "odometerHint": "Mileage shown on the truck's dashboard (useful for a used truck).",
+    "tankMain": "Main tank (L)",
+    "tankAux": "Auxiliary tank (L)"
   },
   "status": {
     "offline": "Offline",
