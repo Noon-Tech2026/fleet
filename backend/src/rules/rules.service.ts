@@ -192,6 +192,11 @@ export class RulesService {
     if (rising === false) return;
     this.alerts.raise(current.id, 'critical', 'unlock_requested', `Le chauffeur demande le déblocage du démarreur (${current.driver || 'non affecté'})`);
     await this.immobilizer.buzzerOn(current.id, 2);
+    // Voyant eteint = demande enregistree ; il se rallume apres 5 min si toujours bloque.
+    await this.immobilizer.ledUnlock(current.id, false);
+    setTimeout(() => {
+      if (current.starter !== 'allowed') void this.immobilizer.ledUnlock(current.id, true);
+    }, 5 * 60_000);
   }
 
   /** Acquittement par un superviseur : coupe le buzzer, l'alerte reste dans le journal. */
