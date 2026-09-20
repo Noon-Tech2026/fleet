@@ -122,6 +122,9 @@ export interface MaintenancePlanState {
   intervalKm: number | null;
   intervalHours: number | null;
   intervalDays: number | null;
+  remindKm: number | null;
+  remindHours: number | null;
+  remindDays: number | null;
 
   lastServiceOdometer: number | null;
   lastServiceHours: number | null;

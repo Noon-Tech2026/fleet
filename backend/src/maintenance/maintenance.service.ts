@@ -190,7 +190,7 @@ export class MaintenanceService implements OnModuleInit {
   async savePlan(
     vehicleId: string,
     kind: MaintenanceKind,
-    intervals: { intervalKm: number | null; intervalHours: number | null; intervalDays: number | null },
+    intervals: { intervalKm: number | null; intervalHours: number | null; intervalDays: number | null; remindKm?: number | null; remindHours?: number | null; remindDays?: number | null },
     notes: string | null,
     current?: VehicleState,
   ): Promise<MaintenancePlanState> {
@@ -204,6 +204,9 @@ export class MaintenanceService implements OnModuleInit {
     plan.intervalKm = intervals.intervalKm;
     plan.intervalHours = intervals.intervalHours;
     plan.intervalDays = intervals.intervalDays;
+    plan.remindKm = intervals.remindKm ?? null;
+    plan.remindHours = intervals.remindHours ?? null;
+    plan.remindDays = intervals.remindDays ?? null;
     plan.notes = notes;
     plan.active = true;
 
@@ -309,10 +312,18 @@ export class MaintenanceService implements OnModuleInit {
 
     const usage = axes.length > 0 ? Math.max(...axes) : 0;
 
+    // Rappel : seuils explicites du plan (km / heures / jours restants),
+    // sinon repli sur la proportion SOON_RATIO.
+    const hasRemind = plan.remindKm !== null || plan.remindHours !== null || plan.remindDays !== null;
+    const remindHit =
+      (plan.remindKm !== null && remainingKm !== null && remainingKm <= plan.remindKm) ||
+      (plan.remindHours !== null && remainingHours !== null && remainingHours <= plan.remindHours) ||
+      (plan.remindDays !== null && remainingDays !== null && remainingDays <= plan.remindDays);
+
     let status: MaintenanceStatus;
     if (axes.length === 0) status = 'unknown';
     else if (usage >= 1) status = 'overdue';
-    else if (usage >= SOON_RATIO) status = 'soon';
+    else if (hasRemind ? remindHit : usage >= SOON_RATIO) status = 'soon';
     else status = 'ok';
 
     return {
@@ -324,6 +335,9 @@ export class MaintenanceService implements OnModuleInit {
       intervalKm: plan.intervalKm,
       intervalHours: plan.intervalHours,
       intervalDays: plan.intervalDays,
+      remindKm: plan.remindKm,
+      remindHours: plan.remindHours,
+      remindDays: plan.remindDays,
       lastServiceOdometer: plan.lastServiceOdometer,
       lastServiceHours: plan.lastServiceHours,
       lastServiceAt: plan.lastServiceAt?.toISOString() ?? null,

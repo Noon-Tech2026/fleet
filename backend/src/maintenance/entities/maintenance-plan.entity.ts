@@ -34,6 +34,16 @@ export class MaintenancePlan {
   @Column({ name: 'interval_days', type: 'int', nullable: true })
   intervalDays: number | null;
 
+  /* --- rappel : passe "a prevoir" quand le restant descend sous ces seuils --- */
+  @Column({ name: 'remind_km', type: 'int', nullable: true })
+  remindKm: number | null;
+
+  @Column({ name: 'remind_hours', type: 'int', nullable: true })
+  remindHours: number | null;
+
+  @Column({ name: 'remind_days', type: 'int', nullable: true })
+  remindDays: number | null;
+
   /**
    * Releves du dernier entretien effectue. Tant qu'ils sont nuls, aucune
    * echeance ne peut etre calculee : l'operation est signalee comme

@@ -118,6 +118,7 @@ export const api = {
     request<{ ok: boolean }>(`/api/simulator/vehicles/${id}/press-button`, { method: 'POST' }),
 
   /* --- entretien --- */
+  maintenanceCatalog: () => request<{ kind: string; label: string }[]>('/api/maintenance/catalog'),
   maintenance: () => request<MaintenancePlanState[]>('/api/maintenance'),
 
   vehicleMaintenance: (id: string) =>
@@ -150,7 +151,7 @@ export const api = {
   saveMaintenancePlan: (
     id: string,
     kind: MaintenanceKind,
-    body: { intervalKm?: number; intervalHours?: number; intervalDays?: number; notes?: string },
+    body: { intervalKm?: number; intervalHours?: number; intervalDays?: number; remindKm?: number; remindHours?: number; remindDays?: number; notes?: string },
   ) =>
     request<MaintenancePlanState>(`/api/vehicles/${id}/maintenance/${kind}`, {
       method: 'POST',

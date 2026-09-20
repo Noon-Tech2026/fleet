@@ -36,6 +36,9 @@ class PlanDto {
   @IsOptional() @IsInt() @Min(100) @Max(500_000) intervalKm?: number;
   @IsOptional() @IsInt() @Min(10) @Max(50_000) intervalHours?: number;
   @IsOptional() @IsInt() @Min(1) @Max(3650) intervalDays?: number;
+  @IsOptional() @IsInt() @Min(1) @Max(100_000) remindKm?: number;
+  @IsOptional() @IsInt() @Min(1) @Max(10_000) remindHours?: number;
+  @IsOptional() @IsInt() @Min(1) @Max(365) remindDays?: number;
   @IsOptional() @IsString() @MaxLength(1000) notes?: string;
 }
 
@@ -126,7 +129,7 @@ export class MaintenanceController {
       {
         intervalKm: dto.intervalKm ?? null,
         intervalHours: dto.intervalHours ?? null,
-        intervalDays: dto.intervalDays ?? null,
+        intervalDays: dto.intervalDays ?? null, remindKm: dto.remindKm ?? null, remindHours: dto.remindHours ?? null, remindDays: dto.remindDays ?? null,
       },
       dto.notes ?? null,
       this.currentOf(id),
