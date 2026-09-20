@@ -151,10 +151,12 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
     void load(f, tt);
   }
 
+  // Rechargement automatique quand la periode change (petit delai pour la saisie).
   useEffect(() => {
-    void load();
+    const timer = setTimeout(() => void load(from, to), 500);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vehicleId]);
+  }, [vehicleId, from, to]);
 
   const summary = useMemo(() => (points && points.length > 1 ? summarize(points) : null), [points]);
 
@@ -316,7 +318,7 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
             {t('track.to')}
             <input type="datetime-local" value={to} onChange={(e) => setTo(e.target.value)} />
           </label>
-          <button className="btn mint" disabled={loading} onClick={() => void load()}>{loading ? t('track.loading') : t('track.load')}</button>
+          <button className="btn mint" disabled={loading} onClick={() => void load(from, to)}>{loading ? t('track.loading') : t('track.load')}</button>
           <span className="presets">
             <button className="btn ghost small" onClick={() => preset('today')}>{t('track.today')}</button>
             <button className="btn ghost small" onClick={() => preset(24)}>{t('track.last24h')}</button>
