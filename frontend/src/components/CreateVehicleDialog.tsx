@@ -88,11 +88,11 @@ export function CreateVehicleDialog({ onCancel, onCreated }: Props) {
           <p className="hint">{t('vehicle.odometerHint')}</p>
         </label>
         <div className="field-row">
-          <label>
+          <label className="field">
             <span>{t('vehicle.tankMain')}</span>
             <input type="number" min="1" max="2000" value={tankMain} onChange={(e) => setTankMain(e.target.value)} />
           </label>
-          <label>
+          <label className="field">
             <span>{t('vehicle.tankAux')}</span>
             <input type="number" min="0" max="2000" value={tankAux} onChange={(e) => setTankAux(e.target.value)} />
           </label>
