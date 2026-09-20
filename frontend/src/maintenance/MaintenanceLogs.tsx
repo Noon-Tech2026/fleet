@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import type { MaintenanceLogEntry } from '../lib/types';
 import { api } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
 
 /**
  * Journal des interventions.
@@ -10,6 +12,9 @@ import { api } from '../api/client';
  * kilométrage », et une ligne rectifiable ne prouve plus rien.
  */
 export function MaintenanceLogs() {
+  const { t } = useTranslation();
+  const { can } = useAuth();
+  const isAdmin = can('admin');
   const [logs, setLogs] = useState<MaintenanceLogEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,6 +81,19 @@ export function MaintenanceLogs() {
                 {entry.cost !== null ? `${entry.cost.toLocaleString('fr-FR')} MRU` : '—'}
               </td>
               <td className="cell-muted">{entry.performedBy}</td>
+              {isAdmin && (
+                <td className="cell-actions">
+                  <button
+                    className="btn ghost small danger"
+                    onClick={() => {
+                      if (window.confirm(t('maintenance.page.confirmDeleteLog')) === false) return;
+                      void api.deleteMaintenanceLog(entry.id).then(() => setLogs((list) => list?.filter((l) => l.id !== entry.id) ?? null));
+                    }}
+                  >
+                    {t('maintenance.page.delete')}
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

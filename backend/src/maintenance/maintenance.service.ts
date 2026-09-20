@@ -218,6 +218,19 @@ export class MaintenanceService implements OnModuleInit {
   }
 
   /** Retire une operation du suivi d'un camion, sans toucher a son journal. */
+  /** Suppression definitive d'un plan (admin) : pour nettoyer les essais. Le journal reste. */
+  async removePlan(id: string): Promise<{ ok: true }> {
+    await this.plansRepo.delete({ id });
+    await this.reload();
+    return { ok: true };
+  }
+
+  /** Suppression definitive d'une entree du journal (admin). Ne recalcule pas le dernier entretien du plan. */
+  async removeLog(id: string): Promise<{ ok: true }> {
+    await this.logsRepo.delete({ id });
+    return { ok: true };
+  }
+
   async deactivatePlan(id: string): Promise<{ ok: true }> {
     const plan = await this.plansRepo.findOne({ where: { id } });
     if (!plan) throw new NotFoundException('Echeance inconnue');

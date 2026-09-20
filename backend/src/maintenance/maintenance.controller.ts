@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import {
   IsDateString,
   IsInt,
@@ -141,6 +141,18 @@ export class MaintenanceController {
   @Post('vehicles/:id/maintenance')
   applyCatalog(@Param('id') id: string) {
     return this.maintenance.applyCatalog(id);
+  }
+
+  @RequireRole(Role.Admin)
+  @Delete('maintenance/plans/:planId')
+  removePlan(@Param('planId') planId: string) {
+    return this.maintenance.removePlan(planId);
+  }
+
+  @RequireRole(Role.Admin)
+  @Delete('maintenance/logs/:logId')
+  removeLog(@Param('logId') logId: string) {
+    return this.maintenance.removeLog(logId);
   }
 
   @RequireRole(Role.Supervisor)

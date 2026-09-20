@@ -273,7 +273,11 @@
       "allTracked": "All catalog operations are already tracked on this truck.",
       "next": "Continue",
       "recorded": "{{label}} — {{id}}: service recorded.",
-      "planSaved": "{{label}} — {{id}}: interval updated."
+      "planSaved": "{{label}} — {{id}}: interval updated.",
+      "delete": "Delete",
+      "confirmDelete": "Permanently delete “{{label}}” for {{id}}?",
+      "confirmDeleteLog": "Delete this log entry?",
+      "deleted": "{{label}} — {{id}}: schedule deleted."
     },
     "plan": {
       "title": "Interval",

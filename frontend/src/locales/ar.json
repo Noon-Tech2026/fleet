@@ -273,7 +273,11 @@
       "allTracked": "كل عمليات الكتالوج متابَعة على هذه الشاحنة.",
       "next": "متابعة",
       "recorded": "{{label}} — {{id}}: تم تسجيل الصيانة.",
-      "planSaved": "{{label}} — {{id}}: تم تحديث الدورية."
+      "planSaved": "{{label}} — {{id}}: تم تحديث الدورية.",
+      "delete": "حذف",
+      "confirmDelete": "حذف «{{label}}» نهائياً للشاحنة {{id}}؟",
+      "confirmDeleteLog": "حذف هذا السطر من السجل؟",
+      "deleted": "{{label}} — {{id}}: تم حذف الموعد."
     },
     "plan": {
       "title": "الدورية",

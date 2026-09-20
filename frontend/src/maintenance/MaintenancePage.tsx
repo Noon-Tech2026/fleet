@@ -32,6 +32,7 @@ export function MaintenancePage({ vehicles }: { vehicles: VehicleState[] }) {
 
   const canRecord = can('operator');
   const canConfigure = can('supervisor');
+  const isAdmin = can('admin');
 
   const load = useCallback(async () => {
     try {
@@ -195,6 +196,20 @@ export function MaintenancePage({ vehicles }: { vehicles: VehicleState[] }) {
                         )}
                         {canRecord && (
                           <button className="btn ghost small" onClick={() => setEditing(plan)}>{tr('page.record')}</button>
+                        )}
+                        {isAdmin && (
+                          <button
+                            className="btn ghost small danger"
+                            onClick={() => {
+                              if (window.confirm(tr('page.confirmDelete', { label: plan.label, id: plan.vehicleId })) === false) return;
+                              void api.deleteMaintenancePlan(plan.id).then(() => {
+                                setPlans((list) => list?.filter((p) => p.id !== plan.id) ?? null);
+                                setNotice(tr('page.deleted', { label: plan.label, id: plan.vehicleId }));
+                              }).catch((e) => setError(e instanceof Error ? e.message : String(e)));
+                            }}
+                          >
+                            {tr('page.delete')}
+                          </button>
                         )}
                       </td>
                     )}

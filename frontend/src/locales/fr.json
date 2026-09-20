@@ -273,7 +273,11 @@
       "allTracked": "Toutes les opérations du catalogue sont déjà suivies sur ce camion.",
       "next": "Continuer",
       "recorded": "{{label}} — {{id}} : entretien enregistré.",
-      "planSaved": "{{label}} — {{id}} : périodicité mise à jour."
+      "planSaved": "{{label}} — {{id}} : périodicité mise à jour.",
+      "delete": "Supprimer",
+      "confirmDelete": "Supprimer définitivement « {{label}} » de {{id}} ?",
+      "confirmDeleteLog": "Supprimer cette entrée du journal ?",
+      "deleted": "{{label}} — {{id}} : échéance supprimée."
     },
     "plan": {
       "title": "Périodicité",

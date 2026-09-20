@@ -158,6 +158,10 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  deleteMaintenancePlan: (planId: string) =>
+    request<{ ok: true }>(`/api/maintenance/plans/${encodeURIComponent(planId)}`, { method: 'DELETE' }),
+  deleteMaintenanceLog: (logId: string) =>
+    request<{ ok: true }>(`/api/maintenance/logs/${encodeURIComponent(logId)}`, { method: 'DELETE' }),
   applyMaintenanceCatalog: (id: string) =>
     request<MaintenancePlanState[]>(`/api/vehicles/${id}/maintenance`, { method: 'POST' }),
 
