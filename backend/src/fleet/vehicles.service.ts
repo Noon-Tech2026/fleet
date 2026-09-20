@@ -28,6 +28,22 @@ export class VehiclesService implements OnModuleInit {
     await this.reload();
   }
 
+  /**
+   * Ajoute une distance parcourue (km) au cumul GPS du camion. Mise a jour
+   * du cache immediate ; ecriture en base sans rechargement (appele a chaque
+   * trame en mouvement).
+   */
+  async addGpsKm(id: string, km: number): Promise<void> {
+    const v = this.cache.get(id);
+    if (v === undefined || km <= 0) return;
+    v.gpsKm = Number(v.gpsKm ?? 0) + km;
+    try {
+      await this.repo.update({ id }, { gpsKm: v.gpsKm });
+    } catch (e) {
+      this.log.warn(`${id} — cumul GPS non persiste : ${String(e)}`);
+    }
+  }
+
   async reload(): Promise<void> {
     const rows = await this.repo.find();
     this.cache = new Map(rows.map((v) => [v.id, v]));
@@ -106,7 +122,8 @@ export class VehiclesService implements OnModuleInit {
         'SELECT odometer FROM positions WHERE vehicle_id = ? ORDER BY id DESC LIMIT 1',
         [id],
       );
-      data = { ...data, initialOdometerDeviceKm: Number(rows[0]?.odometer ?? 0) };
+      // Nouveau compteur saisi : le cumul GPS repart de zero.
+      data = { ...data, initialOdometerDeviceKm: Number(rows[0]?.odometer ?? 0), gpsKm: 0 };
     }
 
     Object.assign(vehicle, data, { id: vehicle.id });

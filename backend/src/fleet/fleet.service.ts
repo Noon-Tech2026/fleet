@@ -93,6 +93,13 @@ export class FleetService implements OnModuleInit {
       return;
     }
 
+    // Distance parcourue depuis la trame precedente, cumulee cote API.
+    // Ignore les sauts GPS improbables (> 5 km) et le bruit a l'arret.
+    if (previous !== undefined && (raw.speed > 3 || previous.speed > 3)) {
+      const km = haversineKm(previous.lat, previous.lon, raw.lat, raw.lon);
+      if (km > 0.005 && km < 5) await this.vehicles.addGpsKm(raw.vehicleId, km);
+    }
+
     const current: VehicleState = {
       id: raw.vehicleId,
       plate: meta.plate,
@@ -115,7 +122,7 @@ export class FleetService implements OnModuleInit {
       fuelMain: this.fuel.toLiters(raw.vehicleId, 'main', raw.fuelMainVolts),
       fuelAux: this.fuel.toLiters(raw.vehicleId, 'aux', raw.fuelAuxVolts),
 
-      odometer: meta.initialOdometer + Math.max(0, raw.odometer - meta.initialOdometerDeviceKm),
+      odometer: Math.round(meta.initialOdometer + Number(meta.gpsKm ?? 0)),
       engineHours: raw.engineHours,
 
       zoneId: this.geofence.locate(raw.lat, raw.lon, raw.vehicleId)?.id ?? null,
@@ -137,4 +144,14 @@ export class FleetService implements OnModuleInit {
 
     this.events.publish({ type: 'position', vehicle: { ...current } });
   }
+}
+
+/** Distance en km entre deux points (formule de haversine). */
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
 }

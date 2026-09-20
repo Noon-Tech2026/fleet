@@ -49,6 +49,14 @@ export class Vehicle {
   @Column({ name: 'initial_odometer_device_km', default: 0 })
   initialOdometerDeviceKm: number;
 
+  /**
+   * Distance GPS cumulee par l'API depuis la derniere saisie du compteur
+   * (haversine entre trames successives). Odometre affiche = initial + gpsKm.
+   * Independant du boitier : fonctionne sans CAN ni odometre Traccar.
+   */
+  @Column({ name: 'gps_km', type: 'double', default: 0 })
+  gpsKm: number;
+
   @Column({ default: true })
   active: boolean;
 
