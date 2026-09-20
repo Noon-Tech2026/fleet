@@ -23,6 +23,7 @@ export function ExitRequestsPanel({ requests }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [clients, setClients] = useState<ClientRecord[]>([]);
   const [drivers, setDrivers] = useState<DriverRecord[]>([]);
+  const [filter, setFilter] = useState('');
 
   useEffect(() => {
     if (canDecide === false || open === false) return;
@@ -60,6 +61,16 @@ export function ExitRequestsPanel({ requests }: Props) {
   const waiting = requests.filter((r) => r.buttonPressedAt === null).length;
   const ready = requests.length - waiting;
 
+  // Jamais "a valider" derriere "en attente" ; a statut egal, la plus ancienne d'abord.
+  const sorted = [...requests].sort((a, b) => {
+    const ra = a.buttonPressedAt === null ? 1 : 0;
+    const rb = b.buttonPressedAt === null ? 1 : 0;
+    if (ra !== rb) return ra - rb;
+    return Date.parse(a.exitedAt) - Date.parse(b.exitedAt);
+  });
+  const q = filter.trim().toLowerCase();
+  const shown = q.length === 0 ? sorted : sorted.filter((r) => r.vehicleId.toLowerCase().includes(q) || r.zoneName.toLowerCase().includes(q));
+
   return (
     <>
       <button className="btn exit-toggle" onClick={() => setOpen(true)}>
@@ -81,8 +92,18 @@ export function ExitRequestsPanel({ requests }: Props) {
               <button className="btn ghost" onClick={() => setOpen(false)}>{t('track.close')}</button>
             </header>
 
+            {requests.length > 10 && (
+              <input
+                className="exit-filter"
+                type="search"
+                placeholder={t('exit.filter')}
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              />
+            )}
+
             <ul className="exit-list">
-              {requests.map((r) => {
+              {shown.map((r) => {
                 const waitingButton = r.buttonPressedAt === null;
                 return (
                   <li key={r.id} className={waitingButton ? 'warn' : 'ready'}>
