@@ -2691,3 +2691,5 @@ h3 {
 .exit-list .muted { font-size: 12px; color: var(--muted, #6b7280); margin-top: 4px; }
 .exit-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
 .nav-badge { display: inline-block; min-width: 18px; padding: 0 6px; margin-inline-start: 6px; border-radius: 9px; background: var(--red, #c0392b); color: #fff; font-size: 11px; line-height: 18px; text-align: center; }
+
+.notice.unlock-request { background: #fdecea; color: #c0392b; font-weight: 600; margin: 8px 0; }

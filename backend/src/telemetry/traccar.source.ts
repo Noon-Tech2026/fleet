@@ -219,6 +219,7 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
       course: p.course,
       ignition: Boolean(a.ignition ?? a.in1),
       buttonPressed: Boolean(a.in2),
+      unlockPressed: Boolean(a.in3),
       // out1 absent de la trame = element I/O DOUT1 non actif dans le boitier : etat inconnu, pas "0".
       outputActive: a.out1 === undefined ? undefined : DOUT1_INVERTED ? Boolean(a.out1) === false : Boolean(a.out1),
       fuelMainVolts: Number(a.adc1 ?? 0),
@@ -283,7 +284,7 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
     for (const h of this.ioHandlers) h(report);
   }
 
-  async setDigitalOutput(vehicleId: string, output: 1 | 2, active: boolean, durationSec?: number): Promise<void> {
+  async setDigitalOutput(vehicleId: string, output: 1 | 2 | 3 | 4, active: boolean, durationSec?: number): Promise<void> {
     const deviceId = [...this.deviceToVehicle.entries()].find(([, name]) => name === vehicleId)?.[0];
     if (!deviceId) throw new Error(`Aucun boîtier associé à ${vehicleId}`);
 
@@ -292,10 +293,14 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
     const value = physical ? '1' : '0';
     // Syntaxe Teltonika : setdigout <D1><D2> [<T1> <T2>] ; '?' = sortie inchangee.
     // Avec timeout, le boitier remet la sortie a 0 tout seul : aucune dependance au reseau.
-    const outputs = output === 1 ? `${value}?` : `?${value}`;
-    let data = `setdigout ${outputs}`;
+    // setdigout <D1><D2><D3><D4> [<T1> <T2> <T3> <T4>] ; '?' = sortie inchangee.
+    const outputs = ['?', '?', '?', '?'];
+    outputs[output - 1] = value;
+    let data = `setdigout ${outputs.join('')}`;
     if (durationSec !== undefined && durationSec > 0) {
-      data += output === 1 ? ` ${durationSec}` : ` ? ${durationSec}`;
+      const timeouts = ['?', '?', '?', '?'];
+      timeouts[output - 1] = String(durationSec);
+      data += ` ${timeouts.join(' ')}`;
     }
     this.log.log(`${vehicleId} — commande boitier : ${data}`);
     const res = await this.api('/api/commands/send', {

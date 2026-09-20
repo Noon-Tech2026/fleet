@@ -215,7 +215,8 @@
     "legendMoving": "En route",
     "legendStopped": "À l'arrêt",
     "legendBlocked": "Démarrage bloqué",
-    "capacity": "capacité {{capacity}} L"
+    "capacity": "capacité {{capacity}} L",
+    "unlockRequested": "🔔 Le chauffeur demande le déblocage du démarreur"
   },
   "maintenance": {
     "status": {
@@ -245,7 +246,8 @@
     "exit_confirmed": "Sortie avec chargement confirmée par {{detail}}",
     "exit_rejected": "Sortie rejetée par {{detail}}",
     "exit_bypassed": "Sortie sans chargement validée — {{detail}}",
-    "starter_mismatch": "État du démarreur différent de l'état voulu — {{detail}}"
+    "starter_mismatch": "État du démarreur différent de l'état voulu — {{detail}}",
+    "unlock_requested": "Demande de déblocage par le chauffeur — {{detail}}"
   },
   "track": {
     "button": "Mouvements",

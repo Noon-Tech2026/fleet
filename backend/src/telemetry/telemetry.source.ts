@@ -16,6 +16,7 @@ export interface RawPosition {
   course: number;
   ignition: boolean; // DIN1
   buttonPressed: boolean; // DIN2 — impulsion du bouton chauffeur
+  unlockPressed: boolean; // DIN3 — bouton "demande de deblocage"
   outputActive: boolean | undefined; // DOUT1 — état réel du relais ; undefined si absent de la trame
   fuelMainVolts: number; // AIN1
   fuelAuxVolts: number; // AIN2
@@ -53,7 +54,7 @@ export interface TelemetrySource {
    * ne considère jamais une commande comme appliquée sans confirmation.
    */
   /** durationSec : le boitier remet la sortie a 0 lui-meme apres ce delai (setdigout avec timeout). */
-  setDigitalOutput(vehicleId: string, output: 1 | 2, active: boolean, durationSec?: number): Promise<void>;
+  setDigitalOutput(vehicleId: string, output: 1 | 2 | 3 | 4, active: boolean, durationSec?: number): Promise<void>;
 
   /**
    * Gestion du répertoire des boîtiers côté source (Traccar). Optionnel :

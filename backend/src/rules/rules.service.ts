@@ -42,6 +42,7 @@ export class RulesService {
   async evaluate(previous: VehicleState | undefined, current: VehicleState): Promise<void> {
     this.checkZoneTransition(previous, current);
     await this.checkPerimeter(previous, current);
+    await this.checkUnlockRequest(previous, current);
     await this.checkDeparture(previous, current);
     this.checkFuel(current);
     this.checkMaintenance(current);
@@ -92,6 +93,7 @@ export class RulesService {
       if (current.departureConfirmed) {
         this.unconfirmed.delete(current.id);
         await this.immobilizer.buzzerOff(current.id);
+        await this.immobilizer.ledTrip(current.id, false);
         await this.exitRequests.markButton(current.id);
         this.alerts.raise(current.id, 'info', 'departure_confirmed_late', 'Départ confirmé par le chauffeur après rappel');
       } else if (now - open.lastBuzz >= BUZZ_REPEAT_MS) {
@@ -124,6 +126,7 @@ export class RulesService {
         'Sortie de station sans confirmation du chauffeur — buzzer cabine déclenché',
       );
       this.unconfirmed.set(current.id, { lastBuzz: Date.now(), count: 1 });
+      await this.immobilizer.ledTrip(current.id, true);
       await this.immobilizer.buzzerOn(current.id, BUZZ_SECONDS);
     }
 
@@ -169,12 +172,26 @@ export class RulesService {
   async resumeExitReminder(vehicle: VehicleState): Promise<void> {
     vehicle.departureConfirmed = false;
     this.unconfirmed.set(vehicle.id, { lastBuzz: Date.now(), count: 1 });
+    await this.immobilizer.ledTrip(vehicle.id, true);
     await this.immobilizer.buzzerOn(vehicle.id, BUZZ_SECONDS);
   }
 
-  /** Decision prise : plus de rappel. */
+  /** Decision prise : plus de rappel, voyant eteint. */
   stopExitReminder(vehicleId: string): void {
     this.unconfirmed.delete(vehicleId);
+    void this.immobilizer.ledTrip(vehicleId, false);
+  }
+
+  /**
+   * DIN3 : le chauffeur demande le deblocage du demarreur. Alerte critique
+   * pour le superviseur + bip de 2 s pour confirmer au chauffeur que la
+   * demande est partie. L'etat retombe a la reautorisation.
+   */
+  private async checkUnlockRequest(previous: VehicleState | undefined, current: VehicleState): Promise<void> {
+    const rising = current.unlockRequested && (previous === undefined || previous.unlockRequested === false);
+    if (rising === false) return;
+    this.alerts.raise(current.id, 'critical', 'unlock_requested', `Le chauffeur demande le déblocage du démarreur (${current.driver || 'non affecté'})`);
+    await this.immobilizer.buzzerOn(current.id, 2);
   }
 
   /** Acquittement par un superviseur : coupe le buzzer, l'alerte reste dans le journal. */

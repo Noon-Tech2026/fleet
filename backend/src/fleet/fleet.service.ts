@@ -108,6 +108,7 @@ export class FleetService implements OnModuleInit {
       // L'appui bouton est une impulsion : on garde l'etat confirme
       // jusqu'a la sortie de station (voir RulesService.checkDeparture).
       departureConfirmed: raw.buttonPressed || (previous?.departureConfirmed ?? false),
+      unlockRequested: raw.unlockPressed || (previous?.unlockRequested ?? false),
       starter: previous?.starter ?? this.immobilizer.initialStarter(raw.vehicleId, raw.outputActive),
       commandLock: this.immobilizer.lockOf(raw.vehicleId),
 

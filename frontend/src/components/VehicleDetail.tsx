@@ -133,6 +133,9 @@ export function VehicleDetail({ vehicle, simulatorMode, onTrack }: Props) {
       >
         <strong>{starterLabel}</strong>
         <span>{t('supervision.starterHint')}</span>
+        {vehicle.unlockRequested && (
+          <p className="notice unlock-request">{t('supervision.unlockRequested')}</p>
+        )}
         {vehicle.commandLock && (
           <p className="hint">{t('supervision.commandInProgress', { by: vehicle.commandLock.by })}</p>
         )}

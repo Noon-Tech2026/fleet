@@ -26,6 +26,7 @@ export type AlertCode =
   | 'starter_blocked'
   | 'starter_released'
   | 'starter_mismatch'
+  | 'unlock_requested'
   | 'device_offline'
   | 'maintenance_due'
   | 'maintenance_overdue';
@@ -43,6 +44,8 @@ export interface VehicleState {
 
   ignition: boolean; // DIN1 — fil d'allumage
   departureConfirmed: boolean; // DIN2 — bouton chauffeur
+  /** DIN3 : le chauffeur demande le deblocage ; retombe a la reautorisation. */
+  unlockRequested: boolean;
   starter: StarterState; // DOUT1 — relais démarreur
   /** Commande démarreur envoyée, en attente de confirmation du boîtier ; null sinon. */
   commandLock: { by: string; action: 'block' | 'release'; since: string } | null;

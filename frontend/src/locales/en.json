@@ -215,7 +215,8 @@
     "legendMoving": "Moving",
     "legendStopped": "Stopped",
     "legendBlocked": "Start blocked",
-    "capacity": "capacity {{capacity}} L"
+    "capacity": "capacity {{capacity}} L",
+    "unlockRequested": "🔔 The driver is requesting the starter to be unlocked"
   },
   "maintenance": {
     "status": {
@@ -256,7 +257,8 @@
     "exit_confirmed": "Loaded departure confirmed by {{detail}}",
     "exit_rejected": "Departure rejected by {{detail}}",
     "exit_bypassed": "Departure without load validated — {{detail}}",
-    "starter_mismatch": "Starter state differs from the requested state — {{detail}}"
+    "starter_mismatch": "Starter state differs from the requested state — {{detail}}",
+    "unlock_requested": "Driver requests starter unlock — {{detail}}"
   },
   "track": {
     "button": "Track",

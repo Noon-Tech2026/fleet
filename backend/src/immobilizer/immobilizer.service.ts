@@ -211,6 +211,8 @@ export class ImmobilizerService implements OnModuleInit {
       throw e;
     }
     vehicle.starter = 'allowed';
+    vehicle.unlockRequested = false;
+    void this.ledUnlock(vehicle.id, false);
     await this.persist(vehicle.id, 'allowed', false, actor, reason);
     this.events.publish({ type: 'position', vehicle: { ...vehicle } });
     this.alerts.raise(vehicle.id, 'info', 'starter_released', `Demarrage reautorise par ${actor.email}`);
@@ -274,6 +276,17 @@ export class ImmobilizerService implements OnModuleInit {
     }
   }
 
+  // ---- Voyants des boutons (DOUT3 = bouton voyage, DOUT4 = bouton deblocage) --
+
+  /** Best effort : un voyant qui rate n'interrompt jamais la logique metier. */
+  async ledTrip(vehicleId: string, on: boolean): Promise<void> {
+    try { await this.source.setDigitalOutput(vehicleId, 3, on); } catch (e) { this.log.warn(`${vehicleId} — voyant voyage : ${String(e)}`); }
+  }
+
+  async ledUnlock(vehicleId: string, on: boolean): Promise<void> {
+    try { await this.source.setDigitalOutput(vehicleId, 4, on); } catch (e) { this.log.warn(`${vehicleId} — voyant deblocage : ${String(e)}`); }
+  }
+
   // ---- Buzzer cabine (DOUT2) ------------------------------------------------
 
   /** Declenche le buzzer pour `seconds` ; le boitier l'eteint seul a l'echeance. */
@@ -320,6 +333,7 @@ export class ImmobilizerService implements OnModuleInit {
       throw e;
     }
     vehicle.starter = 'blocked';
+    void this.ledUnlock(vehicle.id, true);
     await this.persist(vehicle.id, 'blocked', false, actor, reason);
     this.events.publish({ type: 'position', vehicle: { ...vehicle } });
     this.alerts.raise(vehicle.id, 'critical', 'starter_blocked', `Demarreur bloque — ${reason}`);
