@@ -213,6 +213,7 @@ export class ImmobilizerService implements OnModuleInit {
     vehicle.starter = 'allowed';
     vehicle.unlockRequested = false;
     void this.ledUnlock(vehicle.id, false);
+    this.stopIoPolling(vehicle.id);
     await this.persist(vehicle.id, 'allowed', false, actor, reason);
     this.events.publish({ type: 'position', vehicle: { ...vehicle } });
     this.alerts.raise(vehicle.id, 'info', 'starter_released', `Demarrage reautorise par ${actor.email}`);
@@ -276,6 +277,32 @@ export class ImmobilizerService implements OnModuleInit {
     }
   }
 
+  // ---- Sondage getio ---------------------------------------------------------
+  // Le firmware 03.01 du FMC650 ne genere pas de trame sur changement de DIN :
+  // pendant les fenetres ou l'on attend un appui (bouton voyage apres une
+  // sortie, bouton deblocage quand le camion est bloque), on interroge le
+  // boitier a intervalle court. La reponse passe par onIoReport.
+  private readonly ioPolls = new Map<string, { timer: NodeJS.Timeout; stopAt: number }>();
+
+  startIoPolling(vehicleId: string, everyMs: number, maxMs: number): void {
+    this.stopIoPolling(vehicleId);
+    const stopAt = Date.now() + maxMs;
+    const timer = setInterval(() => {
+      if (Date.now() > stopAt) {
+        this.stopIoPolling(vehicleId);
+        return;
+      }
+      void this.source.queryIo?.(vehicleId).catch(() => undefined);
+    }, everyMs);
+    this.ioPolls.set(vehicleId, { timer, stopAt });
+  }
+
+  stopIoPolling(vehicleId: string): void {
+    const p = this.ioPolls.get(vehicleId);
+    if (p !== undefined) clearInterval(p.timer);
+    this.ioPolls.delete(vehicleId);
+  }
+
   // ---- Voyants des boutons (DOUT3 = bouton voyage, DOUT4 = bouton deblocage) --
 
   /** Best effort : un voyant qui rate n'interrompt jamais la logique metier. */
@@ -334,6 +361,7 @@ export class ImmobilizerService implements OnModuleInit {
     }
     vehicle.starter = 'blocked';
     void this.ledUnlock(vehicle.id, true);
+    this.startIoPolling(vehicle.id, 10_000, 15 * 60_000);
     await this.persist(vehicle.id, 'blocked', false, actor, reason);
     this.events.publish({ type: 'position', vehicle: { ...vehicle } });
     this.alerts.raise(vehicle.id, 'critical', 'starter_blocked', `Demarreur bloque — ${reason}`);

@@ -92,6 +92,7 @@ export class RulesService {
       const now = Date.now();
       if (current.departureConfirmed) {
         this.unconfirmed.delete(current.id);
+        this.immobilizer.stopIoPolling(current.id);
         await this.immobilizer.buzzerOff(current.id);
         await this.immobilizer.ledTrip(current.id, false);
         await this.exitRequests.pressButton(current.id, open.zone, open.exitedAt);
@@ -129,6 +130,7 @@ export class RulesService {
       this.unconfirmed.set(current.id, { lastBuzz: Date.now(), count: 1, zone: leftStation, exitedAt: new Date() });
       await this.immobilizer.ledTrip(current.id, true);
       await this.immobilizer.buzzerOn(current.id, BUZZ_SECONDS);
+      this.immobilizer.startIoPolling(current.id, 5_000, 30 * 60_000);
     }
 
     // Une fois hors station, la confirmation est consommée : le prochain
@@ -174,12 +176,25 @@ export class RulesService {
     vehicle.departureConfirmed = false;
     this.unconfirmed.set(vehicle.id, { lastBuzz: Date.now(), count: 1, zone: null, exitedAt: new Date() });
     await this.immobilizer.ledTrip(vehicle.id, true);
+    this.immobilizer.startIoPolling(vehicle.id, 5_000, 30 * 60_000);
     await this.immobilizer.buzzerOn(vehicle.id, BUZZ_SECONDS);
+  }
+
+  /**
+   * Etats des boutons lus par getio (reponse du boitier). Equivalent d'une
+   * trame portant in2/in3 : on met a jour le camion puis on reevalue.
+   */
+  async applyButtons(vehicle: VehicleState, tripPressed: boolean, unlockPressed: boolean): Promise<void> {
+    const before: VehicleState = { ...vehicle };
+    if (tripPressed) vehicle.departureConfirmed = true;
+    if (unlockPressed) vehicle.unlockRequested = true;
+    if (tripPressed || unlockPressed) await this.evaluate(before, vehicle);
   }
 
   /** Decision prise : plus de rappel, voyant eteint. */
   stopExitReminder(vehicleId: string): void {
     this.unconfirmed.delete(vehicleId);
+    this.immobilizer.stopIoPolling(vehicleId);
     void this.immobilizer.ledTrip(vehicleId, false);
   }
 

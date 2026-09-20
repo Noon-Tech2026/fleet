@@ -44,7 +44,9 @@ export class FleetService implements OnModuleInit {
       const v = this.state.get(report.vehicleId);
       if (v === undefined) return;
       this.immobilizer.applyIoReport(v, report);
-      this.events.publish({ type: 'position', vehicle: { ...v } });
+      void this.rules.applyButtons(v, report.din[2] === true, report.din[3] === true).then(() => {
+        this.events.publish({ type: 'position', vehicle: { ...v } });
+      });
     });
     // Au boot : interroger tous les boitiers (ceux hors ligne repondront a leur reveil).
     setTimeout(() => void this.source.queryIoAll?.().catch(() => undefined), 8000);
