@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   title: string;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function ConfirmDialog({ title, message, confirmLabel, onCancel, onConfirm }: Props) {
+  const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,7 +50,7 @@ export function ConfirmDialog({ title, message, confirmLabel, onCancel, onConfir
 
         <div className="modal-actions">
           <button className="btn ghost" onClick={onCancel} disabled={busy} autoFocus>
-            Annuler
+            {t('common.cancel')}
           </button>
           <button className="btn danger" onClick={() => void confirm()} disabled={busy}>
             {busy ? 'Suppression…' : confirmLabel}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AuthUser, Role } from '../lib/types';
 import { ROLE_RANK } from '../lib/types';
 import { ROLE_LABEL, initials } from '../lib/roles';
@@ -8,6 +9,7 @@ import { CreateUserDialog } from './CreateUserDialog';
 import { PasswordDialog } from './PasswordDialog';
 
 export function UsersPage() {
+  const { t } = useTranslation();
   const { user: me } = useAuth();
   const [users, setUsers] = useState<AuthUser[] | null>(null);
   const [query, setQuery] = useState('');
@@ -69,10 +71,10 @@ export function UsersPage() {
     <main className="page">
       <header className="page-head">
         <div>
-          <h2>Utilisateurs</h2>
+          <h2>{t('users.title')}</h2>
         </div>
         <button className="btn primary" onClick={() => setCreating(true)}>
-          Nouvel utilisateur
+          {t('users.new')}
         </button>
       </header>
 
@@ -80,15 +82,15 @@ export function UsersPage() {
         <div className="user-stats">
           <div className="user-stat">
             <b>{users?.length ?? '—'}</b>
-            <span>Comptes</span>
+            <span>{t('users.accounts')}</span>
           </div>
           <div className="user-stat brand">
             <b>{activeCount}</b>
-            <span>Actifs</span>
+            <span>{t('common.activeCount')}</span>
           </div>
           <div className="user-stat">
             <b>{adminCount}</b>
-            <span>Administrateurs</span>
+            <span>{t('users.admins')}</span>
           </div>
         </div>
 
@@ -97,7 +99,7 @@ export function UsersPage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher un nom ou une adresse"
+            placeholder={t('users.search')}
           />
         </label>
       </div>
@@ -106,19 +108,19 @@ export function UsersPage() {
       {notice && <p className="banner ok">{notice}</p>}
 
       {!users ? (
-        <p className="empty">Chargement des comptes…</p>
+        <p className="empty">{t('users.loading')}</p>
       ) : shown.length === 0 ? (
-        <p className="empty">Aucun compte ne correspond à cette recherche.</p>
+        <p className="empty">{t('users.noMatch')}</p>
       ) : (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>Utilisateur</th>
-                <th>Rôle</th>
-                <th>État</th>
-                <th>Dernière connexion</th>
-                <th aria-label="Actions" />
+                <th>{t('users.user')}</th>
+                <th>{t('users.role')}</th>
+                <th>{t('common.status')}</th>
+                <th>{t('users.lastLogin')}</th>
+                <th aria-label={t('common.actions')} />
               </tr>
             </thead>
             <tbody>
@@ -135,7 +137,7 @@ export function UsersPage() {
                         <div>
                           <strong>
                             {u.fullName}
-                            {isSelf && <em className="self">vous</em>}
+                            {isSelf && <em className="self">{t('common.you')}</em>}
                           </strong>
                           <span>{u.email}</span>
                         </div>
@@ -170,7 +172,7 @@ export function UsersPage() {
                         onClick={() => void patch(u, { active: !u.active })}
                       >
                         <i />
-                        {u.active ? 'Actif' : 'Désactivé'}
+                        {u.active ? t('common.active') : t('common.inactive')}
                       </button>
                     </td>
 
@@ -185,7 +187,7 @@ export function UsersPage() {
 
                     <td className="cell-actions">
                       <button className="btn ghost small" onClick={() => setResetting(u)}>
-                        Mot de passe
+                        {t('users.password')}
                       </button>
                     </td>
                   </tr>

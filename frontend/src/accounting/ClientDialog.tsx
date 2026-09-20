@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ClientRecord } from '../lib/types';
 import { api } from '../api/client';
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function ClientDialog({ client, onCancel, onSaved }: Props) {
+  const { t } = useTranslation();
   const editing = client !== undefined;
   const [name, setName] = useState(client?.name ?? '');
   const [contact, setContact] = useState(client?.contact ?? '');
@@ -60,20 +62,20 @@ export function ClientDialog({ client, onCancel, onSaved }: Props) {
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
       >
-        <h2 id="client-dialog-title">{editing ? 'Modifier le client' : 'Nouveau client'}</h2>
+        <h2 id="client-dialog-title">{editing ? t('clients.editTitle') : t('clients.new')}</h2>
 
         <label className="field">
-          <span>Nom du client</span>
+          <span>{t('clients.name')}</span>
           <input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} autoFocus />
         </label>
 
         <label className="field">
-          <span>Contact (téléphone ou email, optionnel)</span>
+          <span>{t('clients.contactOpt')}</span>
           <input value={contact} onChange={(e) => setContact(e.target.value)} />
         </label>
 
         <label className="field">
-          <span>Notes (optionnel)</span>
+          <span>{t('clients.notesOpt')}</span>
           <input value={notes} onChange={(e) => setNotes(e.target.value)} />
         </label>
 
@@ -81,10 +83,10 @@ export function ClientDialog({ client, onCancel, onSaved }: Props) {
 
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onCancel} disabled={busy}>
-            Annuler
+            {t('common.cancel')}
           </button>
           <button type="submit" className="btn primary" disabled={busy}>
-            {busy ? 'Enregistrement…' : editing ? 'Enregistrer' : 'Ajouter le client'}
+            {busy ? 'Enregistrement…' : editing ? t('common.save') : t('clients.add')}
           </button>
         </div>
       </form>

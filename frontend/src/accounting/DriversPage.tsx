@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { DriverRecord } from '../lib/types';
 import { initials } from '../lib/roles';
 import { api } from '../api/client';
@@ -7,6 +8,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DriverDialog } from './DriverDialog';
 
 export function DriversPage() {
+  const { t } = useTranslation();
   const { can } = useAuth();
   const canManage = can('supervisor');
   const [drivers, setDrivers] = useState<DriverRecord[] | null>(null);
@@ -70,11 +72,11 @@ export function DriversPage() {
     <main className="page">
       <header className="page-head">
         <div>
-          <h2>Chauffeurs</h2>
+          <h2>{t('drivers.title')}</h2>
         </div>
         {canManage && (
           <button className="btn primary" onClick={() => setEditing('new')}>
-            Nouveau chauffeur
+            {t('drivers.new')}
           </button>
         )}
       </header>
@@ -83,11 +85,11 @@ export function DriversPage() {
         <div className="user-stats">
           <div className="user-stat">
             <b>{drivers?.length ?? '—'}</b>
-            <span>Chauffeurs</span>
+            <span>{t('drivers.title')}</span>
           </div>
           <div className="user-stat brand">
             <b>{activeCount}</b>
-            <span>Actifs</span>
+            <span>{t('common.activeCount')}</span>
           </div>
         </div>
 
@@ -96,7 +98,7 @@ export function DriversPage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher un nom, un téléphone ou un permis"
+            placeholder={t('drivers.search')}
           />
         </label>
       </div>
@@ -105,21 +107,21 @@ export function DriversPage() {
       {notice && <p className="banner ok">{notice}</p>}
 
       {!drivers ? (
-        <p className="empty">Chargement des chauffeurs…</p>
+        <p className="empty">{t('drivers.loading')}</p>
       ) : drivers.length === 0 ? (
-        <p className="empty">Aucun chauffeur au référentiel.</p>
+        <p className="empty">{t('drivers.empty')}</p>
       ) : shown.length === 0 ? (
-        <p className="empty">Aucun chauffeur ne correspond à cette recherche.</p>
+        <p className="empty">{t('drivers.noMatch')}</p>
       ) : (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>Chauffeur</th>
-                <th>Téléphone</th>
-                <th>N° de permis</th>
-                <th>État</th>
-                {canManage && <th aria-label="Actions" />}
+                <th>{t('common.driver')}</th>
+                <th>{t('common.phone')}</th>
+                <th>{t('drivers.license')}</th>
+                <th>{t('common.status')}</th>
+                {canManage && <th aria-label={t('common.actions')} />}
               </tr>
             </thead>
             <tbody>
@@ -148,16 +150,16 @@ export function DriversPage() {
                         onClick={() => void toggleActive(d)}
                       >
                         <i />
-                        {d.active ? 'Actif' : 'Désactivé'}
+                        {d.active ? t('common.active') : t('common.inactive')}
                       </button>
                     </td>
                     {canManage && (
                       <td className="cell-actions">
                         <button className="btn ghost small" onClick={() => setEditing(d)} disabled={busy}>
-                          Modifier
+                          {t('common.edit')}
                         </button>
                         <button className="btn danger small" onClick={() => setDeleting(d)} disabled={busy}>
-                          Supprimer
+                          {t('common.delete')}
                         </button>
                       </td>
                     )}
@@ -185,9 +187,9 @@ export function DriversPage() {
 
       {deleting && (
         <ConfirmDialog
-          title="Supprimer le chauffeur"
+          title={t('drivers.deleteTitle')}
           message={`${deleting.fullName} sera définitivement retiré du référentiel. Un chauffeur qui a déjà effectué des voyages ne peut pas être supprimé : désactivez-le pour conserver l'historique.`}
-          confirmLabel="Supprimer"
+          confirmLabel={t('common.delete')}
           onCancel={() => setDeleting(null)}
           onConfirm={async () => {
             await api.deleteDriver(deleting.id);

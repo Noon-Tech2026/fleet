@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ClientRecord, DriverRecord, VehicleAccountingSummary } from '../lib/types';
 import { formatMoney } from '../lib/accounting';
 import { api, type VehicleDirectoryEntry } from '../api/client';
@@ -6,6 +7,7 @@ import { useAuth } from '../auth/AuthContext';
 import { VehicleAccountingPanel } from './VehicleAccountingPanel';
 
 export function AccountingPage() {
+  const { t } = useTranslation();
   const { can } = useAuth();
   const [summaries, setSummaries] = useState<VehicleAccountingSummary[] | null>(null);
   const [clients, setClients] = useState<ClientRecord[]>([]);
@@ -65,7 +67,7 @@ export function AccountingPage() {
     <main className="page">
       <header className="page-head">
         <div>
-          <h2>Comptabilité</h2>
+          <h2>{t('accounting.title')}</h2>
         </div>
       </header>
 
@@ -90,37 +92,37 @@ export function AccountingPage() {
             <div className="fleet-summary cols-4">
               <div className="summary-cell ok">
                 <b>{formatMoney(fleetTotals.revenue)}</b>
-                <span>Revenu flotte</span>
+                <span>{t('accounting.fleetRevenue')}</span>
               </div>
               <div className="summary-cell danger">
                 <b>{formatMoney(fleetTotals.expenses)}</b>
-                <span>Charges flotte</span>
+                <span>{t('accounting.fleetExpenses')}</span>
               </div>
               <div className="summary-cell">
                 <b>{formatMoney(fleetTotals.investments)}</b>
-                <span>Investissement flotte</span>
+                <span>{t('accounting.fleetInvest')}</span>
               </div>
               <div className={`summary-cell ${fleetTotals.netResult >= 0 ? 'ok' : 'danger'}`}>
                 <b>{formatMoney(fleetTotals.netResult)}</b>
-                <span>Résultat net flotte</span>
+                <span>{t('accounting.fleetNet')}</span>
               </div>
             </div>
           )}
 
           {!summaries ? (
-            <p className="empty">Chargement de la synthèse…</p>
+            <p className="empty">{t('accounting.loadingSummary')}</p>
           ) : (
             <div className="table-wrap">
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Camion</th>
-                    <th>Voyages</th>
-                    <th>Revenu</th>
-                    <th>Charges</th>
-                    <th>Investissement</th>
-                    <th>Résultat net</th>
-                    <th aria-label="Actions" />
+                    <th>{t('common.truck')}</th>
+                    <th>{t('accounting.trips')}</th>
+                    <th>{t('accounting.revenue')}</th>
+                    <th>{t('accounting.expenses')}</th>
+                    <th>{t('accounting.investment')}</th>
+                    <th>{t('accounting.net')}</th>
+                    <th aria-label={t('common.actions')} />
                   </tr>
                 </thead>
                 <tbody>
@@ -141,7 +143,7 @@ export function AccountingPage() {
                       </td>
                       <td className="cell-actions">
                         <button className="btn ghost small" onClick={() => setSelectedVehicleId(s.vehicleId)}>
-                          Détail
+                          {t('accounting.detail')}
                         </button>
                       </td>
                     </tr>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PASSWORD_MIN_LENGTH, generatePassword } from '../lib/roles';
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
  * ailleurs — c'est ainsi qu'ils finissent dans un fichier texte.
  */
 export function PasswordField({ value, onChange, label }: Props) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const short = value.length > 0 && value.length < PASSWORD_MIN_LENGTH;
 
@@ -40,10 +42,10 @@ export function PasswordField({ value, onChange, label }: Props) {
           placeholder={`${PASSWORD_MIN_LENGTH} caractères minimum`}
         />
         <button type="button" className="btn small" onClick={() => onChange(generatePassword())}>
-          Générer
+          {t('users.generate')}
         </button>
         <button type="button" className="btn small" onClick={() => void copy()} disabled={!value}>
-          {copied ? 'Copié' : 'Copier'}
+          {copied ? t('users.copied') : t('users.copy')}
         </button>
       </div>
       {short && (

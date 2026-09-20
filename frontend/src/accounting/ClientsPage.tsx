@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ClientRecord } from '../lib/types';
 import { initials } from '../lib/roles';
 import { api } from '../api/client';
@@ -7,6 +8,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ClientDialog } from './ClientDialog';
 
 export function ClientsPage() {
+  const { t } = useTranslation();
   const { can } = useAuth();
   const canManage = can('supervisor');
   const [clients, setClients] = useState<ClientRecord[] | null>(null);
@@ -70,11 +72,11 @@ export function ClientsPage() {
     <main className="page">
       <header className="page-head">
         <div>
-          <h2>Clients</h2>
+          <h2>{t('clients.title')}</h2>
         </div>
         {canManage && (
           <button className="btn primary" onClick={() => setEditing('new')}>
-            Nouveau client
+            {t('clients.new')}
           </button>
         )}
       </header>
@@ -83,11 +85,11 @@ export function ClientsPage() {
         <div className="user-stats">
           <div className="user-stat">
             <b>{clients?.length ?? '—'}</b>
-            <span>Clients</span>
+            <span>{t('clients.title')}</span>
           </div>
           <div className="user-stat brand">
             <b>{activeCount}</b>
-            <span>Actifs</span>
+            <span>{t('common.activeCount')}</span>
           </div>
         </div>
 
@@ -96,7 +98,7 @@ export function ClientsPage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher un nom, un contact ou une note"
+            placeholder={t('clients.search')}
           />
         </label>
       </div>
@@ -105,21 +107,21 @@ export function ClientsPage() {
       {notice && <p className="banner ok">{notice}</p>}
 
       {!clients ? (
-        <p className="empty">Chargement des clients…</p>
+        <p className="empty">{t('clients.loading')}</p>
       ) : clients.length === 0 ? (
-        <p className="empty">Aucun client au référentiel.</p>
+        <p className="empty">{t('clients.empty')}</p>
       ) : shown.length === 0 ? (
-        <p className="empty">Aucun client ne correspond à cette recherche.</p>
+        <p className="empty">{t('clients.noMatch')}</p>
       ) : (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>Client</th>
-                <th>Contact</th>
-                <th>Notes</th>
-                <th>État</th>
-                {canManage && <th aria-label="Actions" />}
+                <th>{t('common.client')}</th>
+                <th>{t('common.contact')}</th>
+                <th>{t('common.notes')}</th>
+                <th>{t('common.status')}</th>
+                {canManage && <th aria-label={t('common.actions')} />}
               </tr>
             </thead>
             <tbody>
@@ -148,16 +150,16 @@ export function ClientsPage() {
                         onClick={() => void toggleActive(c)}
                       >
                         <i />
-                        {c.active ? 'Actif' : 'Désactivé'}
+                        {c.active ? t('common.active') : t('common.inactive')}
                       </button>
                     </td>
                     {canManage && (
                       <td className="cell-actions">
                         <button className="btn ghost small" onClick={() => setEditing(c)} disabled={busy}>
-                          Modifier
+                          {t('common.edit')}
                         </button>
                         <button className="btn danger small" onClick={() => setDeleting(c)} disabled={busy}>
-                          Supprimer
+                          {t('common.delete')}
                         </button>
                       </td>
                     )}
@@ -185,9 +187,9 @@ export function ClientsPage() {
 
       {deleting && (
         <ConfirmDialog
-          title="Supprimer le client"
+          title={t('clients.deleteTitle')}
           message={`${deleting.name} sera définitivement retiré du référentiel. Un client déjà facturé ne peut pas être supprimé : désactivez-le pour conserver l'historique.`}
-          confirmLabel="Supprimer"
+          confirmLabel={t('common.delete')}
           onCancel={() => setDeleting(null)}
           onConfirm={async () => {
             await api.deleteClient(deleting.id);

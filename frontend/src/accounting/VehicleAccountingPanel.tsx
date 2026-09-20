@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type {
   ClientRecord,
   DriverRecord,
@@ -32,6 +33,7 @@ export function VehicleAccountingPanel({
   canManageMoney,
   onBack,
 }: Props) {
+  const { t } = useTranslation();
   const [summary, setSummary] = useState<VehicleAccountingSummary | null>(null);
   const [trips, setTrips] = useState<TripEntry[] | null>(null);
   const [expenses, setExpenses] = useState<VehicleExpenseEntry[] | null>(null);
@@ -89,7 +91,7 @@ export function VehicleAccountingPanel({
       <div className="page-toolbar">
         <div className="toolbar-right">
           <button className="btn ghost small" onClick={onBack}>
-            ← Retour à la synthèse
+            {t('accounting.back')}
           </button>
           <h3 className="col-title">
             {vehicleId} <span className="cell-sub">{plate}</span>
@@ -99,7 +101,7 @@ export function VehicleAccountingPanel({
         {(canRecordTrip || canManageMoney) && (
           <div className="dropdown" ref={menuRef}>
             <button className="btn primary small" onClick={() => setMenuOpen((open) => !open)}>
-              + Ajouter un mouvement
+              {t('accounting.addMovement')}
             </button>
             {menuOpen && (
               <div className="dropdown-menu">
@@ -111,8 +113,8 @@ export function VehicleAccountingPanel({
                       setAddingTrip(true);
                     }}
                   >
-                    <strong>Voyage</strong>
-                    <span>Course facturée à un client</span>
+                    <strong>{t('accounting.trip')}</strong>
+                    <span>{t('accounting.tripHint')}</span>
                   </button>
                 )}
                 {canManageMoney && (
@@ -123,8 +125,8 @@ export function VehicleAccountingPanel({
                       setAddingExpense(true);
                     }}
                   >
-                    <strong>Charge</strong>
-                    <span>Carburant, pneus, péage, salaire…</span>
+                    <strong>{t('accounting.expense')}</strong>
+                    <span>{t('accounting.expenseHint')}</span>
                   </button>
                 )}
                 {canManageMoney && (
@@ -135,8 +137,8 @@ export function VehicleAccountingPanel({
                       setAddingInvestment(true);
                     }}
                   >
-                    <strong>Investissement</strong>
-                    <span>Achat, équipement, réfection lourde</span>
+                    <strong>{t('accounting.investment')}</strong>
+                    <span>{t('accounting.investHint')}</span>
                   </button>
                 )}
               </div>
@@ -159,35 +161,35 @@ export function VehicleAccountingPanel({
           </div>
           <div className="summary-cell">
             <b>{formatMoney(summary.investments)}</b>
-            <span>Investissement</span>
+            <span>{t('accounting.investment')}</span>
           </div>
           <div className={`summary-cell ${summary.netResult >= 0 ? 'ok' : 'danger'}`}>
             <b>{formatMoney(summary.netResult)}</b>
-            <span>Résultat net</span>
+            <span>{t('accounting.net')}</span>
           </div>
         </div>
       )}
 
       <section className="accounting-block">
         <header>
-          <h4>Voyages</h4>
+          <h4>{t('accounting.trips')}</h4>
         </header>
 
         {!trips ? (
-          <p className="empty">Chargement…</p>
+          <p className="empty">{t('common.loading')}</p>
         ) : trips.length === 0 ? (
-          <p className="empty">Aucun voyage enregistré pour ce camion.</p>
+          <p className="empty">{t('accounting.noTrips')}</p>
         ) : (
           <div className="table-wrap">
             <table className="table">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Client</th>
-                  <th>Chauffeur</th>
-                  <th>Trajet</th>
-                  <th>Conteneurs</th>
-                  <th>Montant</th>
+                  <th>{t('common.date')}</th>
+                  <th>{t('common.client')}</th>
+                  <th>{t('common.driver')}</th>
+                  <th>{t('accounting.route')}</th>
+                  <th>{t('accounting.containers')}</th>
+                  <th>{t('common.amount')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -220,22 +222,22 @@ export function VehicleAccountingPanel({
 
       <section className="accounting-block">
         <header>
-          <h4>Charges</h4>
+          <h4>{t('accounting.expenses')}</h4>
         </header>
 
         {!expenses ? (
-          <p className="empty">Chargement…</p>
+          <p className="empty">{t('common.loading')}</p>
         ) : expenses.length === 0 ? (
-          <p className="empty">Aucune charge enregistrée pour ce camion.</p>
+          <p className="empty">{t('accounting.noExpenses')}</p>
         ) : (
           <div className="table-wrap">
             <table className="table">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Catégorie</th>
-                  <th>Référence</th>
-                  <th>Montant</th>
+                  <th>{t('common.date')}</th>
+                  <th>{t('common.category')}</th>
+                  <th>{t('common.reference')}</th>
+                  <th>{t('common.amount')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -255,22 +257,22 @@ export function VehicleAccountingPanel({
 
       <section className="accounting-block">
         <header>
-          <h4>Investissements</h4>
+          <h4>{t('accounting.investments')}</h4>
         </header>
 
         {!investments ? (
-          <p className="empty">Chargement…</p>
+          <p className="empty">{t('common.loading')}</p>
         ) : investments.length === 0 ? (
-          <p className="empty">Aucun investissement enregistré pour ce camion.</p>
+          <p className="empty">{t('accounting.noInvest')}</p>
         ) : (
           <div className="table-wrap">
             <table className="table">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Description</th>
-                  <th>Montant</th>
+                  <th>{t('common.date')}</th>
+                  <th>{t('common.type')}</th>
+                  <th>{t('common.description')}</th>
+                  <th>{t('common.amount')}</th>
                 </tr>
               </thead>
               <tbody>

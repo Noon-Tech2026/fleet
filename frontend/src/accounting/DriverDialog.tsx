@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { DriverRecord } from '../lib/types';
 import { api } from '../api/client';
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function DriverDialog({ driver, onCancel, onSaved }: Props) {
+  const { t } = useTranslation();
   const editing = driver !== undefined;
   const [fullName, setFullName] = useState(driver?.fullName ?? '');
   const [phone, setPhone] = useState(driver?.phone ?? '');
@@ -60,20 +62,20 @@ export function DriverDialog({ driver, onCancel, onSaved }: Props) {
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
       >
-        <h2 id="driver-dialog-title">{editing ? 'Modifier le chauffeur' : 'Nouveau chauffeur'}</h2>
+        <h2 id="driver-dialog-title">{editing ? t('drivers.editTitle') : t('drivers.new')}</h2>
 
         <label className="field">
-          <span>Nom complet</span>
+          <span>{t('drivers.name')}</span>
           <input value={fullName} onChange={(e) => setFullName(e.target.value)} required minLength={2} autoFocus />
         </label>
 
         <label className="field">
-          <span>Téléphone (optionnel)</span>
+          <span>{t('drivers.phoneOpt')}</span>
           <input value={phone} onChange={(e) => setPhone(e.target.value)} />
         </label>
 
         <label className="field">
-          <span>N° de permis (optionnel)</span>
+          <span>{t('drivers.licenseOpt')}</span>
           <input value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} />
         </label>
 
@@ -81,10 +83,10 @@ export function DriverDialog({ driver, onCancel, onSaved }: Props) {
 
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={onCancel} disabled={busy}>
-            Annuler
+            {t('common.cancel')}
           </button>
           <button type="submit" className="btn primary" disabled={busy}>
-            {busy ? 'Enregistrement…' : editing ? 'Enregistrer' : 'Ajouter le chauffeur'}
+            {busy ? 'Enregistrement…' : editing ? t('common.save') : t('drivers.add')}
           </button>
         </div>
       </form>

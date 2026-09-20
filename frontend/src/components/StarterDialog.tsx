@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { VehicleState } from '../lib/types';
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
  * attente. Ce dialogue ne fait que rendre la décision prévisible.
  */
 export function StarterDialog({ vehicle, onCancel, onConfirm }: Props) {
+  const { t } = useTranslation();
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +33,7 @@ export function StarterDialog({ vehicle, onCancel, onConfirm }: Props) {
 
   async function submit() {
     if (reason.trim().length < 3) {
-      setError('Indiquez un motif — il sera conservé dans le journal.');
+      setError(t('starter.reasonHint'));
       return;
     }
     setBusy(true);
@@ -56,20 +58,18 @@ export function StarterDialog({ vehicle, onCancel, onConfirm }: Props) {
         <h2 id="starter-dialog-title">Blocage du démarreur — {vehicle.id}</h2>
 
         <div className="warning">
-          <strong>Cette commande ne coupe jamais un moteur en marche.</strong>
-          Elle agit uniquement sur le démarreur et empêche le redémarrage après un
-          arrêt naturel du véhicule. Couper un moteur en roulage supprimerait la
-          direction assistée et l'assistance de freinage.
+          <strong>{t('starter.neverMoving')}</strong>
+          {t('starter.explain')}
         </div>
 
         <dl className="conditions">
           <div>
-            <dt>Vitesse</dt>
+            <dt>{t('starter.speed')}</dt>
             <dd>{vehicle.speed} km/h</dd>
           </div>
           <div>
-            <dt>Contact</dt>
-            <dd>{vehicle.ignition ? 'Mis' : 'Coupé'}</dd>
+            <dt>{t('common.contact')}</dt>
+            <dd>{vehicle.ignition ? t('starter.on') : t('starter.off')}</dd>
           </div>
         </dl>
 
@@ -80,11 +80,11 @@ export function StarterDialog({ vehicle, onCancel, onConfirm }: Props) {
         </p>
 
         <label className="field">
-          <span>Motif</span>
+          <span>{t('starter.reason')}</span>
           <input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Ex. sortie sans confirmation, véhicule signalé volé"
+            placeholder={t('starter.reasonPlaceholder')}
             autoFocus
           />
         </label>
@@ -93,10 +93,10 @@ export function StarterDialog({ vehicle, onCancel, onConfirm }: Props) {
 
         <div className="modal-actions">
           <button className="btn ghost" onClick={onCancel} disabled={busy}>
-            Annuler
+            {t('common.cancel')}
           </button>
           <button className="btn danger" onClick={submit} disabled={busy}>
-            {busy ? 'Envoi…' : stopped ? 'Bloquer maintenant' : 'Programmer le blocage'}
+            {busy ? 'Envoi…' : stopped ? t('starter.blockNow') : t('starter.schedule')}
           </button>
         </div>
       </div>
