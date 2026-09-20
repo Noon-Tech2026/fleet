@@ -25,7 +25,7 @@ const PERIMETER_REPEAT_MS = 2 * 60_000;
 @Injectable()
 export class RulesService {
   /** Sorties non confirmees en cours, par vehicule. */
-  private readonly unconfirmed = new Map<string, { lastBuzz: number; count: number }>();
+  private readonly unconfirmed = new Map<string, { lastBuzz: number; count: number; zone: { id: string; name: string } | null; exitedAt: Date }>();
   /** Alarmes de perimetre en cours : zone quittee + derniere sonnerie. */
   private readonly perimeterAlarm = new Map<string, { zoneId: string; lastBuzz: number }>();
 
@@ -94,7 +94,7 @@ export class RulesService {
         this.unconfirmed.delete(current.id);
         await this.immobilizer.buzzerOff(current.id);
         await this.immobilizer.ledTrip(current.id, false);
-        await this.exitRequests.markButton(current.id);
+        await this.exitRequests.pressButton(current.id, open.zone, open.exitedAt);
         this.alerts.raise(current.id, 'info', 'departure_confirmed_late', 'Départ confirmé par le chauffeur après rappel');
       } else if (now - open.lastBuzz >= BUZZ_REPEAT_MS) {
         if (open.count >= BUZZ_MAX) {
@@ -110,12 +110,13 @@ export class RulesService {
     const wasAtStation = previous.zoneId !== null && !this.geofence.isForbidden(previous.zoneId);
     const hasLeft = wasAtStation && current.zoneId !== previous.zoneId;
 
-    if (hasLeft) {
-      await this.departures.markDeparted(current.id);
-      const zone = this.geofence.get(previous.zoneId as string);
-      if (zone?.kind === 'station') {
-        await this.exitRequests.open(current.id, { id: zone.id, name: zone.name }, current.departureConfirmed);
-      }
+    if (hasLeft) await this.departures.markDeparted(current.id);
+    const leftZone = hasLeft ? this.geofence.get(previous.zoneId as string) : undefined;
+    const leftStation = leftZone?.kind === 'station' ? { id: leftZone.id, name: leftZone.name } : null;
+
+    // Bouton deja presse avant de sortir : demande immediate.
+    if (hasLeft && leftStation && current.departureConfirmed) {
+      await this.exitRequests.create(current.id, leftStation, new Date(), true);
     }
 
     if (hasLeft && !current.departureConfirmed) {
@@ -125,7 +126,7 @@ export class RulesService {
         'departure_without_confirmation',
         'Sortie de station sans confirmation du chauffeur — buzzer cabine déclenché',
       );
-      this.unconfirmed.set(current.id, { lastBuzz: Date.now(), count: 1 });
+      this.unconfirmed.set(current.id, { lastBuzz: Date.now(), count: 1, zone: leftStation, exitedAt: new Date() });
       await this.immobilizer.ledTrip(current.id, true);
       await this.immobilizer.buzzerOn(current.id, BUZZ_SECONDS);
     }
@@ -171,7 +172,7 @@ export class RulesService {
   /** Apres un rejet : le chauffeur doit appuyer a nouveau ; le rappel repart. */
   async resumeExitReminder(vehicle: VehicleState): Promise<void> {
     vehicle.departureConfirmed = false;
-    this.unconfirmed.set(vehicle.id, { lastBuzz: Date.now(), count: 1 });
+    this.unconfirmed.set(vehicle.id, { lastBuzz: Date.now(), count: 1, zone: null, exitedAt: new Date() });
     await this.immobilizer.ledTrip(vehicle.id, true);
     await this.immobilizer.buzzerOn(vehicle.id, BUZZ_SECONDS);
   }

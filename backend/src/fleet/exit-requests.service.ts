@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { ExitRequest } from './entities/exit-request.entity';
 import { EventsService } from '../events/events.service';
 import { ExitRequestView } from '../common/types';
@@ -35,35 +35,42 @@ export class ExitRequestsService {
     return this.repo.findOne({ where: { vehicleId, status: 'pending' }, order: { createdAt: 'DESC' } });
   }
 
-  /** Une seule demande ouverte par camion : la sortie suivante ne l'ecrase pas. */
-  async open(vehicleId: string, zone: { id: string; name: string } | null, buttonPressed: boolean): Promise<ExitRequest> {
-    const existing = await this.pendingFor(vehicleId);
-    if (existing) return existing;
+  /**
+   * Cree une demande. Appelee a l'appui du bouton (ou a la sortie si le
+   * bouton avait deja ete presse) : une demande par chargement, plusieurs
+   * par camion et par jour — le superviseur les valide en fin de service.
+   */
+  async create(vehicleId: string, zone: { id: string; name: string } | null, exitedAt: Date, buttonPressed: boolean): Promise<ExitRequest> {
     const now = new Date();
     const r = await this.repo.save(
       this.repo.create({
         vehicleId,
         zoneId: zone?.id ?? null,
         zoneName: zone?.name ?? '',
-        exitedAt: now,
+        exitedAt,
         buttonPressedAt: buttonPressed ? now : null,
         status: 'pending',
         rejections: 0,
       }),
     );
-    this.log.log(`${vehicleId} — demande de sortie ouverte (${zone?.name ?? 'zone ?'})`);
+    this.log.log(`${vehicleId} — demande de chargement (${zone?.name ?? 'zone ?'})`);
     this.publish(r);
     return r;
   }
 
-  /** Le chauffeur a appuye : la demande passe "a decider". */
-  async markButton(vehicleId: string): Promise<ExitRequest | null> {
-    const r = await this.pendingFor(vehicleId);
-    if (r === null || r.buttonPressedAt !== null) return r;
-    r.buttonPressedAt = new Date();
-    await this.repo.save(r);
-    this.publish(r);
-    return r;
+  /**
+   * Appui du bouton apres la sortie : complete une demande rejetee en
+   * attente d'un nouvel appui, sinon en ouvre une nouvelle.
+   */
+  async pressButton(vehicleId: string, zone: { id: string; name: string } | null, exitedAt: Date): Promise<ExitRequest> {
+    const rejected = await this.repo.findOne({ where: { vehicleId, status: 'pending', buttonPressedAt: IsNull() }, order: { createdAt: 'DESC' } });
+    if (rejected) {
+      rejected.buttonPressedAt = new Date();
+      await this.repo.save(rejected);
+      this.publish(rejected);
+      return rejected;
+    }
+    return this.create(vehicleId, zone, exitedAt, true);
   }
 
   async confirm(id: string, actor: string, tripId: string): Promise<ExitRequest> {
