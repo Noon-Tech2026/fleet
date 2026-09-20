@@ -394,6 +394,7 @@
     "reject": "Reject",
     "bypass": "No load",
     "confirmReject": "Reject {{id}}'s departure? The cab buzzer will restart.",
-    "bypassReason": "Reason (maintenance, relocation, parking…):"
+    "bypassReason": "Reason (maintenance, relocation, parking…):",
+    "summary": "{{ready}} to validate · {{waiting}} waiting for button"
   }
 }

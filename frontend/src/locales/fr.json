@@ -383,6 +383,7 @@
     "reject": "Rejeter",
     "bypass": "Sans chargement",
     "confirmReject": "Rejeter la sortie de {{id}} ? Le buzzer repartira chez le chauffeur.",
-    "bypassReason": "Motif (entretien, déplacement, stationnement…) :"
+    "bypassReason": "Motif (entretien, déplacement, stationnement…) :",
+    "summary": "{{ready}} à valider · {{waiting}} en attente du bouton"
   }
 }

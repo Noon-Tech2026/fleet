@@ -10,24 +10,30 @@ interface Props {
 }
 
 /**
- * Sorties de zone de chargement a valider. Visible par tous, actionnable par
- * superviseur/admin. La confirmation passe par le formulaire de voyage
- * existant : le voyage cree est ensuite lie a la demande.
+ * Sorties de zone de chargement a valider : un bouton compact dans la barre
+ * laterale, une fenetre avec la liste complete. La confirmation passe par
+ * le formulaire de voyage existant ; le voyage cree est lie a la demande.
  */
 export function ExitRequestsPanel({ requests }: Props) {
   const { t, i18n } = useTranslation();
   const { can } = useAuth();
   const canDecide = can('supervisor');
+  const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState<ExitRequestView | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [clients, setClients] = useState<ClientRecord[]>([]);
   const [drivers, setDrivers] = useState<DriverRecord[]>([]);
 
   useEffect(() => {
-    if (canDecide === false) return;
+    if (canDecide === false || open === false) return;
     api.clients().then(setClients).catch(() => setClients([]));
     api.drivers().then(setDrivers).catch(() => setDrivers([]));
-  }, [canDecide]);
+  }, [canDecide, open]);
+
+  // Plus rien a valider : refermer la fenetre toute seule.
+  useEffect(() => {
+    if (requests.length === 0) setOpen(false);
+  }, [requests.length]);
 
   if (requests.length === 0) return null;
 
@@ -50,40 +56,61 @@ export function ExitRequestsPanel({ requests }: Props) {
     try { await api.confirmExit(confirming.id, trip.id); } finally { setBusy(null); setConfirming(null); }
   }
 
-  const fmt = (iso: string) => new Date(iso).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit', hour12: false });
+  const fmt = (iso: string) => new Date(iso).toLocaleString(i18n.language, { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', hour12: false });
+  const waiting = requests.filter((r) => r.buttonPressedAt === null).length;
+  const ready = requests.length - waiting;
 
   return (
-    <section className="exit-panel">
-      <h2 className="col-title">
-        {t('exit.title')} <span className="count">{requests.length}</span>
-      </h2>
-      <ul className="exit-list">
-        {requests.map((r) => {
-          const waitingButton = r.buttonPressedAt === null;
-          return (
-            <li key={r.id} className={waitingButton ? 'warn' : 'ready'}>
-              <div className="row">
-                <strong>{r.vehicleId}</strong>
-                <span className={`badge ${waitingButton ? 'warn' : 'ok'}`}>
-                  {waitingButton ? t('exit.waitingButton') : t('exit.toDecide')}
-                </span>
+    <>
+      <button className="btn exit-toggle" onClick={() => setOpen(true)}>
+        <span>{t('exit.title')}</span>
+        <span className="exit-counts">
+          {ready > 0 && <span className="badge ok">{ready}</span>}
+          {waiting > 0 && <span className="badge warn">{waiting}</span>}
+        </span>
+      </button>
+
+      {open && (
+        <div className="modal-backdrop" onClick={() => setOpen(false)}>
+          <div className="modal exit-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <header className="modal-head">
+              <div>
+                <h2>{t('exit.title')}</h2>
+                <p>{t('exit.summary', { ready, waiting })}</p>
               </div>
-              <div className="muted">
-                {t('exit.leftZone', { zone: r.zoneName || '—', at: fmt(r.exitedAt) })}
-                {r.buttonPressedAt && ` · ${t('exit.pressedAt', { at: fmt(r.buttonPressedAt) })}`}
-                {r.rejections > 0 && ` · ${t('exit.rejections', { n: r.rejections })}`}
-              </div>
-              {canDecide && (
-                <div className="exit-actions">
-                  <button className="btn mint small" disabled={busy === r.id} onClick={() => setConfirming(r)}>{t('exit.confirm')}</button>
-                  <button className="btn ghost small" disabled={busy === r.id || waitingButton} onClick={() => void reject(r)}>{t('exit.reject')}</button>
-                  <button className="btn ghost small" disabled={busy === r.id} onClick={() => void bypass(r)}>{t('exit.bypass')}</button>
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+              <button className="btn ghost" onClick={() => setOpen(false)}>{t('track.close')}</button>
+            </header>
+
+            <ul className="exit-list">
+              {requests.map((r) => {
+                const waitingButton = r.buttonPressedAt === null;
+                return (
+                  <li key={r.id} className={waitingButton ? 'warn' : 'ready'}>
+                    <div className="row">
+                      <strong>{r.vehicleId}</strong>
+                      <span className={`badge ${waitingButton ? 'warn' : 'ok'}`}>
+                        {waitingButton ? t('exit.waitingButton') : t('exit.toDecide')}
+                      </span>
+                    </div>
+                    <div className="muted">
+                      {t('exit.leftZone', { zone: r.zoneName || '—', at: fmt(r.exitedAt) })}
+                      {r.buttonPressedAt && ` · ${t('exit.pressedAt', { at: fmt(r.buttonPressedAt) })}`}
+                      {r.rejections > 0 && ` · ${t('exit.rejections', { n: r.rejections })}`}
+                    </div>
+                    {canDecide && (
+                      <div className="exit-actions">
+                        <button className="btn mint small" disabled={busy === r.id} onClick={() => setConfirming(r)}>{t('exit.confirm')}</button>
+                        <button className="btn ghost small" disabled={busy === r.id || waitingButton} onClick={() => void reject(r)}>{t('exit.reject')}</button>
+                        <button className="btn ghost small" disabled={busy === r.id} onClick={() => void bypass(r)}>{t('exit.bypass')}</button>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {confirming && (
         <TripDialog
@@ -94,6 +121,6 @@ export function ExitRequestsPanel({ requests }: Props) {
           onDone={(trip) => void onTripDone(trip)}
         />
       )}
-    </section>
+    </>
   );
 }

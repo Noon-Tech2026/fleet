@@ -2693,3 +2693,11 @@ h3 {
 .nav-badge { display: inline-block; min-width: 18px; padding: 0 6px; margin-inline-start: 6px; border-radius: 9px; background: var(--red, #c0392b); color: #fff; font-size: 11px; line-height: 18px; text-align: center; }
 
 .notice.unlock-request { background: #fdecea; color: #c0392b; font-weight: 600; margin: 8px 0; }
+
+.exit-toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 14px; padding: 10px 12px; background: #fff; border: 1px solid var(--amber, #d99a1c); color: var(--text, #222); font-weight: 600; }
+.exit-toggle .exit-counts { display: flex; gap: 6px; }
+.exit-toggle .badge { min-width: 24px; text-align: center; }
+.exit-modal { max-width: 760px; width: min(96vw, 760px); }
+.exit-modal .exit-list { max-height: 65vh; overflow: auto; margin-top: 12px; }
+.exit-modal .exit-list li { padding: 12px 14px; }
+.exit-modal .exit-list li .row strong { font-size: 16px; }
