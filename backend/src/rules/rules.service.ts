@@ -96,6 +96,7 @@ export class RulesService {
         await this.immobilizer.buzzerOff(current.id);
         await this.immobilizer.ledTrip(current.id, false);
         await this.exitRequests.pressButton(current.id, open.zone, open.exitedAt);
+        current.departureConfirmed = false; // appui consomme : la prochaine sortie exigera un nouvel appui
         this.alerts.raise(current.id, 'info', 'departure_confirmed_late', 'Départ confirmé par le chauffeur après rappel');
       } else if (now - open.lastBuzz >= BUZZ_REPEAT_MS) {
         if (open.count >= BUZZ_MAX) {
@@ -115,12 +116,8 @@ export class RulesService {
     const leftZone = hasLeft ? this.geofence.get(previous.zoneId as string) : undefined;
     const leftStation = leftZone?.kind === 'station' ? { id: leftZone.id, name: leftZone.name } : null;
 
-    // Bouton deja presse avant de sortir : demande immediate.
-    if (hasLeft && leftStation && current.departureConfirmed) {
-      await this.exitRequests.create(current.id, leftStation, new Date(), true);
-    }
 
-    if (hasLeft && !current.departureConfirmed) {
+    if (hasLeft && leftStation) {
       this.alerts.raise(
         current.id,
         'critical',
@@ -130,7 +127,7 @@ export class RulesService {
       this.unconfirmed.set(current.id, { lastBuzz: Date.now(), count: 1, zone: leftStation, exitedAt: new Date() });
       await this.immobilizer.ledTrip(current.id, true);
       await this.immobilizer.buzzerOn(current.id, BUZZ_SECONDS);
-      this.immobilizer.startIoPolling(current.id, 5_000, 30 * 60_000);
+      this.immobilizer.startIoPolling(current.id, 3_000, 30 * 60_000);
     }
 
     // Une fois hors station, la confirmation est consommée : le prochain
@@ -176,7 +173,7 @@ export class RulesService {
     vehicle.departureConfirmed = false;
     this.unconfirmed.set(vehicle.id, { lastBuzz: Date.now(), count: 1, zone: null, exitedAt: new Date() });
     await this.immobilizer.ledTrip(vehicle.id, true);
-    this.immobilizer.startIoPolling(vehicle.id, 5_000, 30 * 60_000);
+    this.immobilizer.startIoPolling(vehicle.id, 3_000, 30 * 60_000);
     await this.immobilizer.buzzerOn(vehicle.id, BUZZ_SECONDS);
   }
 
