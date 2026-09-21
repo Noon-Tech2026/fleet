@@ -224,38 +224,21 @@ export class RulesService {
   }
 
   private checkFuel(current: VehicleState): void {
-    const drop = this.fuel.inspect(current.id, 'main', current.fuelMain, current.speed);
-    if (drop) {
-      this.alerts.raise(
-        current.id,
-        'critical',
-        'fuel_drop',
-        `Chute anormale du réservoir principal — ${drop.delta} L véhicule à l'arrêt`,
-      );
-    }
-
-    const dropAux = this.fuel.inspect(current.id, 'aux', current.fuelAux, current.speed);
-    if (dropAux) {
-      this.alerts.raise(
-        current.id,
-        'critical',
-        'fuel_drop',
-        `Chute anormale du réservoir auxiliaire — ${dropAux.delta} L véhicule à l'arrêt`,
-      );
+    const labels: Record<string, [level: 'critical' | 'warning' | 'info', text: (tank: string, d: number) => string]> = {
+      fuel_drop: ['critical', (t, d) => `Chute anormale du réservoir ${t} — ${d} L véhicule à l'arrêt (vol possible)`],
+      fuel_leak: ['warning', (t, d) => `Baisse lente du réservoir ${t} moteur coupé — ${d} L (fuite possible)`],
+      fuel_refill: ['info', (t, d) => `Plein détecté — +${d} L (réservoir ${t})`],
+      fuel_overconsumption: ['warning', (_t, d) => `Consommation anormale — ${d} L/100 km`],
+    };
+    for (const tank of ['main', 'aux'] as const) {
+      const liters = tank === 'main' ? current.fuelMain : current.fuelAux;
+      const r = this.fuel.inspect(current.id, tank, liters, current.speed, current.ignition, current.odometer);
+      if (r === null) continue;
+      const [level, text] = labels[r.code];
+      this.alerts.raise(current.id, level, r.code, text(tank === 'main' ? 'principal' : 'auxiliaire', r.delta));
     }
   }
 
-  /**
-   * Echeances d'entretien.
-   *
-   * MaintenanceService ne renvoie que les franchissements de seuil, pas
-   * l'etat courant : une vidange en retard depuis trois semaines ne doit
-   * pas produire une alerte a chaque trame.
-   *
-   * Niveau `warning` et non `critical` : un entretien depasse coute un
-   * moteur a terme, il ne met personne en danger dans la minute. Le
-   * critique reste reserve a la zone interdite et au siphonnage.
-   */
   private checkMaintenance(current: VehicleState): void {
     for (const due of this.maintenance.detectTransitions(current)) {
       if (due.status === 'overdue') {

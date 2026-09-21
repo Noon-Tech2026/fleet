@@ -320,7 +320,10 @@
     "exit_rejected": "Departure rejected by {{detail}}",
     "exit_bypassed": "Departure without load validated — {{detail}}",
     "starter_mismatch": "Starter state differs from the requested state — {{detail}}",
-    "unlock_requested": "Driver requests starter unlock — {{detail}}"
+    "unlock_requested": "Driver requests starter unlock — {{detail}}",
+    "fuel_leak": "Possible fuel leak — {{detail}}",
+    "fuel_refill": "Refuel detected — {{detail}}",
+    "fuel_overconsumption": "Abnormal consumption — {{detail}}"
   },
   "track": {
     "button": "Track",

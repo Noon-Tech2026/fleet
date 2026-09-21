@@ -320,7 +320,10 @@
     "exit_rejected": "رُفض الخروج من {{detail}}",
     "exit_bypassed": "تمت الموافقة على الخروج بلا حمولة — {{detail}}",
     "starter_mismatch": "حالة المشغّل تخالف الحالة المطلوبة — {{detail}}",
-    "unlock_requested": "السائق يطلب فتح التشغيل — {{detail}}"
+    "unlock_requested": "السائق يطلب فتح التشغيل — {{detail}}",
+    "fuel_leak": "تسرب وقود محتمل — {{detail}}",
+    "fuel_refill": "تعبئة وقود — {{detail}}",
+    "fuel_overconsumption": "استهلاك غير طبيعي — {{detail}}"
   },
   "track": {
     "button": "مسار الحركة",

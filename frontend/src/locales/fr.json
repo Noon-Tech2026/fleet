@@ -309,7 +309,11 @@
     "exit_rejected": "Sortie rejetée par {{detail}}",
     "exit_bypassed": "Sortie sans chargement validée — {{detail}}",
     "starter_mismatch": "État du démarreur différent de l'état voulu — {{detail}}",
-    "unlock_requested": "Demande de déblocage par le chauffeur — {{detail}}"
+    "unlock_requested": "Demande de déblocage par le chauffeur — {{detail}}",
+    "fuel_drop": "Chute anormale de carburant — {{detail}}",
+    "fuel_leak": "Fuite de carburant possible — {{detail}}",
+    "fuel_refill": "Plein détecté — {{detail}}",
+    "fuel_overconsumption": "Consommation anormale — {{detail}}"
   },
   "track": {
     "button": "Mouvements",
