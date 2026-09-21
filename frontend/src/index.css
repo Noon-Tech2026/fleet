@@ -2708,3 +2708,7 @@ h3 {
 .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
 
 .field select { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line, #d9d9d9); border-radius: 8px; background: #fff; }
+
+.exit-mini { margin-top: 8px; display: grid; gap: 6px; }
+.exit-mini-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.exit-mini .btn { justify-self: start; }

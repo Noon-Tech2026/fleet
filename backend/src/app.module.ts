@@ -41,6 +41,7 @@ import { GeofenceService } from './geofence/geofence.service';
 import { FuelService } from './fuel/fuel.service';
 import { RulesService } from './rules/rules.service';
 import { AlertsService } from './rules/alerts.service';
+import { AlertEntity } from './rules/entities/alert.entity';
 import { ImmobilizerService } from './immobilizer/immobilizer.service';
 import { MaintenanceService } from './maintenance/maintenance.service';
 import { MaintenanceController } from './maintenance/maintenance.controller';
@@ -54,7 +55,7 @@ import { AccountingController } from './accounting/accounting.controller';
     DatabaseModule,
     AuthModule,
     UsersModule,
-    TypeOrmModule.forFeature([
+    TypeOrmModule.forFeature([AlertEntity, 
       CommandLog,
       Vehicle,
       Position,

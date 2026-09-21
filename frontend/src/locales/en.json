@@ -461,7 +461,8 @@
     "confirmReject": "Reject {{id}}'s departure? The cab buzzer will restart.",
     "bypassReason": "Reason (maintenance, relocation, parking…):",
     "summary": "{{ready}} to validate · {{waiting}} waiting for button",
-    "filter": "Filter by truck or zone…"
+    "filter": "Filter by truck or zone…",
+    "showAll": "Show all ({{n}})"
   },
   "common": {
     "cancel": "Cancel",

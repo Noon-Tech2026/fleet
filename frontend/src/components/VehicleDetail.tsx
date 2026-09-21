@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { VehicleState } from '../lib/types';
+import type { ExitRequestView, VehicleState } from '../lib/types';
 import { statusOf } from '../lib/status';
 import { useTranslation } from 'react-i18next';
 import { FuelGauge } from './FuelGauge';
@@ -11,10 +11,13 @@ import { useAuth } from '../auth/AuthContext';
 interface Props {
   vehicle: VehicleState;
   simulatorMode: boolean;
+  /** Demandes de chargement ouvertes de ce camion. */
+  requests?: ExitRequestView[];
+  onShowRequests?: () => void;
   onTrack?: () => void;
 }
 
-export function VehicleDetail({ vehicle, simulatorMode, onTrack }: Props) {
+export function VehicleDetail({ vehicle, simulatorMode, onTrack, requests = [], onShowRequests }: Props) {
   const { t, i18n } = useTranslation();
   const { can } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -126,6 +129,21 @@ export function VehicleDetail({ vehicle, simulatorMode, onTrack }: Props) {
           </button>
         )}
       </div>
+      {requests.length > 0 && (
+        <div className="exit-mini">
+          {requests.slice(0, 2).map((r) => (
+            <div key={r.id} className={`exit-mini-row ${r.buttonPressedAt ? 'ready' : 'warn'}`}>
+              <span className={`badge ${r.buttonPressedAt ? 'ok' : 'warn'}`}>{r.buttonPressedAt ? t('exit.toDecide') : t('exit.waitingButton')}</span>
+              <span className="muted">{r.zoneName || '—'} · {new Date(r.exitedAt).toLocaleString(i18n.language, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+            </div>
+          ))}
+          {onShowRequests && (
+            <button className="btn ghost small" onClick={onShowRequests}>
+              {requests.length > 2 ? t('exit.showAll', { n: requests.length }) : t('exit.title')}
+            </button>
+          )}
+        </div>
+      )}
 
       <h3>{t('supervision.starter')}</h3>
       <div

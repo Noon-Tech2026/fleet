@@ -64,6 +64,7 @@ function Dashboard({
 }) {
   const { t } = useTranslation();
   const { vehicles, alerts, exitRequests } = useFleetStream();
+  const [exitOpenSignal, setExitOpenSignal] = useState(0);
 
   // Répertoire des camions : ceux dont le boîtier n'a encore rien transmis
   // apparaissent dans la liste (sans marqueur) jusqu'à leur première trame.
@@ -171,7 +172,7 @@ function Dashboard({
       ) : (
         <main className="layout">
           <aside className="col left">
-            <ExitRequestsPanel requests={exitRequests} />
+            <ExitRequestsPanel requests={exitRequests} openSignal={exitOpenSignal} />
             <h2 className="col-title">
               {t('app.fleet')} <span className="count">{vehicles.length + pendingVehicles.length}</span>
             </h2>
@@ -195,7 +196,13 @@ function Dashboard({
 
           <aside className="col right">
             {selected ? (
-              <VehicleDetail vehicle={selected} simulatorMode={SIMULATOR_MODE} onTrack={() => setTrackVehicleId(selected.id)} />
+              <VehicleDetail
+                vehicle={selected}
+                simulatorMode={SIMULATOR_MODE}
+                onTrack={() => setTrackVehicleId(selected.id)}
+                requests={exitRequests.filter((r) => r.vehicleId === selected.id)}
+                onShowRequests={() => setExitOpenSignal((n) => n + 1)}
+              />
             ) : (
               <p className="empty">{t('app.selectVehicle')}</p>
             )}

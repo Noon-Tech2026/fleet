@@ -7,6 +7,8 @@ import { TripDialog } from '../accounting/TripDialog';
 
 interface Props {
   requests: ExitRequestView[];
+  /** Incrementer pour ouvrir la fenetre depuis un autre composant. */
+  openSignal?: number;
 }
 
 /**
@@ -14,7 +16,7 @@ interface Props {
  * laterale, une fenetre avec la liste complete. La confirmation passe par
  * le formulaire de voyage existant ; le voyage cree est lie a la demande.
  */
-export function ExitRequestsPanel({ requests }: Props) {
+export function ExitRequestsPanel({ requests, openSignal = 0 }: Props) {
   const { t, i18n } = useTranslation();
   const { can } = useAuth();
   const canDecide = can('supervisor');
@@ -30,6 +32,10 @@ export function ExitRequestsPanel({ requests }: Props) {
     api.clients().then(setClients).catch(() => setClients([]));
     api.drivers().then(setDrivers).catch(() => setDrivers([]));
   }, [canDecide, open]);
+
+  useEffect(() => {
+    if (openSignal > 0 && requests.length > 0) setOpen(true);
+  }, [openSignal]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Plus rien a valider : refermer la fenetre toute seule.
   useEffect(() => {
