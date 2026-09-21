@@ -71,6 +71,20 @@ export class AuthService {
   }
 
   /**
+   * Connexion sans mot de passe pour un lien SSO deja verifie
+   * (portail Atlantic). Le compte doit exister et etre actif.
+   */
+  async loginTrusted(email: string, context: { userAgent?: string; ip?: string }): Promise<{ user: PublicUser; tokens: TokenPair }> {
+    const user = await this.users.findOne({ where: { email: email.toLowerCase().trim() } });
+    if (!user || !user.active) throw new UnauthorizedException('Compte SSO absent ou desactive');
+    user.lastLoginAt = new Date();
+    await this.users.save(user);
+    const tokens = await this.issue(user, context);
+    this.log.log(`Connexion SSO : ${user.email} (${user.role})`);
+    return { user: toPublic(user), tokens };
+  }
+
+  /**
    * Rotation : l'ancienne session est revoquee et remplacee.
    * Si un jeton deja revoque est presente, toutes les sessions de
    * l'utilisateur sont coupees — c'est le signe d'un vol de jeton.

@@ -41,6 +41,7 @@ import { GeofenceService } from './geofence/geofence.service';
 import { FuelService } from './fuel/fuel.service';
 import { RulesService } from './rules/rules.service';
 import { AlertsService } from './rules/alerts.service';
+import { PortalController } from './portal/portal.controller';
 import { AlertEntity } from './rules/entities/alert.entity';
 import { ImmobilizerService } from './immobilizer/immobilizer.service';
 import { MaintenanceService } from './maintenance/maintenance.service';
@@ -75,6 +76,7 @@ import { AccountingController } from './accounting/accounting.controller';
     TelemetryModule,
   ],
   controllers: [
+    PortalController,
     FleetController,
     FleetAdminController,
     MaintenanceController,

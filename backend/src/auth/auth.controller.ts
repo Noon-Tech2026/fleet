@@ -61,7 +61,7 @@ export class AuthController {
  * declencher un blocage de demarreur en faisant cliquer l'exploitant
  * sur un lien.
  */
-function setAuthCookies(res: Response, tokens: TokenPair): void {
+export function setAuthCookies(res: Response, tokens: TokenPair): void {
   const secure = process.env.NODE_ENV === 'production';
 
   res.cookie(ACCESS_COOKIE, tokens.accessToken, {
