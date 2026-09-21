@@ -306,6 +306,14 @@ export class ImmobilizerService implements OnModuleInit {
   // ---- Voyants des boutons (DOUT3 = bouton voyage, DOUT4 = bouton deblocage) --
 
   /** Best effort : un voyant qui rate n'interrompt jamais la logique metier. */
+  /** Appui bouton voyage recu : voyant + buzzer eteints en une seule commande. */
+  async tripAck(vehicleId: string): Promise<void> {
+    try {
+      if (this.source.setDigitalOutputs) await this.source.setDigitalOutputs(vehicleId, { 2: false, 3: false });
+      else { await this.source.setDigitalOutput(vehicleId, 3, false); await this.source.setDigitalOutput(vehicleId, 2, false); }
+    } catch (e) { this.log.warn(`${vehicleId} — accuse bouton voyage : ${String(e)}`); }
+  }
+
   async ledTrip(vehicleId: string, on: boolean): Promise<void> {
     try { await this.source.setDigitalOutput(vehicleId, 3, on); } catch (e) { this.log.warn(`${vehicleId} — voyant voyage : ${String(e)}`); }
   }

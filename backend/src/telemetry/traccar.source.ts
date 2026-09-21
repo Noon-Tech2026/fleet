@@ -284,6 +284,25 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
     for (const h of this.ioHandlers) h(report);
   }
 
+  /** Plusieurs sorties en une seule commande setdigout (une seule rotation reseau). */
+  async setDigitalOutputs(vehicleId: string, states: Partial<Record<1 | 2 | 3 | 4, boolean>>): Promise<void> {
+    const deviceId = [...this.deviceToVehicle.entries()].find(([, name]) => name === vehicleId)?.[0];
+    if (!deviceId) throw new Error(`Aucun boîtier associé à ${vehicleId}`);
+    const outputs = ['?', '?', '?', '?'];
+    for (const [k, active] of Object.entries(states)) {
+      const output = Number(k) as 1 | 2 | 3 | 4;
+      const physical = output === 1 && DOUT1_INVERTED ? active === false : active;
+      outputs[output - 1] = physical ? '1' : '0';
+    }
+    const data = `setdigout ${outputs.join('')}`;
+    this.log.log(`${vehicleId} — commande boitier : ${data}`);
+    const res = await this.api('/api/commands/send', {
+      method: 'POST',
+      body: JSON.stringify({ deviceId, type: 'custom', attributes: { data } }),
+    });
+    if (!res.ok) throw new Error(`Commande refusée par Traccar (${res.status})`);
+  }
+
   async setDigitalOutput(vehicleId: string, output: 1 | 2 | 3 | 4, active: boolean, durationSec?: number): Promise<void> {
     const deviceId = [...this.deviceToVehicle.entries()].find(([, name]) => name === vehicleId)?.[0];
     if (!deviceId) throw new Error(`Aucun boîtier associé à ${vehicleId}`);

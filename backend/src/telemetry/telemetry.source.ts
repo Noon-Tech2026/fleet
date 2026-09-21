@@ -55,6 +55,8 @@ export interface TelemetrySource {
    */
   /** durationSec : le boitier remet la sortie a 0 lui-meme apres ce delai (setdigout avec timeout). */
   setDigitalOutput(vehicleId: string, output: 1 | 2 | 3 | 4, active: boolean, durationSec?: number): Promise<void>;
+  /** Optionnel : plusieurs sorties en une commande. */
+  setDigitalOutputs?(vehicleId: string, states: Partial<Record<1 | 2 | 3 | 4, boolean>>): Promise<void>;
 
   /**
    * Gestion du répertoire des boîtiers côté source (Traccar). Optionnel :

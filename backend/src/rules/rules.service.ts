@@ -93,9 +93,8 @@ export class RulesService {
       if (current.departureConfirmed) {
         this.unconfirmed.delete(current.id);
         this.immobilizer.stopIoPolling(current.id);
-        await this.immobilizer.buzzerOff(current.id);
-        await this.immobilizer.ledTrip(current.id, false);
-        await this.exitRequests.pressButton(current.id, open.zone, open.exitedAt);
+        await this.exitRequests.pressButton(current.id, open.zone, open.exitedAt); // la demande d'abord : visible tout de suite
+        await this.immobilizer.tripAck(current.id);
         current.departureConfirmed = false; // appui consomme : la prochaine sortie exigera un nouvel appui
         this.alerts.raise(current.id, 'info', 'departure_confirmed_late', 'Départ confirmé par le chauffeur après rappel');
       } else if (now - open.lastBuzz >= BUZZ_REPEAT_MS) {
@@ -127,7 +126,7 @@ export class RulesService {
       this.unconfirmed.set(current.id, { lastBuzz: Date.now(), count: 1, zone: leftStation, exitedAt: new Date() });
       await this.immobilizer.ledTrip(current.id, true);
       await this.immobilizer.buzzerOn(current.id, BUZZ_SECONDS);
-      this.immobilizer.startIoPolling(current.id, 3_000, 30 * 60_000);
+      this.immobilizer.startIoPolling(current.id, 2_000, 30 * 60_000);
     }
 
     // Une fois hors station, la confirmation est consommée : le prochain
@@ -173,7 +172,7 @@ export class RulesService {
     vehicle.departureConfirmed = false;
     this.unconfirmed.set(vehicle.id, { lastBuzz: Date.now(), count: 1, zone: null, exitedAt: new Date() });
     await this.immobilizer.ledTrip(vehicle.id, true);
-    this.immobilizer.startIoPolling(vehicle.id, 3_000, 30 * 60_000);
+    this.immobilizer.startIoPolling(vehicle.id, 2_000, 30 * 60_000);
     await this.immobilizer.buzzerOn(vehicle.id, BUZZ_SECONDS);
   }
 
