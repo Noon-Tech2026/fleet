@@ -33,6 +33,8 @@ interface Operation {
   label: string;
   detail: string;
   by: string;
+  /** Utilisateur qui a saisi l'operation. */
+  createdBy: string;
   /** Signé : recette positive, coût négatif, null si sans montant. */
   amount: number | null;
 }
@@ -87,6 +89,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
             label: x.clientName,
             detail: `${x.origin ?? '—'} → ${x.destination ?? '—'} · ${t('history.containers', { count: x.containers.length })}`,
             by: x.driverName,
+            createdBy: x.createdBy,
             amount: x.amount,
           })),
           ...expenses.map((x) => ({
@@ -98,6 +101,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
             label: t(`history.expense.${x.category}`),
             detail: [x.reference, x.notes].filter(Boolean).join(' · '),
             by: x.createdBy,
+            createdBy: x.createdBy,
             amount: -x.amount,
           })),
           ...investments.map((x) => ({
@@ -109,6 +113,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
             label: t(`history.investment.${x.kind}`),
             detail: x.description ?? '',
             by: x.createdBy,
+            createdBy: x.createdBy,
             amount: -x.amount,
           })),
           ...maintenance.map((x) => ({
@@ -122,6 +127,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
               .filter(Boolean)
               .join(' · '),
             by: x.performedBy,
+            createdBy: x.performedBy,
             amount: x.cost != null ? -x.cost : null,
           })),
           ...commands.map((x) => ({
@@ -133,6 +139,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
             label: t(`history.command.${x.action}`) + (x.applied ? '' : ` ${t('history.command.queued')}`),
             detail: x.reason,
             by: x.actor,
+            createdBy: x.actor,
             amount: null,
           })),
         ];
@@ -312,6 +319,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
                     <th>{t('history.col.type')}</th>
                     <th>{t('history.col.detail')}</th>
                     <th>{t('history.col.by')}</th>
+                    <th>{t('history.col.createdBy')}</th>
                     <th>{t('history.col.amount')}</th>
                     {showActions && <th />}
                   </tr>
@@ -333,6 +341,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
                           {o.detail && <div className="cell-muted">{o.detail}</div>}
                         </td>
                         <td className="cell-muted">{o.by}</td>
+                        <td className="cell-muted">{o.createdBy}</td>
                         <td>
                           {o.amount == null ? (
                             '—'

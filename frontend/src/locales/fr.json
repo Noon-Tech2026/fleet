@@ -126,7 +126,8 @@
       "detail": "Détail",
       "by": "Par",
       "amount": "Montant",
-      "actions": ""
+      "actions": "",
+      "createdBy": "Saisi par"
     },
     "totals": {
       "revenue": "Recettes",

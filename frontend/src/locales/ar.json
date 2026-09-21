@@ -126,7 +126,8 @@
       "detail": "التفاصيل",
       "by": "بواسطة",
       "amount": "المبلغ",
-      "actions": ""
+      "actions": "",
+      "createdBy": "أدخلها"
     },
     "totals": {
       "revenue": "الإيرادات",

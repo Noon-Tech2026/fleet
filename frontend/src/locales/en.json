@@ -126,7 +126,8 @@
       "detail": "Detail",
       "by": "By",
       "amount": "Amount",
-      "actions": ""
+      "actions": "",
+      "createdBy": "Entered by"
     },
     "totals": {
       "revenue": "Revenue",
