@@ -132,23 +132,19 @@ export function VehicleDetail({ vehicle, onTrack, requests = [], onShowRequests,
         </ul>
       )}
 
-      <h3>{t('exit.toValidateTitle')}</h3>
-      {requests.length === 0 && <p className="muted small">{t('exit.none')}</p>}
 
-      {requests.length > 0 && (
-        <div className="exit-mini">
-          {requests.slice(0, 2).map((r) => (
-            <div key={r.id} className={`exit-mini-row ${r.buttonPressedAt ? 'ready' : 'warn'}`}>
-              <span className={`badge ${r.buttonPressedAt ? 'ok' : 'warn'}`}>{r.buttonPressedAt ? t('exit.toDecide') : t('exit.waitingButton')}</span>
-              <span className="muted">{r.zoneName || '—'} · {new Date(r.exitedAt).toLocaleString(i18n.language, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-            </div>
-          ))}
-          {onShowRequests && (
-            <button className="btn ghost small" onClick={onShowRequests}>
-              {requests.length > 2 ? t('exit.showAll', { n: requests.length }) : t('exit.title')}
-            </button>
-          )}
-        </div>
+      {requests.length > 0 && onShowRequests && (
+        <button className="btn exit-toggle" onClick={onShowRequests}>
+          <span>{t('exit.toValidateTitle')}</span>
+          <span className="exit-counts">
+            {requests.filter((r) => r.buttonPressedAt !== null).length > 0 && (
+              <span className="badge ok">{requests.filter((r) => r.buttonPressedAt !== null).length}</span>
+            )}
+            {requests.filter((r) => r.buttonPressedAt === null).length > 0 && (
+              <span className="badge warn">{requests.filter((r) => r.buttonPressedAt === null).length}</span>
+            )}
+          </span>
+        </button>
       )}
 
       <h3>{t('supervision.starter')}</h3>
