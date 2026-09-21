@@ -219,7 +219,9 @@
     "legendStopped": "متوقفة",
     "legendBlocked": "التشغيل محظور",
     "capacity": "السعة {{capacity}} لتر",
-    "unlockRequested": "🔔 السائق يطلب فتح التشغيل"
+    "unlockRequested": "🔔 السائق يطلب فتح التشغيل",
+    "fuelAlerts": "تنبيهات الوقود",
+    "fuelAlertsNone": "لم يُكتشف أي شذوذ في الوقود."
   },
   "maintenance": {
     "status": {
@@ -462,7 +464,9 @@
     "bypassReason": "السبب (صيانة، نقل، توقف…):",
     "summary": "{{ready}} للتأكيد · {{waiting}} بانتظار الزر",
     "filter": "تصفية حسب الشاحنة أو المنطقة…",
-    "showAll": "عرض الكل ({{n}})"
+    "showAll": "عرض الكل ({{n}})",
+    "toValidateTitle": "حمولات للتأكيد",
+    "none": "لا حمولة بانتظار التأكيد."
   },
   "common": {
     "cancel": "إلغاء",

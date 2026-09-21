@@ -2712,3 +2712,9 @@ h3 {
 .exit-mini { margin-top: 8px; display: grid; gap: 6px; }
 .exit-mini-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 .exit-mini .btn { justify-self: start; }
+
+.fuel-alerts { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.fuel-alerts li { display: flex; flex-direction: column; gap: 2px; font-size: 12px; padding: 8px 10px; border-radius: 8px; background: #fff; border: 1px solid var(--line, #e5e5e5); }
+.fuel-alerts li.critical { border-color: var(--red, #c0392b); }
+.fuel-alerts li.warning { border-color: var(--amber, #d99a1c); }
+.muted.small { font-size: 12px; }

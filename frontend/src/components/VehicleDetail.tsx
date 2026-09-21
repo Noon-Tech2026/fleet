@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ExitRequestView, VehicleState } from '../lib/types';
+import type { Alert, ExitRequestView, VehicleState } from '../lib/types';
 import { statusOf } from '../lib/status';
 import { useTranslation } from 'react-i18next';
 import { FuelGauge } from './FuelGauge';
@@ -14,10 +14,12 @@ interface Props {
   /** Demandes de chargement ouvertes de ce camion. */
   requests?: ExitRequestView[];
   onShowRequests?: () => void;
+  /** Alertes carburant de ce camion (les plus recentes en premier). */
+  fuelAlerts?: Alert[];
   onTrack?: () => void;
 }
 
-export function VehicleDetail({ vehicle, simulatorMode, onTrack, requests = [], onShowRequests }: Props) {
+export function VehicleDetail({ vehicle, onTrack, requests = [], onShowRequests, fuelAlerts = [] }: Props) {
   const { t, i18n } = useTranslation();
   const { can } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -29,7 +31,6 @@ export function VehicleDetail({ vehicle, simulatorMode, onTrack, requests = [], 
   // Masquer un bouton n'est pas une protection — le serveur refuse de
   // toute façon. C'est du confort : ne pas proposer une action qui
   // renverra 403.
-  const canOperate = can('operator');
   const canControlStarter = can('supervisor');
   const locked = sending || vehicle.commandLock !== null;
 
@@ -117,18 +118,23 @@ export function VehicleDetail({ vehicle, simulatorMode, onTrack, requests = [], 
       <h3>{t('supervision.maintenance')}</h3>
       <MaintenancePanel vehicleId={vehicle.id} />
 
-      <h3>{t('supervision.departure')}</h3>
-      <div className={`panel ${vehicle.departureConfirmed ? 'ok' : 'warn'}`}>
-        <strong>
-          {vehicle.departureConfirmed ? t('supervision.departureConfirmed') : t('supervision.departureNone')}
-        </strong>
-        <span>{t('supervision.departureHint')}</span>
-        {simulatorMode && canOperate && vehicle.departureConfirmed === false && (
-          <button className="btn ghost full" onClick={() => void api.pressButton(vehicle.id)}>
-            {t('supervision.simulateButton')}
-          </button>
-        )}
-      </div>
+      <h3>{t('supervision.fuelAlerts')}</h3>
+      {fuelAlerts.length === 0 ? (
+        <p className="muted small">{t('supervision.fuelAlertsNone')}</p>
+      ) : (
+        <ul className="fuel-alerts">
+          {fuelAlerts.slice(0, 3).map((a) => (
+            <li key={a.id} className={a.level}>
+              <span className={`badge ${a.level === 'critical' ? 'danger' : a.level === 'warning' ? 'warn' : 'ok'}`}>{t(`alerts.${a.code}`, { detail: '' }).replace(/ — $/, '')}</span>
+              <span className="muted">{a.message} · {new Date(a.at).toLocaleString(i18n.language, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <h3>{t('exit.toValidateTitle')}</h3>
+      {requests.length === 0 && <p className="muted small">{t('exit.none')}</p>}
+
       {requests.length > 0 && (
         <div className="exit-mini">
           {requests.slice(0, 2).map((r) => (

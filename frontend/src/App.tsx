@@ -202,6 +202,7 @@ function Dashboard({
                 onTrack={() => setTrackVehicleId(selected.id)}
                 requests={exitRequests.filter((r) => r.vehicleId === selected.id)}
                 onShowRequests={() => setExitOpenSignal((n) => n + 1)}
+                fuelAlerts={alerts.filter((a) => a.vehicleId === selected.id && a.code.startsWith('fuel_'))}
               />
             ) : (
               <p className="empty">{t('app.selectVehicle')}</p>

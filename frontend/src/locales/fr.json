@@ -219,7 +219,9 @@
     "legendStopped": "À l'arrêt",
     "legendBlocked": "Démarrage bloqué",
     "capacity": "capacité {{capacity}} L",
-    "unlockRequested": "🔔 Le chauffeur demande le déblocage du démarreur"
+    "unlockRequested": "🔔 Le chauffeur demande le déblocage du démarreur",
+    "fuelAlerts": "Alertes carburant",
+    "fuelAlertsNone": "Aucune anomalie de carburant détectée."
   },
   "maintenance": {
     "status": {
@@ -452,7 +454,9 @@
     "bypassReason": "Motif (entretien, déplacement, stationnement…) :",
     "summary": "{{ready}} à valider · {{waiting}} en attente du bouton",
     "filter": "Filtrer par camion ou zone…",
-    "showAll": "Voir tout ({{n}})"
+    "showAll": "Voir tout ({{n}})",
+    "toValidateTitle": "Chargements à valider",
+    "none": "Aucun chargement en attente."
   },
   "common": {
     "cancel": "Annuler",

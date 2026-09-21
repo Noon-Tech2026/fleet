@@ -219,7 +219,9 @@
     "legendStopped": "Stopped",
     "legendBlocked": "Start blocked",
     "capacity": "capacity {{capacity}} L",
-    "unlockRequested": "🔔 The driver is requesting the starter to be unlocked"
+    "unlockRequested": "🔔 The driver is requesting the starter to be unlocked",
+    "fuelAlerts": "Fuel alerts",
+    "fuelAlertsNone": "No fuel anomaly detected."
   },
   "maintenance": {
     "status": {
@@ -462,7 +464,9 @@
     "bypassReason": "Reason (maintenance, relocation, parking…):",
     "summary": "{{ready}} to validate · {{waiting}} waiting for button",
     "filter": "Filter by truck or zone…",
-    "showAll": "Show all ({{n}})"
+    "showAll": "Show all ({{n}})",
+    "toValidateTitle": "Loads to validate",
+    "none": "No load pending."
   },
   "common": {
     "cancel": "Cancel",
