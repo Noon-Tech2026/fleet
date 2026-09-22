@@ -47,6 +47,14 @@ export class PortalController {
     const end = d2 && /^\d{4}-\d{2}-\d{2}$/.test(d2) ? `${d2} 23:59:59` : new Date().toISOString().slice(0, 10) + ' 23:59:59';
 
     const vehicles = this.fleet.all();
+    // Finance par camion sur la periode
+    const [tripsBy, expBy, invBy]: Array<{ vehicle_id: string; total: string }[]> = await Promise.all([
+      this.db.query('SELECT vehicle_id, COALESCE(SUM(amount),0) AS total FROM trips WHERE started_at BETWEEN ? AND ? GROUP BY vehicle_id', [start, end]),
+      this.db.query('SELECT vehicle_id, COALESCE(SUM(amount),0) AS total FROM vehicle_expenses WHERE at BETWEEN ? AND ? GROUP BY vehicle_id', [start, end]),
+      this.db.query('SELECT vehicle_id, COALESCE(SUM(amount),0) AS total FROM vehicle_investments WHERE at BETWEEN ? AND ? GROUP BY vehicle_id', [start, end]),
+    ]);
+    const perVehicle = (rows: { vehicle_id: string; total: string }[]) => new Map(rows.map((r) => [r.vehicle_id, Number(r.total)]));
+    const tripsMap = perVehicle(tripsBy), expMap = perVehicle(expBy), invMap = perVehicle(invBy);
     const [[trips], [expenses], [investments], [clients], [km]] = await Promise.all([
       this.db.query('SELECT COUNT(*) AS n, COALESCE(SUM(amount),0) AS total FROM trips WHERE started_at BETWEEN ? AND ?', [start, end]),
       this.db.query('SELECT COUNT(*) AS n, COALESCE(SUM(amount),0) AS total FROM vehicle_expenses WHERE at BETWEEN ? AND ?', [start, end]),
@@ -86,7 +94,12 @@ export class PortalController {
       pending: { loadsToValidate: pending.length, unlockRequests: vehicles.filter((v) => v.unlockRequested).length },
       alerts: { critical: alertsAll.filter((a) => a.level === 'critical').length, warning: alertsAll.filter((a) => a.level === 'warning').length, fuel: alertsAll.filter((a) => a.code.startsWith('fuel_')).length },
       maintenance: { overdue: plans.filter((p) => p.status === 'overdue').length, soon: plans.filter((p) => p.status === 'soon').length },
-      vehicles: vehicles.map((v) => ({ id: v.id, plate: v.plate, driver: v.driver, speed: v.speed, starter: v.starter, odometer: v.odometer, fuel: v.fuelMain + v.fuelAux, lastSeen: v.updatedAt || null })),
+      vehicles: vehicles.map((v) => ({ id: v.id, plate: v.plate, driver: v.driver, speed: v.speed, starter: v.starter, odometer: v.odometer, fuel: v.fuelMain + v.fuelAux, lastSeen: v.updatedAt || null,
+        revenue: tripsMap.get(v.id) ?? 0,
+        expenses: expMap.get(v.id) ?? 0,
+        investments: invMap.get(v.id) ?? 0,
+        profitBeforeInvest: (tripsMap.get(v.id) ?? 0) - (expMap.get(v.id) ?? 0),
+        net: (tripsMap.get(v.id) ?? 0) - (expMap.get(v.id) ?? 0) - (invMap.get(v.id) ?? 0) })),
     };
   }
 
