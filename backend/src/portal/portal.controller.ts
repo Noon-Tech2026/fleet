@@ -47,10 +47,11 @@ export class PortalController {
     const end = d2 && /^\d{4}-\d{2}-\d{2}$/.test(d2) ? `${d2} 23:59:59` : new Date().toISOString().slice(0, 10) + ' 23:59:59';
 
     const vehicles = this.fleet.all();
-    const [[trips], [expenses], [investments], [km]] = await Promise.all([
+    const [[trips], [expenses], [investments], [clients], [km]] = await Promise.all([
       this.db.query('SELECT COUNT(*) AS n, COALESCE(SUM(amount),0) AS total FROM trips WHERE started_at BETWEEN ? AND ?', [start, end]),
       this.db.query('SELECT COUNT(*) AS n, COALESCE(SUM(amount),0) AS total FROM vehicle_expenses WHERE at BETWEEN ? AND ?', [start, end]),
       this.db.query('SELECT COUNT(*) AS n, COALESCE(SUM(amount),0) AS total FROM vehicle_investments WHERE at BETWEEN ? AND ?', [start, end]),
+      this.db.query('SELECT COUNT(*) AS n FROM clients WHERE active = 1'),
       this.db.query(
         'SELECT COALESCE(SUM(mx - mn),0) AS km FROM (SELECT p.vehicle_id, MAX(p.odometer) mx, MIN(p.odometer) mn FROM positions p JOIN vehicles v ON v.id = p.vehicle_id WHERE p.recorded_at BETWEEN ? AND ? AND p.odometer >= v.initial_odometer AND p.odometer < v.initial_odometer + 1000000 GROUP BY p.vehicle_id) t',
         [start, end],
@@ -67,6 +68,10 @@ export class PortalController {
 
     return {
       generatedAt: new Date().toISOString(),
+      // Champs agreges par le portail (totaux groupe)
+      chiffre_affaires: revenue,
+      nb_commandes: Number(trips.n),
+      nb_clients: Number(clients.n),
       period: { d1: start.slice(0, 10), d2: end.slice(0, 10) },
       currency: 'MRU',
       fleet: {
