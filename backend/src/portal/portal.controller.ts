@@ -52,7 +52,7 @@ export class PortalController {
       this.db.query('SELECT COUNT(*) AS n, COALESCE(SUM(amount),0) AS total FROM vehicle_expenses WHERE at BETWEEN ? AND ?', [start, end]),
       this.db.query('SELECT COUNT(*) AS n, COALESCE(SUM(amount),0) AS total FROM vehicle_investments WHERE at BETWEEN ? AND ?', [start, end]),
       this.db.query(
-        'SELECT COALESCE(SUM(mx - mn),0) AS km FROM (SELECT vehicle_id, MAX(odometer) mx, MIN(odometer) mn FROM positions WHERE recorded_at BETWEEN ? AND ? GROUP BY vehicle_id) t',
+        'SELECT COALESCE(SUM(mx - mn),0) AS km FROM (SELECT p.vehicle_id, MAX(p.odometer) mx, MIN(p.odometer) mn FROM positions p JOIN vehicles v ON v.id = p.vehicle_id WHERE p.recorded_at BETWEEN ? AND ? AND p.odometer >= v.initial_odometer AND p.odometer < v.initial_odometer + 1000000 GROUP BY p.vehicle_id) t',
         [start, end],
       ),
     ]);
