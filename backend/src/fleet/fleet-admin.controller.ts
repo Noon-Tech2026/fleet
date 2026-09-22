@@ -16,6 +16,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { VehiclesService } from './vehicles.service';
+import { FleetService } from './fleet.service';
 import { PositionsService } from './positions.service';
 import { DeparturesService } from './departures.service';
 import { GeofenceService } from '../geofence/geofence.service';
@@ -100,6 +101,7 @@ export class FleetAdminController {
     private readonly departures: DeparturesService,
     private readonly geofence: GeofenceService,
     private readonly fuel: FuelService,
+    private readonly fleet: FleetService,
   ) {}
 
   /* --- répertoire des véhicules --------------------------------------- */
@@ -111,20 +113,26 @@ export class FleetAdminController {
 
   @RequireRole(Role.Admin)
   @Post('fleet/vehicles')
-  createVehicle(@Body() dto: CreateVehicleDto) {
-    return this.vehicles.create(dto);
+  async createVehicle(@Body() dto: CreateVehicleDto) {
+    const r = await this.vehicles.create(dto);
+    this.fleet.pushSnapshot();
+    return r;
   }
 
   @RequireRole(Role.Admin)
   @Patch('fleet/vehicles/:id')
-  updateVehicle(@Param('id') id: string, @Body() dto: UpdateVehicleDto) {
-    return this.vehicles.update(id, dto);
+  async updateVehicle(@Param('id') id: string, @Body() dto: UpdateVehicleDto) {
+    const r = await this.vehicles.update(id, dto);
+    this.fleet.pushSnapshot();
+    return r;
   }
 
   @RequireRole(Role.Admin)
   @Post('fleet/vehicles/:id/deactivate')
-  deactivateVehicle(@Param('id') id: string) {
-    return this.vehicles.deactivate(id);
+  async deactivateVehicle(@Param('id') id: string) {
+    const r = await this.vehicles.deactivate(id);
+    this.fleet.pushSnapshot();
+    return r;
   }
 
   /* --- historique des positions ---------------------------------------- */

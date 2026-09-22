@@ -56,6 +56,11 @@ export class FleetService implements OnModuleInit {
     });
   }
 
+  /** Rebroadcast de l'etat complet : apres un changement du referentiel camions. */
+  pushSnapshot(): void {
+    this.events.publish({ type: 'snapshot', vehicles: this.all(), alerts: [] } as never);
+  }
+
   all(): VehicleState[] {
     const now = Date.now();
     return [...this.state.values()].map((v) => ({
