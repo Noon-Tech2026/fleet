@@ -567,5 +567,13 @@
     "off": "Coupé",
     "blockNow": "Bloquer maintenant",
     "schedule": "Programmer le blocage"
+  },
+  "period": {
+    "from": "Du",
+    "to": "Au",
+    "month": "Ce mois",
+    "lastMonth": "Mois dernier",
+    "year": "Cette année",
+    "all": "Tout"
   }
 }

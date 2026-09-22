@@ -577,5 +577,13 @@
     "off": "Off",
     "blockNow": "Block now",
     "schedule": "Schedule block"
+  },
+  "period": {
+    "from": "From",
+    "to": "To",
+    "month": "This month",
+    "lastMonth": "Last month",
+    "year": "This year",
+    "all": "All"
   }
 }

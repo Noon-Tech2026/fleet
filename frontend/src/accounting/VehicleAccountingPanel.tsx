@@ -10,6 +10,7 @@ import type {
 } from '../lib/types';
 import { EXPENSE_CATEGORY_LABEL, INVESTMENT_KIND_LABEL, formatMoney } from '../lib/accounting';
 import { api } from '../api/client';
+import { PeriodFilter, type Period } from './PeriodFilter';
 import { TripDialog } from './TripDialog';
 import { ExpenseDialog } from './ExpenseDialog';
 import { InvestmentDialog } from './InvestmentDialog';
@@ -39,6 +40,7 @@ export function VehicleAccountingPanel({
   const [expenses, setExpenses] = useState<VehicleExpenseEntry[] | null>(null);
   const [investments, setInvestments] = useState<VehicleInvestmentEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [period, setPeriod] = useState<Period>({});
   const [addingTrip, setAddingTrip] = useState(false);
   const [addingExpense, setAddingExpense] = useState(false);
   const [addingInvestment, setAddingInvestment] = useState(false);
@@ -67,10 +69,10 @@ export function VehicleAccountingPanel({
   const load = useCallback(async () => {
     try {
       const [s, t, e, i] = await Promise.all([
-        api.vehicleAccountingSummary(vehicleId),
-        api.vehicleTrips(vehicleId),
-        api.vehicleExpenses(vehicleId),
-        api.vehicleInvestments(vehicleId),
+        api.vehicleAccountingSummary(vehicleId, period),
+        api.vehicleTrips(vehicleId, period),
+        api.vehicleExpenses(vehicleId, period),
+        api.vehicleInvestments(vehicleId, period),
       ]);
       setSummary(s);
       setTrips(t);
@@ -80,7 +82,7 @@ export function VehicleAccountingPanel({
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Chargement impossible');
     }
-  }, [vehicleId]);
+  }, [vehicleId, period]);
 
   useEffect(() => {
     void load();
@@ -93,6 +95,7 @@ export function VehicleAccountingPanel({
           <button className="btn ghost small" onClick={onBack}>
             {t('accounting.back')}
           </button>
+          <PeriodFilter value={period} onChange={setPeriod} />
           <h3 className="col-title">
             {vehicleId} <span className="cell-sub">{plate}</span>
           </h3>

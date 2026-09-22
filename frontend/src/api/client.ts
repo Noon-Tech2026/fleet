@@ -80,6 +80,15 @@ async function readError(res: Response): Promise<string> {
   return `Erreur ${res.status}`;
 }
 
+/** ?from=&to= (YYYY-MM-DD) si renseignes. */
+function rangeQs(range?: { from?: string; to?: string }): string {
+  const q = new URLSearchParams();
+  if (range?.from) q.set('from', range.from);
+  if (range?.to) q.set('to', range.to);
+  const s = q.toString();
+  return s ? `?${s}` : '';
+}
+
 export const api = {
   /* --- session --- */
   login: (email: string, password: string) =>
@@ -166,10 +175,10 @@ export const api = {
     request<MaintenancePlanState[]>(`/api/vehicles/${id}/maintenance`, { method: 'POST' }),
 
   /* --- comptabilite --- */
-  accountingSummary: () => request<VehicleAccountingSummary[]>('/api/accounting/summary'),
+  accountingSummary: (range?: { from?: string; to?: string }) => request<VehicleAccountingSummary[]>(`/api/accounting/summary${rangeQs(range)}`),
 
-  vehicleAccountingSummary: (id: string) =>
-    request<VehicleAccountingSummary>(`/api/vehicles/${id}/accounting-summary`),
+  vehicleAccountingSummary: (id: string, range?: { from?: string; to?: string }) =>
+    request<VehicleAccountingSummary>(`/api/vehicles/${id}/accounting-summary${rangeQs(range)}`),
 
   clients: () => request<ClientRecord[]>('/api/accounting/clients'),
 
@@ -197,7 +206,7 @@ export const api = {
 
   deleteDriver: (id: string) => request<void>(`/api/accounting/drivers/${id}`, { method: 'DELETE' }),
 
-  vehicleTrips: (id: string) => request<TripEntry[]>(`/api/vehicles/${id}/trips`),
+  vehicleTrips: (id: string, range?: { from?: string; to?: string }) => request<TripEntry[]>(`/api/vehicles/${id}/trips${rangeQs(range)}`),
 
   createTrip: (input: {
     vehicleId: string;
@@ -227,7 +236,7 @@ export const api = {
 
   deleteInvestment: (id: string) => request<{ ok: true }>(`/api/accounting/investments/${id}`, { method: 'DELETE' }),
 
-  vehicleExpenses: (id: string) => request<VehicleExpenseEntry[]>(`/api/vehicles/${id}/expenses`),
+  vehicleExpenses: (id: string, range?: { from?: string; to?: string }) => request<VehicleExpenseEntry[]>(`/api/vehicles/${id}/expenses${rangeQs(range)}`),
 
   addExpense: (
     id: string,
@@ -238,7 +247,7 @@ export const api = {
       body: JSON.stringify(input),
     }),
 
-  vehicleInvestments: (id: string) => request<VehicleInvestmentEntry[]>(`/api/vehicles/${id}/investments`),
+  vehicleInvestments: (id: string, range?: { from?: string; to?: string }) => request<VehicleInvestmentEntry[]>(`/api/vehicles/${id}/investments${rangeQs(range)}`),
 
   addInvestment: (
     id: string,

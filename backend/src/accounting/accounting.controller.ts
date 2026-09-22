@@ -175,29 +175,29 @@ export class AccountingController {
   }
 
   @Get('vehicles/:id/trips')
-  tripsForVehicle(@Param('id') id: string) {
-    return this.accounting.trips({ vehicleId: id });
+  tripsForVehicle(@Param('id') id: string, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.accounting.trips({ vehicleId: id, from: from ? new Date(`${from}T00:00:00`) : undefined, to: to ? new Date(`${to}T23:59:59.999`) : undefined });
   }
 
   @Get('vehicles/:id/expenses')
-  expenses(@Param('id') id: string) {
-    return this.accounting.expensesFor(id);
+  expenses(@Param('id') id: string, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.accounting.expensesFor(id, 200, { from, to });
   }
 
   @Get('vehicles/:id/investments')
-  investments(@Param('id') id: string) {
-    return this.accounting.investmentsFor(id);
+  investments(@Param('id') id: string, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.accounting.investmentsFor(id, 200, { from, to });
   }
 
   @Get('vehicles/:id/accounting-summary')
-  summary(@Param('id') id: string) {
-    return this.accounting.summaryFor(id);
+  summary(@Param('id') id: string, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.accounting.summaryFor(id, { from, to });
   }
 
-  /** Synthèse de toute la flotte, y compris les camions sans trame reçue. */
+  /** Synthèse de toute la flotte, y compris les camions sans trame reçue. Période optionnelle. */
   @Get('accounting/summary')
-  summaryAll() {
-    return this.accounting.summaryForMany(this.vehicles.list().map((v) => v.id));
+  summaryAll(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.accounting.summaryForMany(this.vehicles.list().map((v) => v.id), { from, to });
   }
 
   /* --- référentiels : superviseur ----------------------------------------- */

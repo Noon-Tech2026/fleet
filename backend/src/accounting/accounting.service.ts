@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, FindOptionsWhere, In, Repository } from 'typeorm';
+import { Between, FindOptionsWhere, In, Repository, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import {
   ClientRecord,
   DriverRecord,
@@ -237,9 +237,10 @@ export class AccountingService {
 
   /* --- charges -------------------------------------------------------------- */
 
-  async expensesFor(vehicleId: string, limit = 200): Promise<VehicleExpenseEntry[]> {
+  async expensesFor(vehicleId: string, limit = 200, range?: DateRange): Promise<VehicleExpenseEntry[]> {
+    const d = dateWhere(range);
     const rows = await this.expensesRepo.find({
-      where: { vehicleId },
+      where: { vehicleId, ...(d ? { at: d } : {}) },
       order: { at: 'DESC' },
       take: limit,
     });
@@ -274,9 +275,10 @@ export class AccountingService {
 
   /* --- investissements -------------------------------------------------- */
 
-  async investmentsFor(vehicleId: string, limit = 200): Promise<VehicleInvestmentEntry[]> {
+  async investmentsFor(vehicleId: string, limit = 200, range?: DateRange): Promise<VehicleInvestmentEntry[]> {
+    const d = dateWhere(range);
     const rows = await this.investmentsRepo.find({
-      where: { vehicleId },
+      where: { vehicleId, ...(d ? { at: d } : {}) },
       order: { at: 'DESC' },
       take: limit,
     });
@@ -362,8 +364,8 @@ export class AccountingService {
 
   /* --- synthèse ------------------------------------------------------------ */
 
-  async summaryFor(vehicleId: string): Promise<VehicleAccountingSummary> {
-    const [summary] = await this.summaryForMany([vehicleId]);
+  async summaryFor(vehicleId: string, range?: DateRange): Promise<VehicleAccountingSummary> {
+    const [summary] = await this.summaryForMany([vehicleId], range);
     return summary;
   }
 
@@ -372,14 +374,15 @@ export class AccountingService {
    * requête par véhicule — le tableau flotte entière ne doit pas déclencher
    * N x 4 requêtes SQL.
    */
-  async summaryForMany(vehicleIds: string[]): Promise<VehicleAccountingSummary[]> {
+  async summaryForMany(vehicleIds: string[], range?: DateRange): Promise<VehicleAccountingSummary[]> {
     if (vehicleIds.length === 0) return [];
+    const d = dateWhere(range);
 
     const [trips, expenses, maintenanceLogs, investments] = await Promise.all([
-      this.tripsRepo.find({ where: { vehicleId: In(vehicleIds) } }),
-      this.expensesRepo.find({ where: { vehicleId: In(vehicleIds) } }),
-      this.maintenanceLogsRepo.find({ where: { vehicleId: In(vehicleIds) } }),
-      this.investmentsRepo.find({ where: { vehicleId: In(vehicleIds) } }),
+      this.tripsRepo.find({ where: { vehicleId: In(vehicleIds), ...(d ? { startedAt: d } : {}) } }),
+      this.expensesRepo.find({ where: { vehicleId: In(vehicleIds), ...(d ? { at: d } : {}) } }),
+      this.maintenanceLogsRepo.find({ where: { vehicleId: In(vehicleIds), ...(d ? { at: d } : {}) } }),
+      this.investmentsRepo.find({ where: { vehicleId: In(vehicleIds), ...(d ? { at: d } : {}) } }),
     ]);
 
     return vehicleIds.map((vehicleId) => {
@@ -496,4 +499,20 @@ function toInvestmentEntry(row: VehicleInvestment): VehicleInvestmentEntry {
     description: row.description,
     createdBy: row.createdBy,
   };
+}
+
+/** Plage de dates optionnelle (bornes incluses, format YYYY-MM-DD). */
+export interface DateRange {
+  from?: string;
+  to?: string;
+}
+
+/** Condition TypeORM pour un champ date selon la plage ; undefined si aucune borne. */
+export function dateWhere(range?: DateRange) {
+  const from = range?.from ? new Date(`${range.from}T00:00:00`) : undefined;
+  const to = range?.to ? new Date(`${range.to}T23:59:59.999`) : undefined;
+  if (from && to) return Between(from, to);
+  if (from) return MoreThanOrEqual(from);
+  if (to) return LessThanOrEqual(to);
+  return undefined;
 }

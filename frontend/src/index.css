@@ -2718,3 +2718,7 @@ h3 {
 .fuel-alerts li.critical { border-color: var(--red, #c0392b); }
 .fuel-alerts li.warning { border-color: var(--amber, #d99a1c); }
 .muted.small { font-size: 12px; }
+
+.period-filter { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 14px; margin: 8px 0 14px; }
+.field.inline { display: flex; flex-direction: column; gap: 4px; min-width: 150px; }
+.field.inline input { padding: 6px 8px; }

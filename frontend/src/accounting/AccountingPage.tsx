@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ClientRecord, DriverRecord, VehicleAccountingSummary } from '../lib/types';
 import { formatMoney } from '../lib/accounting';
+import { PeriodFilter, type Period } from './PeriodFilter';
 import { api, type VehicleDirectoryEntry } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { VehicleAccountingPanel } from './VehicleAccountingPanel';
@@ -15,18 +16,19 @@ export function AccountingPage() {
   const [fleet, setFleet] = useState<VehicleDirectoryEntry[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [period, setPeriod] = useState<Period>({});
 
   const canRecordTrip = can('operator');
   const canManageMoney = can('supervisor');
 
   const loadSummaries = useCallback(async () => {
     try {
-      setSummaries(await api.accountingSummary());
+      setSummaries(await api.accountingSummary(period));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Chargement impossible');
     }
-  }, []);
+  }, [period]);
 
   const loadDirectory = useCallback(async () => {
     try {
@@ -68,6 +70,7 @@ export function AccountingPage() {
       <header className="page-head">
         <div>
           <h2>{t('accounting.title')}</h2>
+          <PeriodFilter value={period} onChange={setPeriod} />
         </div>
       </header>
 
