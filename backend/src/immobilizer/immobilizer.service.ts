@@ -284,17 +284,42 @@ export class ImmobilizerService implements OnModuleInit {
   // boitier a intervalle court. La reponse passe par onIoReport.
   private readonly ioPolls = new Map<string, { timer: NodeJS.Timeout; stopAt: number }>();
 
-  startIoPolling(vehicleId: string, everyMs: number, maxMs: number): void {
+  /**
+   * Sonde le boitier toutes les everyMs pendant fastMs, puis toutes les slowMs
+   * sans limite (slowMs = 0 : arret apres fastMs). Le sondage lent garantit
+   * qu'un appui tardif est toujours vu, pour un cout reseau faible.
+   */
+  startIoPolling(vehicleId: string, everyMs: number, fastMs: number, slowMs = 0): void {
     this.stopIoPolling(vehicleId);
-    const stopAt = Date.now() + maxMs;
-    const timer = setInterval(() => {
-      if (Date.now() > stopAt) {
-        this.stopIoPolling(vehicleId);
+    const slowAt = Date.now() + fastMs;
+    let timer = setInterval(() => {
+      if (Date.now() > slowAt) {
+        clearInterval(timer);
+        if (slowMs <= 0) { this.ioPolls.delete(vehicleId); return; }
+        timer = setInterval(() => void this.source.queryIo?.(vehicleId).catch(() => undefined), slowMs);
+        this.ioPolls.set(vehicleId, { timer, stopAt: Number.MAX_SAFE_INTEGER });
         return;
       }
       void this.source.queryIo?.(vehicleId).catch(() => undefined);
     }, everyMs);
-    this.ioPolls.set(vehicleId, { timer, stopAt });
+    this.ioPolls.set(vehicleId, { timer, stopAt: slowAt });
+  }
+
+  /**
+   * Au demarrage de l'API : les rappels vivent en memoire, un voyant peut donc
+   * rester allume apres un redemarrage. On remet buzzer et voyant voyage a
+   * zero, et le voyant deblocage selon l'etat demarreur restaure.
+   */
+  async resyncOutputs(vehicleIds: string[]): Promise<void> {
+    for (const id of vehicleIds) {
+      const blocked = this.desired.get(id) === 'blocked';
+      try {
+        if (this.source.setDigitalOutputs) await this.source.setDigitalOutputs(id, { 2: false, 3: false, 4: blocked });
+      } catch (e) {
+        this.log.warn(`${id} — resync sorties : ${String(e)}`);
+      }
+    }
+    this.log.log(`sorties resynchronisees sur ${vehicleIds.length} camion(s)`);
   }
 
   stopIoPolling(vehicleId: string): void {
@@ -369,7 +394,7 @@ export class ImmobilizerService implements OnModuleInit {
     }
     vehicle.starter = 'blocked';
     void this.ledUnlock(vehicle.id, true);
-    this.startIoPolling(vehicle.id, 10_000, 15 * 60_000);
+    this.startIoPolling(vehicle.id, 10_000, 15 * 60_000, 30_000);
     await this.persist(vehicle.id, 'blocked', false, actor, reason);
     this.events.publish({ type: 'position', vehicle: { ...vehicle } });
     this.alerts.raise(vehicle.id, 'critical', 'starter_blocked', `Demarreur bloque — ${reason}`);

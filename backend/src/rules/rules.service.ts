@@ -126,7 +126,7 @@ export class RulesService {
       this.unconfirmed.set(current.id, { lastBuzz: Date.now(), count: 1, zone: leftStation, exitedAt: new Date() });
       await this.immobilizer.ledTrip(current.id, true);
       await this.immobilizer.buzzerOn(current.id, BUZZ_SECONDS);
-      this.immobilizer.startIoPolling(current.id, 2_000, 30 * 60_000);
+      this.immobilizer.startIoPolling(current.id, 3_000, 10 * 60_000, 15_000);
     }
 
     // Une fois hors station, la confirmation est consommée : le prochain
@@ -172,7 +172,7 @@ export class RulesService {
     vehicle.departureConfirmed = false;
     this.unconfirmed.set(vehicle.id, { lastBuzz: Date.now(), count: 1, zone: null, exitedAt: new Date() });
     await this.immobilizer.ledTrip(vehicle.id, true);
-    this.immobilizer.startIoPolling(vehicle.id, 2_000, 30 * 60_000);
+    this.immobilizer.startIoPolling(vehicle.id, 3_000, 10 * 60_000, 15_000);
     await this.immobilizer.buzzerOn(vehicle.id, BUZZ_SECONDS);
   }
 

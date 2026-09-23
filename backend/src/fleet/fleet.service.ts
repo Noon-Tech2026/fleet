@@ -39,6 +39,7 @@ export class FleetService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
+    setTimeout(() => void this.immobilizer.resyncOutputs(this.vehicles.list().map((v) => v.id)), 12_000);
     // Reponses getio : etat reel des sorties, applique au camion concerne.
     this.source.onIoReport?.((report) => {
       const v = this.state.get(report.vehicleId);
