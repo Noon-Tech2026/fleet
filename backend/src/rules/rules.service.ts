@@ -172,6 +172,7 @@ export class RulesService {
     vehicle.departureConfirmed = false;
     this.unconfirmed.set(vehicle.id, { lastBuzz: Date.now(), count: 1, zone: null, exitedAt: new Date() });
     await this.immobilizer.ledTrip(vehicle.id, true);
+    await this.immobilizer.buzzerOn(vehicle.id, BUZZ_SECONDS); // rejet : le buzzer repart comme a la sortie
     this.immobilizer.startIoPolling(vehicle.id, 3_000, 10 * 60_000, 15_000);
     await this.immobilizer.buzzerOn(vehicle.id, BUZZ_SECONDS);
   }
