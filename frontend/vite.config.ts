@@ -16,7 +16,7 @@ export default defineConfig({
       // Le dashboard ne parle jamais a Traccar directement :
       // tout passe par l'API, y compris le flux SSE.
       '/api': {
-        target: 'https://demo.geotruck.noor.sarl',
+        target: 'https://demo.mirsad.noor.sarl',
         changeOrigin: true,
       },
     },
