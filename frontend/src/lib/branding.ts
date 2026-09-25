@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 export interface Branding { name: string; tagline: string; logo: string }
 
-const FALLBACK: Branding = { name: 'GeoTruck', tagline: 'Your fleet under control', logo: '/logo.png' };
+const FALLBACK: Branding = { name: 'Mirsad', tagline: 'Your fleet under control', logo: '/logo.png' };
 let cached: Branding | null = null;
 let inflight: Promise<Branding> | null = null;
 

@@ -19,7 +19,7 @@ export class BrandingController {
   branding() {
     const logoPath = this.config.get<string>('BRAND_LOGO') ?? '';
     return {
-      name: (this.config.get<string>('BRAND_NAME') ?? 'GeoTruck').trim(),
+      name: (this.config.get<string>('BRAND_NAME') ?? 'Mirsad').trim(),
       tagline: (this.config.get<string>('BRAND_TAGLINE') ?? 'Your fleet under control').trim(),
       logo: logoPath && existsSync(logoPath) ? '/api/branding/logo' : '/logo.png',
     };
