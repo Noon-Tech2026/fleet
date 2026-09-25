@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useBranding } from '../lib/branding';
 import { useAuth } from './AuthContext';
 
 type Lang = 'fr' | 'en' | 'ar';
@@ -9,6 +10,7 @@ interface Translations {
 }
 
 export function LoginPage() {
+  const brand = useBranding();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -43,7 +45,7 @@ export function LoginPage() {
         <div className="blob blob-1" />
         <div className="blob blob-2" />
         <div className="login-visual-caption">
-          <div className="lv-logo"><span className="lv-dot" />GeoTruck</div>
+          <div className="lv-logo"><span className="lv-dot" />{brand.name}</div>
           <p>Suivi et pilotage de flotte en temps réel.</p>
         </div>
         <div className="lv-truck-lane">
@@ -61,8 +63,8 @@ export function LoginPage() {
         </div>
 
         <form className="login-card" onSubmit={submit}>
-          <img src="/logo.png" className="mark" alt="" aria-hidden="true" />
-          <h1>{tx?.title ?? 'GeoTruck'}</h1>
+          <img src={brand.logo} className="mark" alt="" aria-hidden="true" />
+          <h1>{brand.name}</h1>
           <p className="login-sub">{tx?.subtitle ?? ''}</p>
 
           <label className="field">

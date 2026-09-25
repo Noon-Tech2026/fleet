@@ -1,4 +1,5 @@
 import {useEffect, useMemo, useState} from 'react';
+import { useBranding } from './lib/branding';
 import { useTranslation } from 'react-i18next';
 import type { Role } from './lib/types';
 import { useFleetStream } from './api/useFleetStream';
@@ -64,6 +65,7 @@ function Dashboard({
 }) {
   const { t } = useTranslation();
   const { vehicles, alerts, exitRequests } = useFleetStream();
+  const brand = useBranding();
   const [exitOpenSignal, setExitOpenSignal] = useState(0);
 
   // Répertoire des camions : ceux dont le boîtier n'a encore rien transmis
@@ -98,10 +100,10 @@ function Dashboard({
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <img src="/logo.png" className="mark" alt="" aria-hidden="true" />
+          <img src={brand.logo} className="mark" alt="" aria-hidden="true" />
           <div>
-            <h1>GeoTruck</h1>
-            <p>{t('app.tagline')}</p>
+            <h1>{brand.name}</h1>
+            <p>{brand.tagline}</p>
           </div>
         </div>
 

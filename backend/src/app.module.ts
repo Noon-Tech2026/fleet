@@ -42,6 +42,7 @@ import { FuelService } from './fuel/fuel.service';
 import { RulesService } from './rules/rules.service';
 import { AlertsService } from './rules/alerts.service';
 import { PortalController } from './portal/portal.controller';
+import { BrandingController } from './branding/branding.controller';
 import { AlertEntity } from './rules/entities/alert.entity';
 import { ImmobilizerService } from './immobilizer/immobilizer.service';
 import { MaintenanceService } from './maintenance/maintenance.service';
@@ -77,6 +78,7 @@ import { AccountingController } from './accounting/accounting.controller';
   ],
   controllers: [
     PortalController,
+    BrandingController,
     FleetController,
     FleetAdminController,
     MaintenanceController,
