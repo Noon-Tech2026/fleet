@@ -339,6 +339,13 @@ export class ImmobilizerService implements OnModuleInit {
     } catch (e) { this.log.warn(`${vehicleId} — accuse bouton voyage : ${String(e)}`); }
   }
 
+  /** Les deux voyants en une commande (reconciliation periodique). */
+  async setLeds(vehicleId: string, trip: boolean, unlock: boolean): Promise<void> {
+    try {
+      if (this.source.setDigitalOutputs) await this.source.setDigitalOutputs(vehicleId, { 3: trip, 4: unlock });
+    } catch (e) { this.log.warn(`${vehicleId} — voyants : ${String(e)}`); }
+  }
+
   async ledTrip(vehicleId: string, on: boolean): Promise<void> {
     try { await this.source.setDigitalOutput(vehicleId, 3, on); } catch (e) { this.log.warn(`${vehicleId} — voyant voyage : ${String(e)}`); }
   }

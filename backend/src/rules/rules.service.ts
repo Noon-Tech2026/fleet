@@ -39,7 +39,11 @@ export class RulesService {
     private readonly maintenance: MaintenanceService,
   ) {}
 
+  /** Derniere trame vue par camion (pour la reconciliation periodique, sans dependre de FleetService). */
+  private readonly seen = new Map<string, VehicleState>();
+
   async evaluate(previous: VehicleState | undefined, current: VehicleState): Promise<void> {
+    this.seen.set(current.id, current);
     this.checkZoneTransition(previous, current);
     await this.checkPerimeter(previous, current);
     await this.checkUnlockRequest(previous, current);
@@ -182,10 +186,22 @@ export class RulesService {
    * trame portant in2/in3 : on met a jour le camion puis on reevalue.
    */
   async applyButtons(vehicle: VehicleState, tripPressed: boolean, unlockPressed: boolean): Promise<void> {
+    // Appui sans rappel ouvert (rappel perdu apres redemarrage / coupure reseau) : on eteint quand meme le voyant.
+    if (tripPressed && this.unconfirmed.has(vehicle.id) === false) await this.immobilizer.tripAck(vehicle.id);
     const before: VehicleState = { ...vehicle };
     if (tripPressed) vehicle.departureConfirmed = true;
     if (unlockPressed) vehicle.unlockRequested = true;
     if (tripPressed || unlockPressed) await this.evaluate(before, vehicle);
+  }
+
+  /** Toutes les 10 min : remet les voyants dans l'etat attendu (rappel ouvert / camion bloque). */
+  private readonly reconcileTimer = setInterval(() => void this.reconcileOutputs(), 10 * 60_000);
+
+  async reconcileOutputs(): Promise<void> {
+    for (const v of this.seen.values()) {
+      const led3 = this.unconfirmed.has(v.id);
+      await this.immobilizer.setLeds(v.id, led3, v.starter === 'blocked');
+    }
   }
 
   /** Decision prise : plus de rappel, voyant eteint. */
