@@ -531,8 +531,14 @@
       "pay": "تسجيل دفعة",
       "noFees": "لا أجور في هذه الفترة.",
       "noPayments": "لا دفعات في هذه الفترة.",
-      "confirmDelete": "حذف هذه الدفعة؟"
-    }
+      "confirmDelete": "حذف هذه الدفعة؟",
+      "selected": "{{n}} أجر محدَّد",
+      "paySelection": "دفع المحدَّد",
+      "containers": "الحاويات",
+      "paidBadge": "مدفوع",
+      "dueBadge": "مستحق"
+    },
+    "salary": "الراتب الشهري (أوقية)"
   },
   "clients": {
     "title": "العملاء",

@@ -40,6 +40,10 @@ export class VehicleExpense {
   @Column({ name: 'driver_id', type: 'varchar', length: 36, nullable: true })
   driverId: string | null;
 
+  /** Paiement qui a regle cette prime (null = encore due). */
+  @Column({ name: 'driver_payment_id', type: 'varchar', length: 36, nullable: true })
+  driverPaymentId: string | null;
+
   @Column({ name: 'created_by', length: 190 })
   createdBy: string;
 

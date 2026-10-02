@@ -136,6 +136,7 @@ export class AccountingService {
     phone?: string | null;
     licenseNumber?: string | null;
     tripFee?: number;
+    monthlySalary?: number;
   }): Promise<DriverRecord> {
     const saved = await this.driversRepo.save(
       this.driversRepo.create({
@@ -143,6 +144,7 @@ export class AccountingService {
         phone: data.phone ?? null,
         licenseNumber: data.licenseNumber ?? null,
         tripFee: (data.tripFee ?? 0).toFixed(2),
+        monthlySalary: (data.monthlySalary ?? 0).toFixed(2),
         active: true,
       }),
     );
@@ -151,13 +153,14 @@ export class AccountingService {
 
   async updateDriver(
     id: string,
-    patch: { fullName?: string; phone?: string | null; licenseNumber?: string | null; tripFee?: number; active?: boolean },
+    patch: { fullName?: string; phone?: string | null; licenseNumber?: string | null; tripFee?: number; monthlySalary?: number; active?: boolean },
   ): Promise<DriverRecord> {
     const driver = await this.driversRepo.findOne({ where: { id } });
     if (!driver) throw new NotFoundException('Chauffeur inconnu');
-    const { tripFee, ...rest } = patch;
+    const { tripFee, monthlySalary, ...rest } = patch;
     Object.assign(driver, rest);
     if (tripFee !== undefined) driver.tripFee = tripFee.toFixed(2);
+    if (monthlySalary !== undefined) driver.monthlySalary = monthlySalary.toFixed(2);
     return toDriverRecord(await this.driversRepo.save(driver));
   }
 
@@ -486,15 +489,26 @@ export class AccountingService {
     };
   }
 
-  async addDriverPayment(driverId: string, input: { amount: number; at: Date; notes?: string }, createdBy: string) {
-    if (input.amount <= 0) throw new BadRequestException('Le montant doit être positif');
+  async addDriverPayment(driverId: string, input: { amount?: number; feeIds?: string[]; at: Date; notes?: string }, createdBy: string) {
     const driver = await this.driversRepo.findOne({ where: { id: driverId } });
     if (!driver) throw new BadRequestException('Chauffeur inconnu');
-    const p = await this.paymentsRepo.save(this.paymentsRepo.create({ driverId, amount: input.amount.toFixed(2), at: input.at, notes: input.notes ?? null, createdBy }));
+    // Selection de primes : le montant est la somme des primes encore dues, et elles sont marquees reglees.
+    let fees: VehicleExpense[] = [];
+    if (input.feeIds && input.feeIds.length > 0) {
+      fees = await this.expensesRepo.find({ where: { id: In(input.feeIds), driverId } });
+      fees = fees.filter((f) => f.driverPaymentId === null);
+      if (fees.length === 0) throw new BadRequestException('Aucune prime due dans la sélection');
+    }
+    const amount = fees.length > 0 ? fees.reduce((a, f) => a + Number(f.amount), 0) : Number(input.amount ?? 0);
+    if (amount <= 0) throw new BadRequestException('Le montant doit être positif');
+    const notes = input.notes ?? (fees.length > 0 ? `Règlement de ${fees.length} prime(s)` : null);
+    const p = await this.paymentsRepo.save(this.paymentsRepo.create({ driverId, amount: amount.toFixed(2), at: input.at, notes, createdBy }));
+    if (fees.length > 0) await this.expensesRepo.update({ id: In(fees.map((f) => f.id)) }, { driverPaymentId: p.id });
     return { id: p.id, at: p.at.toISOString(), amount: Number(p.amount), notes: p.notes, createdBy: p.createdBy };
   }
 
   async removeDriverPayment(id: string): Promise<{ ok: true }> {
+    await this.expensesRepo.update({ driverPaymentId: id }, { driverPaymentId: null });
     await this.paymentsRepo.delete({ id });
     return { ok: true };
   }
@@ -505,9 +519,12 @@ export class AccountingService {
     const rows = await this.expensesRepo.find({ where: { driverId, ...(d ? { at: d } : {}) }, order: { at: 'DESC' }, take: 500 });
     const trips = rows.length > 0 ? await this.tripsRepo.find({ where: { id: In(rows.map((r) => r.tripId ?? '')) } }) : [];
     const byTrip = new Map(trips.map((t) => [t.id, t]));
+    const containers = trips.length > 0 ? await this.containersRepo.find({ where: { tripId: In(trips.map((t) => t.id)) } }) : [];
+    const contByTrip = new Map<string, string>();
+    for (const c of containers) contByTrip.set(c.tripId, [contByTrip.get(c.tripId), `${c.containerNumber ?? '?'} (${c.size}')`].filter(Boolean).join(' · '));
     const items = rows.map((r) => {
       const t = r.tripId ? byTrip.get(r.tripId) : undefined;
-      return { expenseId: r.id, tripId: r.tripId, vehicleId: r.vehicleId, at: r.at.toISOString(), amount: Number(r.amount), origin: t?.origin ?? null, destination: t?.destination ?? null };
+      return { expenseId: r.id, tripId: r.tripId, vehicleId: r.vehicleId, at: r.at.toISOString(), amount: Number(r.amount), origin: t?.origin ?? null, destination: t?.destination ?? null, containers: r.tripId ? contByTrip.get(r.tripId) ?? '' : '', paid: r.driverPaymentId !== null };
     });
     return { driverId, count: items.length, total: items.reduce((a, b) => a + b.amount, 0), items };
   }
@@ -622,6 +639,7 @@ function toDriverRecord(row: Driver): DriverRecord {
     phone: row.phone,
     licenseNumber: row.licenseNumber,
     tripFee: Number(row.tripFee ?? 0),
+    monthlySalary: Number(row.monthlySalary ?? 0),
     active: row.active,
   };
 }

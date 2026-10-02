@@ -531,8 +531,14 @@
       "pay": "Record a payment",
       "noFees": "No fees in this period.",
       "noPayments": "No payments in this period.",
-      "confirmDelete": "Delete this payment?"
-    }
+      "confirmDelete": "Delete this payment?",
+      "selected": "{{n}} fee(s) selected",
+      "paySelection": "Pay selection",
+      "containers": "Containers",
+      "paidBadge": "Paid",
+      "dueBadge": "Due"
+    },
+    "salary": "Monthly salary (MRU)"
   },
   "clients": {
     "title": "Clients",

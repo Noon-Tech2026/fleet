@@ -70,6 +70,7 @@ class DriverDto {
   @IsOptional() @IsString() @MaxLength(32) phone?: string;
   @IsOptional() @IsString() @MaxLength(64) licenseNumber?: string;
   @IsOptional() @IsNumber() @Min(0) @Max(1_000_000) tripFee?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(10_000_000) monthlySalary?: number;
 }
 
 class ClientEntryDto {
@@ -80,7 +81,8 @@ class ClientEntryDto {
 }
 
 class DriverPaymentDto {
-  @IsNumber() @Min(1) @Max(10_000_000) amount: number;
+  @IsOptional() @IsNumber() @Min(1) @Max(10_000_000) amount?: number;
+  @IsOptional() @IsArray() @IsString({ each: true }) feeIds?: string[];
   @IsOptional() @IsString() at?: string;
   @IsOptional() @IsString() @MaxLength(160) notes?: string;
 }
@@ -90,6 +92,7 @@ class UpdateDriverDto {
   @IsOptional() @IsString() @MaxLength(32) phone?: string;
   @IsOptional() @IsString() @MaxLength(64) licenseNumber?: string;
   @IsOptional() @IsNumber() @Min(0) @Max(1_000_000) tripFee?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(10_000_000) monthlySalary?: number;
   @IsOptional() @IsBoolean() active?: boolean;
 }
 
@@ -197,7 +200,7 @@ export class AccountingController {
   @RequireRole(Role.Supervisor)
   @Post('accounting/drivers/:id/payments')
   addDriverPayment(@Param('id') id: string, @Body() dto: DriverPaymentDto, @CurrentUser() user: JwtPayload) {
-    return this.accounting.addDriverPayment(id, { amount: dto.amount, at: dto.at ? new Date(dto.at) : new Date(), notes: dto.notes }, user.email);
+    return this.accounting.addDriverPayment(id, { amount: dto.amount, feeIds: dto.feeIds, at: dto.at ? new Date(dto.at) : new Date(), notes: dto.notes }, user.email);
   }
 
   @RequireRole(Role.Admin)

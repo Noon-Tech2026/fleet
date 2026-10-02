@@ -2734,3 +2734,5 @@ h3 {
 .text-success { color: var(--mint, #1f7a4d); }
 
 .ledger-total td { border-top: 2px solid var(--line, #ddd); background: #fafafa; }
+
+.ledger-select-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 8px; border-radius: 8px; background: #fff7e6; border: 1px solid var(--amber, #d99a1c); }

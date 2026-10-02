@@ -521,8 +521,14 @@
       "pay": "Enregistrer un paiement",
       "noFees": "Aucune prime sur la période.",
       "noPayments": "Aucun paiement sur la période.",
-      "confirmDelete": "Supprimer ce paiement ?"
-    }
+      "confirmDelete": "Supprimer ce paiement ?",
+      "selected": "{{n}} prime(s) sélectionnée(s)",
+      "paySelection": "Payer la sélection",
+      "containers": "Conteneurs",
+      "paidBadge": "Payée",
+      "dueBadge": "Due"
+    },
+    "salary": "Salaire mensuel (MRU)"
   },
   "clients": {
     "title": "Clients",

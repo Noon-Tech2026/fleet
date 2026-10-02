@@ -19,6 +19,7 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
   const [amount, setAmount] = useState('');
   const [at, setAt] = useState(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,6 +44,21 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
     finally { setBusy(false); }
   }
 
+  const selectedTotal = ledger ? ledger.fees.filter((f) => selected.has(f.expenseId)).reduce((a, f) => a + f.amount, 0) : 0;
+  function toggle(id: string) {
+    setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  }
+  async function paySelection() {
+    if (selected.size === 0) return;
+    setBusy(true);
+    try {
+      await api.addDriverPayment(driver.id, { feeIds: [...selected], at: `${at}T12:00:00` });
+      setSelected(new Set());
+      await load();
+    } catch (err) { setError(err instanceof Error ? err.message : String(err)); }
+    finally { setBusy(false); }
+  }
+
   async function remove(id: string) {
     if (window.confirm(t('drivers.ledger.confirmDelete')) === false) return;
     await api.deleteDriverPayment(id); await load();
@@ -54,7 +70,7 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
         <header className="modal-head">
           <div>
             <h2>{t('drivers.ledger.title')} — {driver.fullName}</h2>
-            <p>{t('drivers.tripFee')} : {formatMoney(driver.tripFee)}</p>
+            <p>{t('drivers.tripFee')} : {formatMoney(driver.tripFee)} · {t('drivers.salary')} : {formatMoney(driver.monthlySalary ?? 0)}</p>
           </div>
           <button className="btn ghost" onClick={onClose}>{t('track.close')}</button>
         </header>
@@ -83,10 +99,24 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
               <section>
                 <h3>{t('drivers.ledger.fees')}</h3>
                 {ledger.fees.length === 0 ? <p className="muted small">{t('drivers.ledger.noFees')}</p> : (
-                  <table className="table small"><thead><tr><th>{t('common.date')}</th><th>{t('common.truck')}</th><th>{t('accounting.route')}</th><th>{t('common.amount')}</th></tr></thead>
+                  <>
+                  {canPay && selected.size > 0 && (
+                    <div className="ledger-select-bar">
+                      <span>{t('drivers.ledger.selected', { n: selected.size })} · <b>{formatMoney(selectedTotal)}</b></span>
+                      <button className="btn primary small" disabled={busy} onClick={() => void paySelection()}>{t('drivers.ledger.paySelection')}</button>
+                    </div>
+                  )}
+                  <table className="table small"><thead><tr>{canPay && <th />}<th>{t('common.date')}</th><th>{t('common.truck')}</th><th>{t('drivers.ledger.containers')}</th><th>{t('common.amount')}</th><th /></tr></thead>
                     <tbody>{ledger.fees.map((f) => (
-                      <tr key={f.expenseId}><td>{fmtDate(f.at)}</td><td>{f.vehicleId}</td><td className="cell-muted">{f.origin ?? '—'} → {f.destination ?? '—'}</td><td>{formatMoney(f.amount)}</td></tr>
+                      <tr key={f.expenseId} className={f.paid ? 'is-off' : ''}>
+                        {canPay && <td>{!f.paid && <input type="checkbox" checked={selected.has(f.expenseId)} onChange={() => toggle(f.expenseId)} />}</td>}
+                        <td>{fmtDate(f.at)}</td><td>{f.vehicleId}</td>
+                        <td className="cell-muted">{f.containers || '—'}{f.origin || f.destination ? ` · ${f.origin ?? '—'} → ${f.destination ?? '—'}` : ''}</td>
+                        <td>{formatMoney(f.amount)}</td>
+                        <td>{f.paid ? <span className="badge ok">{t('drivers.ledger.paidBadge')}</span> : <span className="badge warn">{t('drivers.ledger.dueBadge')}</span>}</td>
+                      </tr>
                     ))}</tbody></table>
+                  </>
                 )}
               </section>
               <section>

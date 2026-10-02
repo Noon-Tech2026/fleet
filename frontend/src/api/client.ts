@@ -93,7 +93,7 @@ export interface DriverLedger {
   driverId: string;
   period: { fees: number; feesCount: number; paid: number; balance: number };
   overall: { fees: number; paid: number; balance: number };
-  fees: { expenseId: string; tripId: string | null; vehicleId: string; at: string; amount: number; origin: string | null; destination: string | null }[];
+  fees: { expenseId: string; tripId: string | null; vehicleId: string; at: string; amount: number; origin: string | null; destination: string | null; containers: string; paid: boolean }[];
   payments: { id: string; at: string; amount: number; notes: string | null; createdBy: string }[];
 }
 
@@ -217,7 +217,7 @@ export const api = {
 
   driverLedger: (id: string, range?: { from?: string; to?: string }) =>
     request<DriverLedger>(`/api/accounting/drivers/${id}/ledger${rangeQs(range)}`),
-  addDriverPayment: (id: string, input: { amount: number; at?: string; notes?: string }) =>
+  addDriverPayment: (id: string, input: { amount?: number; feeIds?: string[]; at?: string; notes?: string }) =>
     request<DriverLedger['payments'][number]>(`/api/accounting/drivers/${id}/payments`, { method: 'POST', body: JSON.stringify(input) }),
   deleteDriverPayment: (paymentId: string) =>
     request<{ ok: true }>(`/api/accounting/drivers/payments/${paymentId}`, { method: 'DELETE' }),
@@ -225,12 +225,12 @@ export const api = {
     request<{ driverId: string; count: number; total: number; items: { expenseId: string; tripId: string | null; vehicleId: string; at: string; amount: number; origin: string | null; destination: string | null }[] }>(`/api/accounting/drivers/${id}/fees${rangeQs(range)}`),
   drivers: () => request<DriverRecord[]>('/api/accounting/drivers'),
 
-  createDriver: (input: { fullName: string; phone?: string; licenseNumber?: string | null; tripFee?: number }) =>
+  createDriver: (input: { fullName: string; phone?: string; licenseNumber?: string | null; tripFee?: number; monthlySalary?: number }) =>
     request<DriverRecord>('/api/accounting/drivers', { method: 'POST', body: JSON.stringify(input) }),
 
   updateDriver: (
     id: string,
-    patch: { fullName?: string; phone?: string | null; licenseNumber?: string | null; tripFee?: number; active?: boolean },
+    patch: { fullName?: string; phone?: string | null; licenseNumber?: string | null; tripFee?: number; monthlySalary?: number; active?: boolean },
   ) => request<DriverRecord>(`/api/accounting/drivers/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
 
   deleteDriver: (id: string) => request<void>(`/api/accounting/drivers/${id}`, { method: 'DELETE' }),

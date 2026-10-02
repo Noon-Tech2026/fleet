@@ -25,6 +25,10 @@ export class Driver {
   @Column({ name: 'trip_fee', type: 'decimal', precision: 10, scale: 2, default: 0 })
   tripFee: string;
 
+  /** Salaire mensuel indicatif (MRU). */
+  @Column({ name: 'monthly_salary', type: 'decimal', precision: 10, scale: 2, default: 0 })
+  monthlySalary: string;
+
   @Column({ default: true })
   active: boolean;
 
