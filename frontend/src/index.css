@@ -2739,3 +2739,8 @@ h3 {
 
 .ledger-salaries { margin: 10px 0 16px; }
 .ledger-salaries h3, .ledger-grid h3 { margin: 6px 0; font-size: 14px; }
+
+.overview-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 900px) { .overview-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.versements { margin: 16px 0 24px; }
+.versements h3 { margin: 6px 0; font-size: 14px; }

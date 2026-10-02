@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { VersementsPanel } from './VersementsPanel';
+import { api as apiClient, type AccountingOverview } from '../api/client';
 import { ExpenseCategoriesDialog } from './ExpenseCategoriesDialog';
 import { useTranslation } from 'react-i18next';
 import type { ClientRecord, DriverRecord, VehicleAccountingSummary } from '../lib/types';
@@ -18,6 +20,9 @@ export function AccountingPage() {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>({});
+  const [overview, setOverview] = useState<AccountingOverview | null>(null);
+  const [ovTick, setOvTick] = useState(0);
+  useEffect(() => { apiClient.accountingOverview(period).then(setOverview).catch(() => setOverview(null)); }, [period, ovTick]);
   const [catalogOpen, setCatalogOpen] = useState(false);
 
   const canRecordTrip = can('operator');
@@ -52,18 +57,6 @@ export function AccountingPage() {
   // doit rester consultable ici avant meme d'avoir emis sa premiere position.
   const byVehicle = useMemo(() => new Map(fleet.map((v) => [v.id, v])), [fleet]);
 
-  const fleetTotals = useMemo(() => {
-    if (!summaries) return null;
-    return summaries.reduce(
-      (acc, s) => ({
-        revenue: acc.revenue + s.revenue,
-        expenses: acc.expenses + s.expenses,
-        investments: acc.investments + s.investments,
-        netResult: acc.netResult + s.netResult,
-      }),
-      { revenue: 0, expenses: 0, investments: 0, netResult: 0 },
-    );
-  }, [summaries]);
 
   const selectedVehicle = selectedVehicleId ? byVehicle.get(selectedVehicleId) : undefined;
 
@@ -95,26 +88,20 @@ export function AccountingPage() {
         />
       ) : (
         <>
-          {fleetTotals && (
-            <div className="fleet-summary cols-4">
-              <div className="summary-cell ok">
-                <b>{formatMoney(fleetTotals.revenue)}</b>
-                <span>{t('accounting.fleetRevenue')}</span>
-              </div>
-              <div className="summary-cell danger">
-                <b>{formatMoney(fleetTotals.expenses)}</b>
-                <span>{t('accounting.fleetExpenses')}</span>
-              </div>
-              <div className="summary-cell">
-                <b>{formatMoney(fleetTotals.investments)}</b>
-                <span>{t('accounting.fleetInvest')}</span>
-              </div>
-              <div className={`summary-cell ${fleetTotals.netResult >= 0 ? 'ok' : 'danger'}`}>
-                <b>{formatMoney(fleetTotals.netResult)}</b>
-                <span>{t('accounting.fleetNet')}</span>
-              </div>
+          {overview && (
+            <div className="fleet-summary cols-4 overview-cards">
+              <div className="summary-cell ok"><b>{formatMoney(overview.revenue)}</b><span>{t('overview.revenue')}</span></div>
+              <div className="summary-cell danger"><b>{formatMoney(overview.driverCharges)}</b><span>{t('overview.driverCharges')}</span></div>
+              <div className="summary-cell danger"><b>{formatMoney(overview.truckCharges)}</b><span>{t('overview.truckCharges')}</span></div>
+              <div className={`summary-cell ${overview.afterCharges >= 0 ? 'ok' : 'danger'}`}><b>{formatMoney(overview.afterCharges)}</b><span>{t('overview.afterCharges')}</span></div>
+              <div className="summary-cell warn"><b>{formatMoney(overview.versements)}</b><span>{t('overview.versements')}</span></div>
+              <div className={`summary-cell ${overview.afterVersements >= 0 ? 'ok' : 'danger'}`}><b>{formatMoney(overview.afterVersements)}</b><span>{t('overview.afterVersements')}</span></div>
+              <div className="summary-cell"><b>{formatMoney(overview.investments)}</b><span>{t('overview.investments')}</span></div>
+              <div className={`summary-cell ${overview.afterInvestments >= 0 ? 'ok' : 'danger'}`}><b>{formatMoney(overview.afterInvestments)}</b><span>{t('overview.afterInvestments')}</span></div>
             </div>
           )}
+
+          <VersementsPanel period={period} onChanged={() => setOvTick((v) => v + 1)} />
 
           {!summaries ? (
             <p className="empty">{t('accounting.loadingSummary')}</p>

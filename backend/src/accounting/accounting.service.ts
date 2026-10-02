@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
+import { Versement } from './entities/versement.entity';
 import { DriverSalary } from './entities/driver-salary.entity';
 import { CashEntry } from './entities/cash-entry.entity';
 import { ExpenseCategory } from './entities/expense-category.entity';
@@ -71,6 +72,7 @@ export class AccountingService implements OnModuleInit {
     @InjectRepository(ExpenseCategory) private readonly categoriesRepo: Repository<ExpenseCategory>,
     @InjectRepository(CashEntry) private readonly cashRepo: Repository<CashEntry>,
     @InjectRepository(DriverSalary) private readonly salariesRepo: Repository<DriverSalary>,
+    @InjectRepository(Versement) private readonly versementsRepo: Repository<Versement>,
     @InjectRepository(Trip) private readonly tripsRepo: Repository<Trip>,
     @InjectRepository(TripContainer) private readonly containersRepo: Repository<TripContainer>,
     @InjectRepository(VehicleExpense) private readonly expensesRepo: Repository<VehicleExpense>,
@@ -103,6 +105,51 @@ export class AccountingService implements OnModuleInit {
     for (const r of sals) m.set(r.id, (m.get(r.id) ?? 0) + Number(r.total));
     for (const r of pays) m.set(r.id, (m.get(r.id) ?? 0) - Number(r.total));
     return m;
+  }
+
+  /* --- synthese comptable (bandeau Comptabilite) --------------------------- */
+  async overview(range?: DateRange) {
+    const d = dateWhere(range);
+    const sumOf = async (qb: Promise<{ total: string | null } | undefined>) => Number((await qb)?.total ?? 0);
+    const between = (alias: string, col: string) => (d ? `${alias}.${col} BETWEEN :from AND :to` : '1=1');
+    const params = d ? { from: range?.from ? new Date(range.from) : new Date(0), to: range?.to ? new Date(`${range.to}T23:59:59.999`) : new Date(8.64e15) } : {};
+    const [revenue, driverPays, truckExpenses, maintenance, investments, versements] = await Promise.all([
+      sumOf(this.tripsRepo.createQueryBuilder('t').select('COALESCE(SUM(t.amount),0)', 'total').where(between('t', 'startedAt'), params).getRawOne()),
+      sumOf(this.paymentsRepo.createQueryBuilder('p').select('COALESCE(SUM(p.amount),0)', 'total').where(between('p', 'at'), params).getRawOne()),
+      sumOf(this.expensesRepo.createQueryBuilder('x').select('COALESCE(SUM(x.amount),0)', 'total').where(between('x', 'at'), params).andWhere("x.category <> 'driver'").getRawOne()),
+      sumOf(this.maintenanceLogsRepo.createQueryBuilder('m').select('COALESCE(SUM(m.cost),0)', 'total').where(between('m', 'at'), params).getRawOne()),
+      sumOf(this.investmentsRepo.createQueryBuilder('i').select('COALESCE(SUM(i.amount),0)', 'total').where(between('i', 'at'), params).getRawOne()),
+      sumOf(this.versementsRepo.createQueryBuilder('v').select('COALESCE(SUM(v.amount),0)', 'total').where(between('v', 'at'), params).getRawOne()),
+    ]);
+    const truck = truckExpenses + maintenance;
+    const afterCharges = revenue - driverPays - truck;
+    return {
+      revenue,
+      driverCharges: driverPays,
+      truckCharges: truck,
+      afterCharges,
+      versements,
+      afterVersements: afterCharges - versements,
+      investments,
+      afterInvestments: investments - versements,
+    };
+  }
+
+  async versements(range?: DateRange) {
+    const d = dateWhere(range);
+    const rows = await this.versementsRepo.find({ where: d ? { at: d } : {}, order: { at: 'DESC' }, take: 1000 });
+    return rows.map((v) => ({ id: v.id, at: v.at.toISOString(), amount: Number(v.amount), label: v.label, createdBy: v.createdBy }));
+  }
+
+  async addVersement(input: { amount: number; at: Date; label: string }, createdBy: string) {
+    if (input.amount <= 0) throw new BadRequestException('Le montant doit être positif');
+    const v = await this.versementsRepo.save(this.versementsRepo.create({ amount: input.amount.toFixed(2), at: input.at, label: input.label.trim(), createdBy }));
+    return { id: v.id, at: v.at.toISOString(), amount: Number(v.amount), label: v.label, createdBy: v.createdBy };
+  }
+
+  async removeVersement(id: string): Promise<{ ok: true }> {
+    await this.versementsRepo.delete({ id });
+    return { ok: true };
   }
 
   /* --- salaires automatiques --------------------------------------------- */
@@ -152,11 +199,12 @@ export class AccountingService implements OnModuleInit {
    */
   async cashJournal(range?: DateRange) {
     const d = dateWhere(range);
-    const [clientCredits, paidTrips, driverPays, manual, clients, drivers] = await Promise.all([
+    const [clientCredits, paidTrips, driverPays, manual, vers, clients, drivers] = await Promise.all([
       this.clientEntriesRepo.find({ where: { kind: 'credit', ...(d ? { at: d } : {}) }, take: 2000 }),
       this.tripsRepo.find({ where: { paid: true, ...(d ? { startedAt: d } : {}) }, take: 2000 }),
       this.paymentsRepo.find({ where: d ? { at: d } : {}, take: 2000 }),
       this.cashRepo.find({ where: d ? { at: d } : {}, take: 2000 }),
+      this.versementsRepo.find({ where: d ? { at: d } : {}, take: 2000 }),
       this.clientsRepo.find(),
       this.driversRepo.find(),
     ]);
@@ -167,19 +215,21 @@ export class AccountingService implements OnModuleInit {
       ...paidTrips.map((t) => ({ id: `pt:${t.id}`, kind: 'debit' as const, at: t.startedAt.toISOString(), amount: Number(t.amount), label: `${cname.get(t.clientId) ?? t.clientId} — voyage ${t.vehicleId} (comptant)`, source: 'client' as const, deletable: false })),
       ...driverPays.map((p) => ({ id: `dp:${p.id}`, kind: 'credit' as const, at: p.at.toISOString(), amount: Number(p.amount), label: `${dname.get(p.driverId) ?? p.driverId} — ${p.notes ?? 'paiement chauffeur'}`, source: 'driver' as const, deletable: false })),
       ...manual.map((m) => ({ id: m.id, kind: m.kind, at: m.at.toISOString(), amount: Number(m.amount), label: m.label, source: 'manual' as const, deletable: true })),
+      ...vers.map((v) => ({ id: `vs:${v.id}`, kind: 'credit' as const, at: v.at.toISOString(), amount: Number(v.amount), label: `Versement — ${v.label}`, source: 'versement' as const, deletable: false })),
     ].sort((a, b) => b.at.localeCompare(a.at));
     const sum = (k: string) => lines.filter((l) => l.kind === k).reduce((a, l) => a + l.amount, 0);
     const debit = sum('debit'), credit = sum('credit');
     // Solde global toutes periodes (solde de caisse reel), par agregats
     const num = async (q: Promise<{ total: string | null } | undefined>) => Number((await q)?.total ?? 0);
-    const [allCc, allPt, allDp, allMd, allMc] = await Promise.all([
+    const [allCc, allPt, allDp, allMd, allMc, allVs] = await Promise.all([
       num(this.clientEntriesRepo.createQueryBuilder('e').select('COALESCE(SUM(e.amount),0)', 'total').where("e.kind = 'credit'").getRawOne()),
       num(this.tripsRepo.createQueryBuilder('t').select('COALESCE(SUM(t.amount),0)', 'total').where('t.paid = 1').getRawOne()),
       num(this.paymentsRepo.createQueryBuilder('p').select('COALESCE(SUM(p.amount),0)', 'total').getRawOne()),
       num(this.cashRepo.createQueryBuilder('m').select('COALESCE(SUM(m.amount),0)', 'total').where("m.kind = 'debit'").getRawOne()),
       num(this.cashRepo.createQueryBuilder('m').select('COALESCE(SUM(m.amount),0)', 'total').where("m.kind = 'credit'").getRawOne()),
+      num(this.versementsRepo.createQueryBuilder('v').select('COALESCE(SUM(v.amount),0)', 'total').getRawOne()),
     ]);
-    const allDebit = allCc + allPt + allMd, allCredit = allDp + allMc;
+    const allDebit = allCc + allPt + allMd, allCredit = allDp + allMc + allVs;
     return { period: { debit, credit, balance: debit - credit }, overall: { debit: allDebit, credit: allCredit, balance: allDebit - allCredit }, lines };
   }
 

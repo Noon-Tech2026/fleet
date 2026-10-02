@@ -40,7 +40,7 @@
     "fuelAux": "Aux.",
     "trips": "Voyages",
     "charges": "Charges",
-    "investments": "Invest.",
+    "investments": "Total investissements",
     "netResult": "Reste après invest.",
     "track": "Suivi",
     "history": "Historique",
@@ -54,7 +54,14 @@
     "updated": "Camion {{id}} mis à jour",
     "awaitingPosition": "En attente de première position",
     "pendingHint": "Enregistré au répertoire et dans Traccar. La fiche se remplira dès la première position du boîtier.",
-    "imei": "IMEI"
+    "imei": "IMEI",
+    "revenue": "Revenu (voyages)",
+    "driverCharges": "Charges salaires & primes",
+    "truckCharges": "Charges dépenses camion",
+    "afterCharges": "Solde après charges",
+    "versements": "Total versements",
+    "afterVersements": "Solde après versements",
+    "afterInvestments": "Reste après investissements"
   },
   "app": {
     "tagline": "Your fleet under control",
@@ -668,7 +675,16 @@
     "src": {
       "client": "Client",
       "driver": "Chauffeur",
-      "manual": "Manuel"
+      "manual": "Manuel",
+      "versement": "Versement"
     }
+  },
+  "versements": {
+    "title": "Versements",
+    "label": "Bénéficiaire / motif",
+    "labelPh": "ex. associé A — retrait octobre",
+    "add": "Enregistrer le versement",
+    "empty": "Aucun versement sur la période.",
+    "confirmDelete": "Supprimer ce versement ?"
   }
 }

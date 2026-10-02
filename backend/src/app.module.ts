@@ -49,6 +49,7 @@ import { ClientEntry } from './accounting/entities/client-entry.entity';
 import { ExpenseCategory } from './accounting/entities/expense-category.entity';
 import { CashEntry } from './accounting/entities/cash-entry.entity';
 import { DriverSalary } from './accounting/entities/driver-salary.entity';
+import { Versement } from './accounting/entities/versement.entity';
 import { ImmobilizerService } from './immobilizer/immobilizer.service';
 import { MaintenanceService } from './maintenance/maintenance.service';
 import { MaintenanceController } from './maintenance/maintenance.controller';
@@ -62,7 +63,7 @@ import { AccountingController } from './accounting/accounting.controller';
     DatabaseModule,
     AuthModule,
     UsersModule,
-    TypeOrmModule.forFeature([DriverSalary, CashEntry, ExpenseCategory, ClientEntry, DriverPayment, AlertEntity, 
+    TypeOrmModule.forFeature([Versement, DriverSalary, CashEntry, ExpenseCategory, ClientEntry, DriverPayment, AlertEntity, 
       CommandLog,
       Vehicle,
       Position,

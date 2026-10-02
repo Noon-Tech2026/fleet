@@ -108,10 +108,20 @@ export interface ClientLedger {
 export interface CashJournal {
   period: { debit: number; credit: number; balance: number };
   overall: { debit: number; credit: number; balance: number };
-  lines: { id: string; kind: 'debit' | 'credit'; at: string; amount: number; label: string; source: 'client' | 'driver' | 'manual'; deletable: boolean }[];
+  lines: { id: string; kind: 'debit' | 'credit'; at: string; amount: number; label: string; source: 'client' | 'driver' | 'manual' | 'versement'; deletable: boolean }[];
 }
 
+export interface AccountingOverview {
+  revenue: number; driverCharges: number; truckCharges: number; afterCharges: number;
+  versements: number; afterVersements: number; investments: number; afterInvestments: number;
+}
+export interface VersementRecord { id: string; at: string; amount: number; label: string; createdBy: string }
+
 export const api = {
+  accountingOverview: (range?: { from?: string; to?: string }) => request<AccountingOverview>(`/api/accounting/overview${rangeQs(range)}`),
+  versements: (range?: { from?: string; to?: string }) => request<VersementRecord[]>(`/api/accounting/versements${rangeQs(range)}`),
+  addVersement: (input: { amount: number; at?: string; label: string }) => request<VersementRecord>('/api/accounting/versements', { method: 'POST', body: JSON.stringify(input) }),
+  deleteVersement: (id: string) => request<{ ok: true }>(`/api/accounting/versements/${id}`, { method: 'DELETE' }),
   cashJournal: (range?: { from?: string; to?: string }) => request<CashJournal>(`/api/accounting/cash${rangeQs(range)}`),
   addCashEntry: (input: { kind: 'debit' | 'credit'; amount: number; at?: string; label: string }) =>
     request<unknown>('/api/accounting/cash/entries', { method: 'POST', body: JSON.stringify(input) }),

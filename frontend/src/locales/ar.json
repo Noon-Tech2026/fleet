@@ -40,7 +40,7 @@
     "fuelAux": "احتياطي",
     "trips": "الرحلات",
     "charges": "المصاريف",
-    "investments": "الاستثمارات",
+    "investments": "إجمالي الاستثمارات",
     "netResult": "الصافي بعد الاستثمار",
     "track": "تتبّع",
     "history": "السجل",
@@ -54,7 +54,14 @@
     "updated": "تم تحديث الشاحنة {{id}}",
     "awaitingPosition": "بانتظار أول موقع",
     "pendingHint": "مسجّلة في السجل وفي Traccar. تكتمل البطاقة عند وصول أول موقع من الجهاز.",
-    "imei": "IMEI"
+    "imei": "IMEI",
+    "revenue": "الإيراد (الرحلات)",
+    "driverCharges": "مصاريف الرواتب والأجور",
+    "truckCharges": "مصاريف الشاحنات",
+    "afterCharges": "الرصيد بعد المصاريف",
+    "versements": "إجمالي السحوبات",
+    "afterVersements": "الرصيد بعد السحوبات",
+    "afterInvestments": "المتبقي بعد الاستثمارات"
   },
   "app": {
     "tagline": "أسطولك تحت السيطرة",
@@ -678,7 +685,16 @@
     "src": {
       "client": "عميل",
       "driver": "سائق",
-      "manual": "يدوي"
+      "manual": "يدوي",
+      "versement": "سحب"
     }
+  },
+  "versements": {
+    "title": "السحوبات",
+    "label": "المستفيد / السبب",
+    "labelPh": "مثلاً: الشريك أ — سحب أكتوبر",
+    "add": "تسجيل السحب",
+    "empty": "لا سحوبات في هذه الفترة.",
+    "confirmDelete": "حذف هذا السحب؟"
   }
 }

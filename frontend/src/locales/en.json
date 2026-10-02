@@ -40,7 +40,7 @@
     "fuelAux": "Aux.",
     "trips": "Trips",
     "charges": "Charges",
-    "investments": "Invest.",
+    "investments": "Total investments",
     "netResult": "Net after invest.",
     "track": "Track",
     "history": "History",
@@ -54,7 +54,14 @@
     "updated": "Truck {{id}} updated",
     "awaitingPosition": "Awaiting first position",
     "pendingHint": "Registered in the directory and in Traccar. The card fills in once the tracker sends its first position.",
-    "imei": "IMEI"
+    "imei": "IMEI",
+    "revenue": "Revenue (trips)",
+    "driverCharges": "Salaries & fees",
+    "truckCharges": "Truck expenses",
+    "afterCharges": "Balance after charges",
+    "versements": "Total withdrawals",
+    "afterVersements": "Balance after withdrawals",
+    "afterInvestments": "Remaining after investments"
   },
   "app": {
     "tagline": "Your fleet under control",
@@ -678,7 +685,16 @@
     "src": {
       "client": "Client",
       "driver": "Driver",
-      "manual": "Manual"
+      "manual": "Manual",
+      "versement": "Withdrawal"
     }
+  },
+  "versements": {
+    "title": "Withdrawals",
+    "label": "Beneficiary / reason",
+    "labelPh": "e.g. partner A — October withdrawal",
+    "add": "Record withdrawal",
+    "empty": "No withdrawal in this period.",
+    "confirmDelete": "Delete this withdrawal?"
   }
 }

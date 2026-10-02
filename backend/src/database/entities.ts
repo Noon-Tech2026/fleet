@@ -1,4 +1,5 @@
 import { User } from '../auth/entities/user.entity';
+import { Versement } from '../accounting/entities/versement.entity';
 import { DriverSalary } from '../accounting/entities/driver-salary.entity';
 import { CashEntry } from '../accounting/entities/cash-entry.entity';
 import { ExpenseCategory } from '../accounting/entities/expense-category.entity';
@@ -29,6 +30,7 @@ import { VehicleInvestment } from '../accounting/entities/vehicle-investment.ent
  * tables que l'application ne connait pas — ou l'inverse.
  */
 export const ENTITIES = [
+  Versement,
   DriverSalary,
   CashEntry,
   ExpenseCategory,
