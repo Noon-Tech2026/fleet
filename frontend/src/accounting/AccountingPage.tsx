@@ -70,7 +70,7 @@ export function AccountingPage() {
       <header className="page-head">
         <div>
           <h2>{t('accounting.title')}</h2>
-          <PeriodFilter value={period} onChange={setPeriod} />
+          {selectedVehicleId === null && <PeriodFilter value={period} onChange={setPeriod} />}
         </div>
       </header>
 

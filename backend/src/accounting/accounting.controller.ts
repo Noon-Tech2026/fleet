@@ -329,6 +329,7 @@ export class AccountingController {
       origin: dto.origin,
       destination: dto.destination,
       amount: dto.amount,
+      paid: dto.paid,
       notes: dto.notes,
       containers: dto.containers?.map((c) => ({
         containerNumber: c.containerNumber ?? null,

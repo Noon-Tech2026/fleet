@@ -87,7 +87,7 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
             at: x.startedAt,
             type: 'trip' as const,
             label: x.clientName,
-            detail: `${x.origin ?? '—'} → ${x.destination ?? '—'} · ${t('history.containers', { count: x.containers.length })}`,
+            detail: `${x.containers.map((c) => `${c.containerNumber ?? '?'} (${c.size}')`).join(' · ') || t('history.containers', { count: 0 })}${x.origin || x.destination ? ` · ${x.origin ?? '—'} → ${x.destination ?? '—'}` : ''}${x.paid ? ' · ' + t('dialog.trip.paid') : ''}`,
             by: x.driverName,
             createdBy: x.createdBy,
             amount: x.amount,
