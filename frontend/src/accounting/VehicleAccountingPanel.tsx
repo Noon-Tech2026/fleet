@@ -42,8 +42,24 @@ export function VehicleAccountingPanel({
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>({});
   const [addingTrip, setAddingTrip] = useState(false);
+  const [editingTrip, setEditingTrip] = useState<TripEntry | null>(null);
+  const [editingExpense, setEditingExpense] = useState<VehicleExpenseEntry | null>(null);
+  const [editingInvestment, setEditingInvestment] = useState<VehicleInvestmentEntry | null>(null);
   const [addingExpense, setAddingExpense] = useState(false);
   const [addingInvestment, setAddingInvestment] = useState(false);
+
+  async function removeTrip(id: string) {
+    if (window.confirm(t('history.confirmDelete', { type: t('accounting.trip') })) === false) return;
+    await api.deleteTrip(id); void load();
+  }
+  async function removeExpense(id: string) {
+    if (window.confirm(t('history.confirmDelete', { type: t('accounting.expense') })) === false) return;
+    await api.deleteExpense(id); void load();
+  }
+  async function removeInvestment(id: string) {
+    if (window.confirm(t('history.confirmDelete', { type: t('accounting.investment') })) === false) return;
+    await api.deleteInvestment(id); void load();
+  }
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -193,6 +209,7 @@ export function VehicleAccountingPanel({
                   <th>{t('accounting.route')}</th>
                   <th>{t('accounting.containers')}</th>
                   <th>{t('common.amount')}</th>
+                  {canManageMoney && <th />}
                 </tr>
               </thead>
               <tbody>
@@ -214,7 +231,14 @@ export function VehicleAccountingPanel({
                     </td>
                     <td>
                       <strong>{formatMoney(trip.amount)}</strong>
+                      {trip.paid && <div className="cell-sub">{t('dialog.trip.paid')}</div>}
                     </td>
+                    {canManageMoney && (
+                      <td className="cell-actions">
+                        <button className="btn ghost small" onClick={() => setEditingTrip(trip)}>{t('common.edit')}</button>
+                        <button className="btn ghost small danger" onClick={() => void removeTrip(trip.id)}>{t('common.delete')}</button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -241,6 +265,7 @@ export function VehicleAccountingPanel({
                   <th>{t('common.category')}</th>
                   <th>{t('common.reference')}</th>
                   <th>{t('common.amount')}</th>
+                  {canManageMoney && <th />}
                 </tr>
               </thead>
               <tbody>
@@ -250,6 +275,12 @@ export function VehicleAccountingPanel({
                     <td>{EXPENSE_CATEGORY_LABEL[e.category]}</td>
                     <td className="cell-muted">{e.reference ?? '—'}</td>
                     <td>{formatMoney(e.amount)}</td>
+                    {canManageMoney && (
+                      <td className="cell-actions">
+                        <button className="btn ghost small" onClick={() => setEditingExpense(e)}>{t('common.edit')}</button>
+                        <button className="btn ghost small danger" onClick={() => void removeExpense(e.id)}>{t('common.delete')}</button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -276,6 +307,7 @@ export function VehicleAccountingPanel({
                   <th>{t('common.type')}</th>
                   <th>{t('common.description')}</th>
                   <th>{t('common.amount')}</th>
+                  {canManageMoney && <th />}
                 </tr>
               </thead>
               <tbody>
@@ -285,6 +317,12 @@ export function VehicleAccountingPanel({
                     <td>{INVESTMENT_KIND_LABEL[i.kind]}</td>
                     <td className="cell-muted">{i.description ?? '—'}</td>
                     <td>{formatMoney(i.amount)}</td>
+                    {canManageMoney && (
+                      <td className="cell-actions">
+                        <button className="btn ghost small" onClick={() => setEditingInvestment(i)}>{t('common.edit')}</button>
+                        <button className="btn ghost small danger" onClick={() => void removeInvestment(i.id)}>{t('common.delete')}</button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -304,6 +342,23 @@ export function VehicleAccountingPanel({
             void load();
           }}
         />
+      )}
+
+      {editingTrip && (
+        <TripDialog
+          vehicleId={vehicleId}
+          clients={clients}
+          drivers={drivers}
+          initial={editingTrip}
+          onCancel={() => setEditingTrip(null)}
+          onDone={() => { setEditingTrip(null); void load(); }}
+        />
+      )}
+      {editingExpense && (
+        <ExpenseDialog vehicleId={vehicleId} initial={editingExpense} onCancel={() => setEditingExpense(null)} onDone={() => { setEditingExpense(null); void load(); }} />
+      )}
+      {editingInvestment && (
+        <InvestmentDialog vehicleId={vehicleId} initial={editingInvestment} onCancel={() => setEditingInvestment(null)} onDone={() => { setEditingInvestment(null); void load(); }} />
       )}
 
       {addingExpense && (
