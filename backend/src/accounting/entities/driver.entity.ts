@@ -25,6 +25,10 @@ export class Driver {
   @Column({ name: 'trip_fee', type: 'decimal', precision: 10, scale: 2, default: 0 })
   tripFee: string;
 
+  /** Camion attribue (null = non affecte). */
+  @Column({ name: 'vehicle_id', type: 'varchar', length: 36, nullable: true })
+  vehicleId: string | null;
+
   /** Salaire mensuel indicatif (MRU). */
   @Column({ name: 'monthly_salary', type: 'decimal', precision: 10, scale: 2, default: 0 })
   monthlySalary: string;

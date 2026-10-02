@@ -123,6 +123,7 @@ export function DriversPage() {
                 <th>{t('common.driver')}</th>
                 <th>{t('common.phone')}</th>
                 <th>{t('drivers.license')}</th>
+                <th>{t('common.truck')}</th>
                 <th>{t('common.balance')}</th>
                 <th>{t('common.status')}</th>
                 {canManage && <th aria-label={t('common.actions')} />}
@@ -145,6 +146,7 @@ export function DriversPage() {
                     </td>
                     <td className="cell-muted">{d.phone ?? '—'}</td>
                     <td className="cell-muted">{d.licenseNumber ?? '—'}</td>
+                    <td>{d.vehicleId ? <span className="badge idle">{d.vehicleId}</span> : <span className="cell-muted">—</span>}</td>
                     <td className={(d.balance ?? 0) > 0 ? 'text-danger' : 'cell-muted'}><b>{formatMoney(d.balance ?? 0)}</b></td>
                     <td>
                       <button

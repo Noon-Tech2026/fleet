@@ -228,6 +228,7 @@ export class AccountingService {
     licenseNumber?: string | null;
     tripFee?: number;
     monthlySalary?: number;
+    vehicleId?: string | null;
   }): Promise<DriverRecord> {
     const saved = await this.driversRepo.save(
       this.driversRepo.create({
@@ -236,6 +237,7 @@ export class AccountingService {
         licenseNumber: data.licenseNumber ?? null,
         tripFee: (data.tripFee ?? 0).toFixed(2),
         monthlySalary: (data.monthlySalary ?? 0).toFixed(2),
+        vehicleId: data.vehicleId ?? null,
         active: true,
       }),
     );
@@ -244,7 +246,7 @@ export class AccountingService {
 
   async updateDriver(
     id: string,
-    patch: { fullName?: string; phone?: string | null; licenseNumber?: string | null; tripFee?: number; monthlySalary?: number; active?: boolean },
+    patch: { fullName?: string; phone?: string | null; licenseNumber?: string | null; tripFee?: number; monthlySalary?: number; vehicleId?: string | null; active?: boolean },
   ): Promise<DriverRecord> {
     const driver = await this.driversRepo.findOne({ where: { id } });
     if (!driver) throw new NotFoundException('Chauffeur inconnu');
@@ -769,6 +771,7 @@ function toDriverRecord(row: Driver): DriverRecord {
     licenseNumber: row.licenseNumber,
     tripFee: Number(row.tripFee ?? 0),
     monthlySalary: Number(row.monthlySalary ?? 0),
+    vehicleId: row.vehicleId ?? null,
     active: row.active,
   };
 }

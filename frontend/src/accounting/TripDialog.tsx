@@ -36,7 +36,7 @@ export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers
   const clients = allClients.filter((c) => c.active || c.id === initial?.clientId);
   const drivers = allDrivers.filter((d) => d.active || d.id === initial?.driverId);
   const [clientId, setClientId] = useState(initial?.clientId ?? clients[0]?.id ?? '');
-  const [driverId, setDriverId] = useState(initial?.driverId ?? drivers[0]?.id ?? '');
+  const [driverId, setDriverId] = useState(initial?.driverId ?? drivers.find((d) => d.vehicleId === vehicleId)?.id ?? drivers[0]?.id ?? '');
   const [startedAt, setStartedAt] = useState(() => (initial ? initial.startedAt : new Date().toISOString()).slice(0, 10));
   const [origin, setOrigin] = useState(initial?.origin ?? '');
   const [destination, setDestination] = useState(initial?.destination ?? '');

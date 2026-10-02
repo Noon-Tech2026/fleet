@@ -174,6 +174,7 @@ export interface DriverRecord {
   licenseNumber: string | null;
   tripFee: number;
   monthlySalary: number;
+  vehicleId: string | null;
   active: boolean;
   /** Reste du au chauffeur (primes - paiements). */
   balance?: number;

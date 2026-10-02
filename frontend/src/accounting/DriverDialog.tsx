@@ -17,6 +17,9 @@ export function DriverDialog({ driver, onCancel, onSaved }: Props) {
   const [phone, setPhone] = useState(driver?.phone ?? '');
   const [licenseNumber, setLicenseNumber] = useState(driver?.licenseNumber ?? '');
   const [tripFee, setTripFee] = useState(driver?.tripFee != null ? String(driver.tripFee) : '0');
+  const [vehicleId, setVehicleId] = useState<string>(driver?.vehicleId ?? '');
+  const [vehicles, setVehicles] = useState<{ id: string; plate?: string | null }[]>([]);
+  useEffect(() => { api.fleetVehicles().then((v) => setVehicles(v as { id: string; plate?: string | null }[])).catch(() => setVehicles([])); }, []);
   const [monthlySalary, setMonthlySalary] = useState(driver?.monthlySalary != null ? String(driver.monthlySalary) : '0');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +46,7 @@ export function DriverDialog({ driver, onCancel, onSaved }: Props) {
             licenseNumber: licenseNumber.trim() || null,
         tripFee: Number(tripFee) || 0,
         monthlySalary: Number(monthlySalary) || 0,
+        vehicleId: vehicleId || null,
           })
         : await api.createDriver({
             fullName: fullName.trim(),
@@ -87,6 +91,14 @@ export function DriverDialog({ driver, onCancel, onSaved }: Props) {
           <span>{t('drivers.tripFee')}</span>
           <input type="number" min="0" step="1" value={tripFee} onChange={(e) => setTripFee(e.target.value)} />
           <p className="hint">{t('drivers.tripFeeHint')}</p>
+        </label>
+
+        <label className="field">
+          <span>{t('drivers.vehicle')}</span>
+          <select className="select" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>
+            <option value="">{t('drivers.noVehicle')}</option>
+            {vehicles.map((v) => <option key={v.id} value={v.id}>{v.id}{v.plate ? ` · ${v.plate}` : ''}</option>)}
+          </select>
         </label>
 
         <label className="field">

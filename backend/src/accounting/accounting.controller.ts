@@ -61,6 +61,7 @@ class DriverDto {
   @IsOptional() @IsString() @MaxLength(64) licenseNumber?: string;
   @IsOptional() @IsNumber() @Min(0) @Max(1_000_000) tripFee?: number;
   @IsOptional() @IsNumber() @Min(0) @Max(10_000_000) monthlySalary?: number;
+  @IsOptional() @IsString() @MaxLength(36) vehicleId?: string | null;
 }
 
 class ExpenseCategoryDto {
@@ -106,6 +107,7 @@ class UpdateDriverDto {
   @IsOptional() @IsString() @MaxLength(64) licenseNumber?: string;
   @IsOptional() @IsNumber() @Min(0) @Max(1_000_000) tripFee?: number;
   @IsOptional() @IsNumber() @Min(0) @Max(10_000_000) monthlySalary?: number;
+  @IsOptional() @IsString() @MaxLength(36) vehicleId?: string | null;
   @IsOptional() @IsBoolean() active?: boolean;
 }
 

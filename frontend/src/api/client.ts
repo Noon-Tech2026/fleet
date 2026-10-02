@@ -243,12 +243,12 @@ export const api = {
     request<{ driverId: string; count: number; total: number; items: { expenseId: string; tripId: string | null; vehicleId: string; at: string; amount: number; origin: string | null; destination: string | null }[] }>(`/api/accounting/drivers/${id}/fees${rangeQs(range)}`),
   drivers: () => request<DriverRecord[]>('/api/accounting/drivers'),
 
-  createDriver: (input: { fullName: string; phone?: string; licenseNumber?: string | null; tripFee?: number; monthlySalary?: number }) =>
+  createDriver: (input: { fullName: string; phone?: string; licenseNumber?: string | null; tripFee?: number; monthlySalary?: number; vehicleId?: string | null }) =>
     request<DriverRecord>('/api/accounting/drivers', { method: 'POST', body: JSON.stringify(input) }),
 
   updateDriver: (
     id: string,
-    patch: { fullName?: string; phone?: string | null; licenseNumber?: string | null; tripFee?: number; monthlySalary?: number; active?: boolean },
+    patch: { fullName?: string; phone?: string | null; licenseNumber?: string | null; tripFee?: number; monthlySalary?: number; vehicleId?: string | null; active?: boolean },
   ) => request<DriverRecord>(`/api/accounting/drivers/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
 
   deleteDriver: (id: string) => request<void>(`/api/accounting/drivers/${id}`, { method: 'DELETE' }),

@@ -552,7 +552,9 @@
         "other": "Other"
       }
     },
-    "salary": "Monthly salary (MRU)"
+    "salary": "Monthly salary (MRU)",
+    "vehicle": "Assigned truck",
+    "noVehicle": "— None —"
   },
   "clients": {
     "title": "Clients",
