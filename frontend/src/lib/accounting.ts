@@ -1,14 +1,8 @@
-import type { VehicleExpenseCategory, VehicleInvestmentKind } from './types';
+import type { VehicleInvestmentKind } from './types';
 
-export const EXPENSE_CATEGORY_LABEL: Record<VehicleExpenseCategory, string> = {
-  driver: 'Prime chauffeur',
-  fuel: 'Carburant',
-  tires: 'Pneus',
-  insurance: 'Assurance',
-  toll: 'Péage',
-  salary: 'Salaire',
-  fine: 'Amende',
-  other: 'Autre',
+/** Libelles de secours pour les charges anciennes (le catalogue fait foi). */
+export const EXPENSE_CATEGORY_LABEL: Record<string, string> = {
+  driver: 'Prime chauffeur', fuel: 'Carburant', tires: 'Pneus', insurance: 'Assurance', toll: 'Péage', salary: 'Salaire', fine: 'Amende', other: 'Autre',
 };
 
 export const INVESTMENT_KIND_LABEL: Record<VehicleInvestmentKind, string> = {

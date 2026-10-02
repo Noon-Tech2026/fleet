@@ -210,7 +210,8 @@ export interface TripEntry {
 
 /** Catalogue volontairement sans "entretien" : déjà suivi par
  *  `maintenance_logs.cost`, compter les deux compterait deux fois. */
-export type VehicleExpenseCategory = 'fuel' | 'tires' | 'insurance' | 'toll' | 'salary' | 'driver' | 'fine' | 'other';
+export type VehicleExpenseCategory = string;
+export interface ExpenseCategoryRecord { id: string; labelFr: string; labelEn: string | null; labelAr: string | null; active: boolean; sortOrder: number; system: boolean }
 
 export interface VehicleExpenseEntry {
   id: string;

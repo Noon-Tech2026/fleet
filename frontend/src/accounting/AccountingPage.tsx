@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ExpenseCategoriesDialog } from './ExpenseCategoriesDialog';
 import { useTranslation } from 'react-i18next';
 import type { ClientRecord, DriverRecord, VehicleAccountingSummary } from '../lib/types';
 import { formatMoney } from '../lib/accounting';
@@ -17,6 +18,7 @@ export function AccountingPage() {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>({});
+  const [catalogOpen, setCatalogOpen] = useState(false);
 
   const canRecordTrip = can('operator');
   const canManageMoney = can('supervisor');
@@ -72,7 +74,9 @@ export function AccountingPage() {
           <h2>{t('accounting.title')}</h2>
           {selectedVehicleId === null && <PeriodFilter value={period} onChange={setPeriod} />}
         </div>
+        {can('admin') && <button className="btn ghost" onClick={() => setCatalogOpen(true)}>{t('expenseCat.button')}</button>}
       </header>
+      {catalogOpen && <ExpenseCategoriesDialog onClose={() => setCatalogOpen(false)} />}
 
       {error && <p className="banner err">{error}</p>}
 

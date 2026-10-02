@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ExpenseCategory } from './entities/expense-category.entity';
 import { ClientEntry } from './entities/client-entry.entity';
 import { DriverPayment } from './entities/driver-payment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -65,6 +66,7 @@ export class AccountingService {
     @InjectRepository(Driver) private readonly driversRepo: Repository<Driver>,
     @InjectRepository(DriverPayment) private readonly paymentsRepo: Repository<DriverPayment>,
     @InjectRepository(ClientEntry) private readonly clientEntriesRepo: Repository<ClientEntry>,
+    @InjectRepository(ExpenseCategory) private readonly categoriesRepo: Repository<ExpenseCategory>,
     @InjectRepository(Trip) private readonly tripsRepo: Repository<Trip>,
     @InjectRepository(TripContainer) private readonly containersRepo: Repository<TripContainer>,
     @InjectRepository(VehicleExpense) private readonly expensesRepo: Repository<VehicleExpense>,
@@ -95,6 +97,40 @@ export class AccountingService {
     for (const r of fees) m.set(r.id, (m.get(r.id) ?? 0) + Number(r.total));
     for (const r of pays) m.set(r.id, (m.get(r.id) ?? 0) - Number(r.total));
     return m;
+  }
+
+  /* --- catalogue des charges ------------------------------------------- */
+  async expenseCategories(includeInactive = false): Promise<ExpenseCategory[]> {
+    return this.categoriesRepo.find({ where: includeInactive ? {} : { active: true }, order: { sortOrder: 'ASC', labelFr: 'ASC' } });
+  }
+
+  async assertCategory(id: string): Promise<void> {
+    const c = await this.categoriesRepo.findOne({ where: { id } });
+    if (!c || !c.active) throw new BadRequestException('Catégorie de charge inconnue ou désactivée');
+  }
+
+  async saveExpenseCategory(input: { id?: string; labelFr: string; labelEn?: string | null; labelAr?: string | null; active?: boolean; sortOrder?: number }): Promise<ExpenseCategory> {
+    const id = (input.id ?? input.labelFr).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 32) || 'cat';
+    const existing = await this.categoriesRepo.findOne({ where: { id } });
+    if (existing?.system) throw new BadRequestException('Catégorie système non modifiable');
+    const row = existing ?? this.categoriesRepo.create({ id, system: false, active: true, sortOrder: 100 });
+    row.labelFr = input.labelFr.trim();
+    row.labelEn = input.labelEn?.trim() || null;
+    row.labelAr = input.labelAr?.trim() || null;
+    if (input.active !== undefined) row.active = input.active;
+    if (input.sortOrder !== undefined) row.sortOrder = input.sortOrder;
+    return this.categoriesRepo.save(row);
+  }
+
+  /** Suppression : refusee si des charges l'utilisent (desactiver a la place). */
+  async deleteExpenseCategory(id: string): Promise<{ ok: true }> {
+    const c = await this.categoriesRepo.findOne({ where: { id } });
+    if (!c) return { ok: true };
+    if (c.system) throw new BadRequestException('Catégorie système non supprimable');
+    const used = await this.expensesRepo.count({ where: { category: id } });
+    if (used > 0) throw new BadRequestException(`Catégorie utilisée par ${used} charge(s) : désactivez-la plutôt`);
+    await this.categoriesRepo.delete({ id });
+    return { ok: true };
   }
 
   async clients(): Promise<ClientRecord[]> {

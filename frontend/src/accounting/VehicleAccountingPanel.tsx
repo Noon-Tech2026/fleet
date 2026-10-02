@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useExpenseCategories } from '../lib/useExpenseCategories';
 import { useTranslation } from 'react-i18next';
 import type {
   ClientRecord,
@@ -8,7 +9,7 @@ import type {
   VehicleExpenseEntry,
   VehicleInvestmentEntry,
 } from '../lib/types';
-import { EXPENSE_CATEGORY_LABEL, INVESTMENT_KIND_LABEL, formatMoney } from '../lib/accounting';
+import { INVESTMENT_KIND_LABEL, formatMoney } from '../lib/accounting';
 import { api } from '../api/client';
 import { PeriodFilter, type Period } from './PeriodFilter';
 import { TripDialog } from './TripDialog';
@@ -34,6 +35,7 @@ export function VehicleAccountingPanel({
   canManageMoney,
   onBack,
 }: Props) {
+  const { label: categoryLabel } = useExpenseCategories();
   const { t } = useTranslation();
   const [summary, setSummary] = useState<VehicleAccountingSummary | null>(null);
   const [trips, setTrips] = useState<TripEntry[] | null>(null);
@@ -272,7 +274,7 @@ export function VehicleAccountingPanel({
                 {expenses.map((e) => (
                   <tr key={e.id}>
                     <td>{new Date(e.at).toLocaleDateString('fr-FR')}</td>
-                    <td>{EXPENSE_CATEGORY_LABEL[e.category]}</td>
+                    <td>{categoryLabel(e.category)}</td>
                     <td className="cell-muted">{e.reference ?? '—'}</td>
                     <td>{formatMoney(e.amount)}</td>
                     {canManageMoney && (

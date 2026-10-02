@@ -213,14 +213,8 @@ export interface TripEntry {
 
 /** Catalogue volontairement sans "entretien" : déjà suivi par
  *  `maintenance_logs.cost`, compter les deux compterait deux fois. */
-export type VehicleExpenseCategory =
-  | 'fuel' // carburant
-  | 'tires' // pneus
-  | 'insurance' // assurance
-  | 'toll' // péage
-  | 'salary' | 'driver' // salaire
-  | 'fine' // amende
-  | 'other'; // autre
+/** Slug d'une categorie du catalogue (expense_categories). */
+export type VehicleExpenseCategory = string;
 
 export interface VehicleExpenseEntry {
   id: string;

@@ -633,5 +633,19 @@
     "lastMonth": "Last month",
     "year": "This year",
     "all": "All"
+  },
+  "expenseCat": {
+    "button": "Expense catalog",
+    "title": "Expense categories",
+    "hint": "Active categories appear in the expense form. A category already in use can only be disabled.",
+    "new": "New category",
+    "labelFr": "Label (FR)",
+    "labelEn": "Label (EN)",
+    "labelAr": "Label (AR)",
+    "order": "Order",
+    "system": "system",
+    "disable": "Disable",
+    "enable": "Enable",
+    "confirmDelete": "Delete category “{{label}}”?"
   }
 }

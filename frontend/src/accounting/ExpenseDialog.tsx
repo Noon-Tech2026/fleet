@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useExpenseCategories } from '../lib/useExpenseCategories';
 import { useTranslation } from 'react-i18next';
 import type { VehicleExpenseCategory, VehicleExpenseEntry } from '../lib/types';
 import { api } from '../api/client';
@@ -11,11 +12,11 @@ interface Props {
   onDone: (expense: VehicleExpenseEntry) => void;
 }
 
-const CATEGORIES: VehicleExpenseCategory[] = ['fuel', 'tires', 'insurance', 'toll', 'salary', 'fine', 'other'];
 
 export function ExpenseDialog({ vehicleId, initial, onCancel, onDone }: Props) {
+  const { categories, label } = useExpenseCategories();
   const { t } = useTranslation();
-  const [category, setCategory] = useState<VehicleExpenseCategory>(initial?.category ?? 'fuel');
+  const [category, setCategory] = useState<VehicleExpenseCategory>(initial?.category ?? '');
   const [amount, setAmount] = useState(initial ? String(initial.amount) : '');
   const [at, setAt] = useState(() => (initial ? initial.at : new Date().toISOString()).slice(0, 10));
   const [reference, setReference] = useState(initial?.reference ?? '');
@@ -69,8 +70,9 @@ export function ExpenseDialog({ vehicleId, initial, onCancel, onDone }: Props) {
           <label className="field">
             <span>{t('dialog.expense.category')}</span>
             <select className="select" value={category} onChange={(e) => setCategory(e.target.value as VehicleExpenseCategory)}>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>{t(`history.expense.${c}`)}</option>
+              {category === '' && <option value="">—</option>}
+              {categories.filter((c) => c.id !== 'driver').map((c) => (
+                <option key={c.id} value={c.id}>{label(c.id)}</option>
               ))}
             </select>
           </label>

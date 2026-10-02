@@ -1,4 +1,4 @@
-import type { Alert, AuthUser, ClientRecord, CommandAudit, ContainerSize, DriverRecord, MaintenanceKind, MaintenanceLogEntry, MaintenancePlanState, Role, TripEntry, VehicleAccountingSummary, VehicleExpenseCategory, VehicleExpenseEntry, VehicleInvestmentEntry, VehicleInvestmentKind, VehicleState, TrackPoint, Zone, ZoneInput, ExitRequestView } from '../lib/types';
+import type { Alert, AuthUser, ClientRecord, CommandAudit, ContainerSize, DriverRecord, MaintenanceKind, MaintenanceLogEntry, MaintenancePlanState, Role, TripEntry, VehicleAccountingSummary, VehicleExpenseCategory, VehicleExpenseEntry, VehicleInvestmentEntry, VehicleInvestmentKind, VehicleState, TrackPoint, Zone, ZoneInput, ExitRequestView , ExpenseCategoryRecord } from '../lib/types';
 
 /**
  * Repertoire d'un vehicule (fiche administrative), independant de sa
@@ -105,6 +105,10 @@ export interface ClientLedger {
 }
 
 export const api = {
+  expenseCategories: (all = false) => request<ExpenseCategoryRecord[]>(`/api/accounting/expense-categories${all ? '?all=1' : ''}`),
+  saveExpenseCategory: (input: { id?: string; labelFr: string; labelEn?: string; labelAr?: string; active?: boolean; sortOrder?: number }) =>
+    request<ExpenseCategoryRecord>('/api/accounting/expense-categories', { method: 'POST', body: JSON.stringify(input) }),
+  deleteExpenseCategory: (id: string) => request<{ ok: true }>(`/api/accounting/expense-categories/${id}`, { method: 'DELETE' }),
   clientLedger: (id: string, range?: { from?: string; to?: string }) =>
     request<ClientLedger>(`/api/accounting/clients/${id}/ledger${rangeQs(range)}`),
   addClientEntry: (id: string, input: { kind: 'debit' | 'credit'; amount: number; at?: string; label: string }) =>

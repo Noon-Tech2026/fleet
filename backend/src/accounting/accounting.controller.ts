@@ -12,8 +12,7 @@ import {
   MaxLength,
   Min,
   MinLength,
-  ValidateNested,
-} from 'class-validator';
+  ValidateNested, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AccountingService } from './accounting.service';
 import { VehiclesService } from '../fleet/vehicles.service';
@@ -25,20 +24,11 @@ import { ContainerSize, VehicleExpenseCategory, VehicleInvestmentKind } from '..
 
 /* --- DTO -------------------------------------------------------------- */
 
-const EXPENSE_CATEGORIES: VehicleExpenseCategory[] = [
-  'fuel',
-  'tires',
-  'insurance',
-  'toll',
-  'salary',
-  'fine',
-  'other',
-];
 const INVESTMENT_KINDS: VehicleInvestmentKind[] = ['purchase', 'equipment', 'overhaul', 'other'];
 const CONTAINER_SIZES: ContainerSize[] = ['20', '40'];
 
 class UpdateExpenseDto {
-  @IsOptional() @IsIn(EXPENSE_CATEGORIES) category?: VehicleExpenseCategory;
+  @IsOptional() @IsString() @MaxLength(32) category?: VehicleExpenseCategory;
   @IsOptional() @IsNumber() @Min(0) amount?: number;
   @IsOptional() @IsString() at?: string;
   @IsOptional() @IsString() @MaxLength(120) reference?: string;
@@ -71,6 +61,15 @@ class DriverDto {
   @IsOptional() @IsString() @MaxLength(64) licenseNumber?: string;
   @IsOptional() @IsNumber() @Min(0) @Max(1_000_000) tripFee?: number;
   @IsOptional() @IsNumber() @Min(0) @Max(10_000_000) monthlySalary?: number;
+}
+
+class ExpenseCategoryDto {
+  @IsOptional() @IsString() @MaxLength(32) id?: string;
+  @IsString() @MinLength(2) @MaxLength(80) labelFr: string;
+  @IsOptional() @IsString() @MaxLength(80) labelEn?: string;
+  @IsOptional() @IsString() @MaxLength(80) labelAr?: string;
+  @IsOptional() @IsBoolean() active?: boolean;
+  @IsOptional() @IsInt() @Min(0) @Max(9999) sortOrder?: number;
 }
 
 class ClientEntryDto {
@@ -142,7 +141,7 @@ class UpdateTripDto {
 }
 
 class ExpenseDto {
-  @IsIn(EXPENSE_CATEGORIES) category: VehicleExpenseCategory;
+  @IsString() @MaxLength(32) category: VehicleExpenseCategory;
   @IsNumber() @Min(0) @Max(1_000_000) amount: number;
   @IsOptional() @IsDateString() at?: string;
   @IsOptional() @IsString() @MaxLength(160) reference?: string;
@@ -172,6 +171,24 @@ export class AccountingController {
     return this.accounting.clients();
   }
 
+
+  /** Catalogue des charges (actives). ?all=1 : y compris desactivees (admin). */
+  @Get('accounting/expense-categories')
+  expenseCategories(@Query('all') all?: string) {
+    return this.accounting.expenseCategories(all === '1');
+  }
+
+  @RequireRole(Role.Admin)
+  @Post('accounting/expense-categories')
+  saveExpenseCategory(@Body() dto: ExpenseCategoryDto) {
+    return this.accounting.saveExpenseCategory(dto);
+  }
+
+  @RequireRole(Role.Admin)
+  @Delete('accounting/expense-categories/:id')
+  deleteExpenseCategory(@Param('id') id: string) {
+    return this.accounting.deleteExpenseCategory(id);
+  }
 
   /** Journal d'un client : debit (voyages + ecritures), credit (paiements), solde. */
   @Get('accounting/clients/:id/ledger')
@@ -347,7 +364,8 @@ export class AccountingController {
 
   @RequireRole(Role.Supervisor)
   @Post('vehicles/:id/expenses')
-  addExpense(@Param('id') id: string, @Body() dto: ExpenseDto, @CurrentUser() user: JwtPayload) {
+  async addExpense(@Param('id') id: string, @Body() dto: ExpenseDto, @CurrentUser() user: JwtPayload) {
+    await this.accounting.assertCategory(dto.category);
     return this.accounting.addExpense(
       id,
       {

@@ -623,5 +623,19 @@
     "lastMonth": "Mois dernier",
     "year": "Cette année",
     "all": "Tout"
+  },
+  "expenseCat": {
+    "button": "Catalogue des charges",
+    "title": "Catalogue des charges",
+    "hint": "Les catégories actives apparaissent dans le formulaire de charge. Une catégorie déjà utilisée ne peut qu’être désactivée.",
+    "new": "Nouvelle catégorie",
+    "labelFr": "Libellé (FR)",
+    "labelEn": "Libellé (EN)",
+    "labelAr": "Libellé (AR)",
+    "order": "Ordre",
+    "system": "système",
+    "disable": "Désactiver",
+    "enable": "Activer",
+    "confirmDelete": "Supprimer la catégorie « {{label}} » ?"
   }
 }
