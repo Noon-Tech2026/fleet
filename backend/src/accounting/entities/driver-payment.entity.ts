@@ -10,6 +10,10 @@ export class DriverPayment {
   @Column({ name: 'driver_id', length: 36 })
   driverId: string;
 
+  /** fee = primes, salary = salaire, advance = avance sur salaire, other. */
+  @Column({ type: 'varchar', length: 16, default: 'fee' })
+  kind: 'fee' | 'salary' | 'advance' | 'other';
+
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount: string;
 

@@ -86,9 +86,16 @@ class ClientEntryDto {
   @IsString() @MinLength(2) @MaxLength(160) label: string;
 }
 
+class DriverSalaryDto {
+  @IsString() @MaxLength(7) month: string;
+  @IsOptional() @IsNumber() @Min(1) @Max(10_000_000) amount?: number;
+}
+
 class DriverPaymentDto {
   @IsOptional() @IsNumber() @Min(1) @Max(10_000_000) amount?: number;
   @IsOptional() @IsArray() @IsString({ each: true }) feeIds?: string[];
+  @IsOptional() @IsString() salaryId?: string;
+  @IsOptional() @IsIn(['fee', 'salary', 'advance', 'other']) kind?: 'fee' | 'salary' | 'advance' | 'other';
   @IsOptional() @IsString() at?: string;
   @IsOptional() @IsString() @MaxLength(160) notes?: string;
 }
@@ -243,7 +250,19 @@ export class AccountingController {
   @RequireRole(Role.Supervisor)
   @Post('accounting/drivers/:id/payments')
   addDriverPayment(@Param('id') id: string, @Body() dto: DriverPaymentDto, @CurrentUser() user: JwtPayload) {
-    return this.accounting.addDriverPayment(id, { amount: dto.amount, feeIds: dto.feeIds, at: dto.at ? new Date(dto.at) : new Date(), notes: dto.notes }, user.email);
+    return this.accounting.addDriverPayment(id, { amount: dto.amount, feeIds: dto.feeIds, salaryId: dto.salaryId, kind: dto.kind, at: dto.at ? new Date(dto.at) : new Date(), notes: dto.notes }, user.email);
+  }
+
+  @RequireRole(Role.Supervisor)
+  @Post('accounting/drivers/:id/salaries')
+  declareDriverSalary(@Param('id') id: string, @Body() dto: DriverSalaryDto, @CurrentUser() user: JwtPayload) {
+    return this.accounting.declareDriverSalary(id, { month: dto.month, amount: dto.amount }, user.email);
+  }
+
+  @RequireRole(Role.Admin)
+  @Delete('accounting/drivers/salaries/:salaryId')
+  removeDriverSalary(@Param('salaryId') salaryId: string) {
+    return this.accounting.removeDriverSalary(salaryId);
   }
 
   @RequireRole(Role.Admin)

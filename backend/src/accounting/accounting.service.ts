@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { DriverSalary } from './entities/driver-salary.entity';
 import { CashEntry } from './entities/cash-entry.entity';
 import { ExpenseCategory } from './entities/expense-category.entity';
 import { ClientEntry } from './entities/client-entry.entity';
@@ -69,6 +70,7 @@ export class AccountingService {
     @InjectRepository(ClientEntry) private readonly clientEntriesRepo: Repository<ClientEntry>,
     @InjectRepository(ExpenseCategory) private readonly categoriesRepo: Repository<ExpenseCategory>,
     @InjectRepository(CashEntry) private readonly cashRepo: Repository<CashEntry>,
+    @InjectRepository(DriverSalary) private readonly salariesRepo: Repository<DriverSalary>,
     @InjectRepository(Trip) private readonly tripsRepo: Repository<Trip>,
     @InjectRepository(TripContainer) private readonly containersRepo: Repository<TripContainer>,
     @InjectRepository(VehicleExpense) private readonly expensesRepo: Repository<VehicleExpense>,
@@ -95,8 +97,10 @@ export class AccountingService {
       this.expensesRepo.createQueryBuilder('x').select('x.driverId', 'id').addSelect('COALESCE(SUM(x.amount),0)', 'total').where('x.driverId IS NOT NULL').groupBy('x.driverId').getRawMany<{ id: string; total: string }>(),
       this.paymentsRepo.createQueryBuilder('p').select('p.driverId', 'id').addSelect('COALESCE(SUM(p.amount),0)', 'total').groupBy('p.driverId').getRawMany<{ id: string; total: string }>(),
     ]);
+    const sals = await this.salariesRepo.createQueryBuilder('s').select('s.driverId', 'id').addSelect('COALESCE(SUM(s.amount),0)', 'total').groupBy('s.driverId').getRawMany<{ id: string; total: string }>();
     const m = new Map<string, number>();
     for (const r of fees) m.set(r.id, (m.get(r.id) ?? 0) + Number(r.total));
+    for (const r of sals) m.set(r.id, (m.get(r.id) ?? 0) + Number(r.total));
     for (const r of pays) m.set(r.id, (m.get(r.id) ?? 0) - Number(r.total));
     return m;
   }
@@ -558,27 +562,63 @@ export class AccountingService {
     return { ok: true };
   }
 
-  /** Releve complet : primes, paiements, solde (periode optionnelle sur les deux). */
+  /** Releve complet : primes, salaires, paiements (par type), solde = primes + salaires - paiements. */
   async driverLedger(driverId: string, range?: DateRange) {
     const fees = await this.driverFees(driverId, range);
     const d = dateWhere(range);
-    const payments = await this.paymentsRepo.find({ where: { driverId, ...(d ? { at: d } : {}) }, order: { at: 'DESC' }, take: 500 });
-    const paid = payments.reduce((a, p) => a + Number(p.amount), 0);
-    // Solde global (toutes periodes) pour afficher ce qui reste du reellement
-    const allFees = await this.driverFees(driverId);
-    const allPaid = (await this.paymentsRepo.find({ where: { driverId } })).reduce((a, p) => a + Number(p.amount), 0);
+    const [payments, salaries, allFees, allPays, allSal] = await Promise.all([
+      this.paymentsRepo.find({ where: { driverId, ...(d ? { at: d } : {}) }, order: { at: 'DESC' }, take: 500 }),
+      this.salariesRepo.find({ where: { driverId }, order: { month: 'DESC' }, take: 120 }),
+      this.driverFees(driverId),
+      this.paymentsRepo.find({ where: { driverId } }),
+      this.salariesRepo.find({ where: { driverId } }),
+    ]);
+    const inRange = (m: string) => (!range?.from || m >= range.from.slice(0, 7)) && (!range?.to || m <= range.to.slice(0, 7));
+    const periodSal = salaries.filter((x) => inRange(x.month));
+    const sumP = (rows: { amount: string }[]) => rows.reduce((a, p) => a + Number(p.amount), 0);
+    const paid = sumP(payments), salTotal = sumP(periodSal);
+    const allPaid = sumP(allPays), allSalTotal = sumP(allSal);
     return {
       driverId,
-      period: { fees: fees.total, feesCount: fees.count, paid, balance: fees.total - paid },
-      overall: { fees: allFees.total, paid: allPaid, balance: allFees.total - allPaid },
+      period: { fees: fees.total, feesCount: fees.count, salaries: salTotal, paid, balance: fees.total + salTotal - paid },
+      overall: { fees: allFees.total, salaries: allSalTotal, paid: allPaid, balance: allFees.total + allSalTotal - allPaid },
       fees: fees.items,
-      payments: payments.map((p) => ({ id: p.id, at: p.at.toISOString(), amount: Number(p.amount), notes: p.notes, createdBy: p.createdBy })),
+      salaries: salaries.map((x) => ({ id: x.id, month: x.month, amount: Number(x.amount), paid: x.driverPaymentId !== null })),
+      payments: payments.map((p) => ({ id: p.id, kind: p.kind, at: p.at.toISOString(), amount: Number(p.amount), notes: p.notes, createdBy: p.createdBy })),
     };
   }
 
-  async addDriverPayment(driverId: string, input: { amount?: number; feeIds?: string[]; at: Date; notes?: string }, createdBy: string) {
+  async declareDriverSalary(driverId: string, input: { month: string; amount?: number }, createdBy: string) {
     const driver = await this.driversRepo.findOne({ where: { id: driverId } });
     if (!driver) throw new BadRequestException('Chauffeur inconnu');
+    if (!/^\d{4}-\d{2}$/.test(input.month)) throw new BadRequestException('Mois invalide (YYYY-MM)');
+    const amount = input.amount ?? Number(driver.monthlySalary ?? 0);
+    if (amount <= 0) throw new BadRequestException('Montant du salaire requis');
+    const existing = await this.salariesRepo.findOne({ where: { driverId, month: input.month } });
+    if (existing) throw new BadRequestException(`Salaire ${input.month} déjà déclaré`);
+    const row = await this.salariesRepo.save(this.salariesRepo.create({ driverId, month: input.month, amount: amount.toFixed(2), driverPaymentId: null, createdBy }));
+    return { id: row.id, month: row.month, amount: Number(row.amount), paid: false };
+  }
+
+  async removeDriverSalary(id: string): Promise<{ ok: true }> {
+    const row = await this.salariesRepo.findOne({ where: { id } });
+    if (row?.driverPaymentId) throw new BadRequestException('Salaire déjà payé : supprimez d’abord le paiement');
+    await this.salariesRepo.delete({ id });
+    return { ok: true };
+  }
+
+  async addDriverPayment(driverId: string, input: { amount?: number; feeIds?: string[]; salaryId?: string; kind?: 'fee' | 'salary' | 'advance' | 'other'; at: Date; notes?: string }, createdBy: string) {
+    const driver = await this.driversRepo.findOne({ where: { id: driverId } });
+    if (!driver) throw new BadRequestException('Chauffeur inconnu');
+    // Paiement d'un salaire declare
+    if (input.salaryId) {
+      const sal = await this.salariesRepo.findOne({ where: { id: input.salaryId, driverId } });
+      if (!sal) throw new BadRequestException('Salaire inconnu');
+      if (sal.driverPaymentId) throw new BadRequestException('Salaire déjà payé');
+      const p = await this.paymentsRepo.save(this.paymentsRepo.create({ driverId, kind: 'salary', amount: sal.amount, at: input.at, notes: input.notes ?? `Salaire ${sal.month}`, createdBy }));
+      await this.salariesRepo.update({ id: sal.id }, { driverPaymentId: p.id });
+      return { id: p.id, kind: p.kind, at: p.at.toISOString(), amount: Number(p.amount), notes: p.notes, createdBy: p.createdBy };
+    }
     // Selection de primes : le montant est la somme des primes encore dues, et elles sont marquees reglees.
     let fees: VehicleExpense[] = [];
     if (input.feeIds && input.feeIds.length > 0) {
@@ -589,13 +629,15 @@ export class AccountingService {
     const amount = fees.length > 0 ? fees.reduce((a, f) => a + Number(f.amount), 0) : Number(input.amount ?? 0);
     if (amount <= 0) throw new BadRequestException('Le montant doit être positif');
     const notes = input.notes ?? (fees.length > 0 ? `Règlement de ${fees.length} prime(s)` : null);
-    const p = await this.paymentsRepo.save(this.paymentsRepo.create({ driverId, amount: amount.toFixed(2), at: input.at, notes, createdBy }));
+    const kind = fees.length > 0 ? 'fee' : input.kind ?? 'other';
+    const p = await this.paymentsRepo.save(this.paymentsRepo.create({ driverId, kind, amount: amount.toFixed(2), at: input.at, notes, createdBy }));
     if (fees.length > 0) await this.expensesRepo.update({ id: In(fees.map((f) => f.id)) }, { driverPaymentId: p.id });
-    return { id: p.id, at: p.at.toISOString(), amount: Number(p.amount), notes: p.notes, createdBy: p.createdBy };
+    return { id: p.id, kind: p.kind, at: p.at.toISOString(), amount: Number(p.amount), notes: p.notes, createdBy: p.createdBy };
   }
 
   async removeDriverPayment(id: string): Promise<{ ok: true }> {
     await this.expensesRepo.update({ driverPaymentId: id }, { driverPaymentId: null });
+    await this.salariesRepo.update({ driverPaymentId: id }, { driverPaymentId: null });
     await this.paymentsRepo.delete({ id });
     return { ok: true };
   }

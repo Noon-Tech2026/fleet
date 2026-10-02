@@ -537,7 +537,20 @@
       "paySelection": "Pay selection",
       "containers": "Containers",
       "paidBadge": "Paid",
-      "dueBadge": "Due"
+      "dueBadge": "Due",
+      "salaries": "Salaries",
+      "month": "Month",
+      "declareSalary": "Declare salary",
+      "paySalary": "Pay",
+      "noSalaries": "No salary declared.",
+      "confirmDeleteSalary": "Delete this declared salary?",
+      "driverOwes": "Advance to recover (driver owes)",
+      "kind": {
+        "fee": "Fees",
+        "salary": "Salary",
+        "advance": "Salary advance",
+        "other": "Other"
+      }
     },
     "salary": "Monthly salary (MRU)"
   },

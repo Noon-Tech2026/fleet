@@ -527,7 +527,20 @@
       "paySelection": "Payer la sélection",
       "containers": "Conteneurs",
       "paidBadge": "Payée",
-      "dueBadge": "Due"
+      "dueBadge": "Due",
+      "salaries": "Salaires",
+      "month": "Mois",
+      "declareSalary": "Déclarer le salaire",
+      "paySalary": "Payer",
+      "noSalaries": "Aucun salaire déclaré.",
+      "confirmDeleteSalary": "Supprimer ce salaire déclaré ?",
+      "driverOwes": "Avance à récupérer (le chauffeur doit)",
+      "kind": {
+        "fee": "Primes",
+        "salary": "Salaire",
+        "advance": "Avance sur salaire",
+        "other": "Autre"
+      }
     },
     "salary": "Salaire mensuel (MRU)"
   },

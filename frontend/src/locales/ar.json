@@ -537,7 +537,20 @@
       "paySelection": "دفع المحدَّد",
       "containers": "الحاويات",
       "paidBadge": "مدفوع",
-      "dueBadge": "مستحق"
+      "dueBadge": "مستحق",
+      "salaries": "الرواتب",
+      "month": "الشهر",
+      "declareSalary": "تسجيل راتب الشهر",
+      "paySalary": "دفع",
+      "noSalaries": "لا رواتب مسجَّلة.",
+      "confirmDeleteSalary": "حذف هذا الراتب المسجَّل؟",
+      "driverOwes": "سلفة مستحقة (السائق مدين)",
+      "kind": {
+        "fee": "أجور",
+        "salary": "راتب",
+        "advance": "سلفة على الراتب",
+        "other": "أخرى"
+      }
     },
     "salary": "الراتب الشهري (أوقية)"
   },
