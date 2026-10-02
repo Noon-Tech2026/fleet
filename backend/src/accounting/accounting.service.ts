@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ClientEntry } from './entities/client-entry.entity';
 import { DriverPayment } from './entities/driver-payment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, FindOptionsWhere, In, Repository, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
@@ -62,6 +63,7 @@ export class AccountingService {
     @InjectRepository(Client) private readonly clientsRepo: Repository<Client>,
     @InjectRepository(Driver) private readonly driversRepo: Repository<Driver>,
     @InjectRepository(DriverPayment) private readonly paymentsRepo: Repository<DriverPayment>,
+    @InjectRepository(ClientEntry) private readonly clientEntriesRepo: Repository<ClientEntry>,
     @InjectRepository(Trip) private readonly tripsRepo: Repository<Trip>,
     @InjectRepository(TripContainer) private readonly containersRepo: Repository<TripContainer>,
     @InjectRepository(VehicleExpense) private readonly expensesRepo: Repository<VehicleExpense>,
@@ -389,6 +391,42 @@ export class AccountingService {
   }
 
   /* --- synthèse ------------------------------------------------------------ */
+
+  /** Journal d'un client : voyages (debit auto) + ecritures manuelles, solde periode et global. */
+  async clientLedger(clientId: string, range?: DateRange) {
+    const d = dateWhere(range);
+    const [trips, entries, allTrips, allEntries] = await Promise.all([
+      this.tripsRepo.find({ where: { clientId, ...(d ? { startedAt: d } : {}) }, order: { startedAt: 'DESC' }, take: 1000 }),
+      this.clientEntriesRepo.find({ where: { clientId, ...(d ? { at: d } : {}) }, order: { at: 'DESC' }, take: 1000 }),
+      this.tripsRepo.find({ where: { clientId } }),
+      this.clientEntriesRepo.find({ where: { clientId } }),
+    ]);
+    const lines = [
+      ...trips.map((t) => ({ id: `trip:${t.id}`, type: 'trip' as const, kind: 'debit' as const, at: t.startedAt.toISOString(), amount: Number(t.amount), label: `Voyage ${t.vehicleId} — ${t.origin ?? '—'} → ${t.destination ?? '—'}`, tripId: t.id, vehicleId: t.vehicleId, deletable: false })),
+      ...entries.map((e) => ({ id: e.id, type: 'entry' as const, kind: e.kind, at: e.at.toISOString(), amount: Number(e.amount), label: e.label, tripId: null, vehicleId: null, deletable: true })),
+    ].sort((a, b) => b.at.localeCompare(a.at));
+    const sum = (rows: { kind: string; amount: number }[], kind: string) => rows.filter((r) => r.kind === kind).reduce((a, r) => a + r.amount, 0);
+    const periodDebit = sum(lines, 'debit'), periodCredit = sum(lines, 'credit');
+    const allDebit = allTrips.reduce((a, t) => a + Number(t.amount), 0) + allEntries.filter((e) => e.kind === 'debit').reduce((a, e) => a + Number(e.amount), 0);
+    const allCredit = allEntries.filter((e) => e.kind === 'credit').reduce((a, e) => a + Number(e.amount), 0);
+    return {
+      clientId,
+      period: { debit: periodDebit, credit: periodCredit, balance: periodDebit - periodCredit },
+      overall: { debit: allDebit, credit: allCredit, balance: allDebit - allCredit },
+      lines,
+    };
+  }
+
+  async addClientEntry(clientId: string, input: { kind: 'debit' | 'credit'; amount: number; at: Date; label: string }, createdBy: string) {
+    if (input.amount <= 0) throw new BadRequestException('Le montant doit être positif');
+    const e = await this.clientEntriesRepo.save(this.clientEntriesRepo.create({ clientId, kind: input.kind, amount: input.amount.toFixed(2), at: input.at, label: input.label.trim(), createdBy }));
+    return { id: e.id, kind: e.kind, at: e.at.toISOString(), amount: Number(e.amount), label: e.label };
+  }
+
+  async removeClientEntry(id: string): Promise<{ ok: true }> {
+    await this.clientEntriesRepo.delete({ id });
+    return { ok: true };
+  }
 
   /** Releve complet : primes, paiements, solde (periode optionnelle sur les deux). */
   async driverLedger(driverId: string, range?: DateRange) {

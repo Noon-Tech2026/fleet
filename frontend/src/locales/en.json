@@ -541,7 +541,21 @@
     "contactOpt": "Contact (phone or email, optional)",
     "notesOpt": "Notes (optional)",
     "editTitle": "Edit client",
-    "add": "Add client"
+    "add": "Add client",
+    "ledger": {
+      "button": "Ledger",
+      "title": "Client ledger",
+      "debit": "Debit (due)",
+      "credit": "Credit (received)",
+      "balance": "Balance due (total)",
+      "creditEntry": "Credit — payment received",
+      "debitEntry": "Debit — amount due",
+      "label": "Label",
+      "labelPh": "e.g. transfer 15/10, penalty, credit note",
+      "add": "Record",
+      "empty": "No entries in this period.",
+      "confirmDelete": "Delete this entry?"
+    }
   },
   "users": {
     "title": "Users",

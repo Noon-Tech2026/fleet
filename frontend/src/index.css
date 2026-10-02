@@ -2729,3 +2729,6 @@ h3 {
 .ledger-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 800px) { .ledger-grid { grid-template-columns: 1fr; } }
 .table.small td, .table.small th { padding: 6px 8px; font-size: 13px; }
+
+.text-danger { color: var(--red, #c0392b); }
+.text-success { color: var(--mint, #1f7a4d); }

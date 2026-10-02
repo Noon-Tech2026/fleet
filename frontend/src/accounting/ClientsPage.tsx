@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ClientLedgerDialog } from './ClientLedgerDialog';
 import { useTranslation } from 'react-i18next';
 import type { ClientRecord } from '../lib/types';
 import { initials } from '../lib/roles';
@@ -18,6 +19,7 @@ export function ClientsPage() {
   // null : fermé. 'new' : création. Une fiche : modification.
   const [editing, setEditing] = useState<ClientRecord | 'new' | null>(null);
   const [deleting, setDeleting] = useState<ClientRecord | null>(null);
+  const [ledgerFor, setLedgerFor] = useState<ClientRecord | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   // Relue après chaque écriture : la base fait foi, pas la réponse d'un PATCH,
@@ -155,6 +157,7 @@ export function ClientsPage() {
                     </td>
                     {canManage && (
                       <td className="cell-actions">
+                        <button className="btn ghost small" onClick={() => setLedgerFor(c)}>{t('clients.ledger.button')}</button>
                         <button className="btn ghost small" onClick={() => setEditing(c)} disabled={busy}>
                           {t('common.edit')}
                         </button>
@@ -201,6 +204,7 @@ export function ClientsPage() {
           }}
         />
       )}
+      {ledgerFor && <ClientLedgerDialog client={ledgerFor} onClose={() => setLedgerFor(null)} />}
     </main>
   );
 }

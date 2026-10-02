@@ -72,6 +72,13 @@ class DriverDto {
   @IsOptional() @IsNumber() @Min(0) @Max(1_000_000) tripFee?: number;
 }
 
+class ClientEntryDto {
+  @IsIn(['debit', 'credit']) kind: 'debit' | 'credit';
+  @IsNumber() @Min(1) @Max(100_000_000) amount: number;
+  @IsOptional() @IsString() at?: string;
+  @IsString() @MinLength(2) @MaxLength(160) label: string;
+}
+
 class DriverPaymentDto {
   @IsNumber() @Min(1) @Max(10_000_000) amount: number;
   @IsOptional() @IsString() at?: string;
@@ -160,6 +167,24 @@ export class AccountingController {
     return this.accounting.clients();
   }
 
+
+  /** Journal d'un client : debit (voyages + ecritures), credit (paiements), solde. */
+  @Get('accounting/clients/:id/ledger')
+  clientLedger(@Param('id') id: string, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.accounting.clientLedger(id, { from, to });
+  }
+
+  @RequireRole(Role.Supervisor)
+  @Post('accounting/clients/:id/entries')
+  addClientEntry(@Param('id') id: string, @Body() dto: ClientEntryDto, @CurrentUser() user: JwtPayload) {
+    return this.accounting.addClientEntry(id, { kind: dto.kind, amount: dto.amount, at: dto.at ? new Date(dto.at) : new Date(), label: dto.label }, user.email);
+  }
+
+  @RequireRole(Role.Admin)
+  @Delete('accounting/clients/entries/:entryId')
+  removeClientEntry(@Param('entryId') entryId: string) {
+    return this.accounting.removeClientEntry(entryId);
+  }
 
   /** Releve complet d'un chauffeur : primes, paiements, solde. */
   @Get('accounting/drivers/:id/ledger')

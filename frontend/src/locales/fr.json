@@ -531,7 +531,21 @@
     "contactOpt": "Contact (téléphone ou email, optionnel)",
     "notesOpt": "Notes (optionnel)",
     "editTitle": "Modifier le client",
-    "add": "Ajouter le client"
+    "add": "Ajouter le client",
+    "ledger": {
+      "button": "Journal",
+      "title": "Journal du client",
+      "debit": "Débit (dû)",
+      "credit": "Crédit (reçu)",
+      "balance": "Solde dû (total)",
+      "creditEntry": "Crédit — paiement reçu",
+      "debitEntry": "Débit — montant dû",
+      "label": "Libellé",
+      "labelPh": "ex. virement du 15/10, pénalité, avoir",
+      "add": "Enregistrer",
+      "empty": "Aucune écriture sur la période.",
+      "confirmDelete": "Supprimer cette écriture ?"
+    }
   },
   "users": {
     "title": "Utilisateurs",

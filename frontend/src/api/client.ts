@@ -97,7 +97,20 @@ export interface DriverLedger {
   payments: { id: string; at: string; amount: number; notes: string | null; createdBy: string }[];
 }
 
+export interface ClientLedger {
+  clientId: string;
+  period: { debit: number; credit: number; balance: number };
+  overall: { debit: number; credit: number; balance: number };
+  lines: { id: string; type: 'trip' | 'entry'; kind: 'debit' | 'credit'; at: string; amount: number; label: string; tripId: string | null; vehicleId: string | null; deletable: boolean }[];
+}
+
 export const api = {
+  clientLedger: (id: string, range?: { from?: string; to?: string }) =>
+    request<ClientLedger>(`/api/accounting/clients/${id}/ledger${rangeQs(range)}`),
+  addClientEntry: (id: string, input: { kind: 'debit' | 'credit'; amount: number; at?: string; label: string }) =>
+    request<unknown>(`/api/accounting/clients/${id}/entries`, { method: 'POST', body: JSON.stringify(input) }),
+  deleteClientEntry: (entryId: string) =>
+    request<{ ok: true }>(`/api/accounting/clients/entries/${entryId}`, { method: 'DELETE' }),
   /* --- session --- */
   login: (email: string, password: string) =>
     request<AuthUser>('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
