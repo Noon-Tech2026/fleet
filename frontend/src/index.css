@@ -2744,3 +2744,21 @@ h3 {
 @media (max-width: 900px) { .overview-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .versements { margin: 16px 0 24px; }
 .versements h3 { margin: 6px 0; font-size: 14px; }
+
+/* ---- Lisibilite : police plus grande et plus marquee ; en-tete qui ne se casse pas ---- */
+html { font-size: 15.5px; }
+body { font-weight: 500; }
+p, td, li, .cell-muted, .muted, .hint { font-weight: 500; }
+strong, b, th, label > span, .summary-cell b, .nav-tab, .btn { font-weight: 700; }
+.table th { font-size: 12.5px; letter-spacing: 0.06em; }
+.table td { font-size: 15px; }
+.cell-muted, .muted { opacity: 1; }
+.summary-cell span { font-weight: 600; letter-spacing: 0.05em; }
+
+.topbar { flex-wrap: wrap; row-gap: 8px; }
+.topbar .nav { flex: 1 1 auto; order: 3; width: 100%; justify-content: center; flex-wrap: wrap; }
+.topbar > :last-child { order: 2; margin-inline-start: auto; }
+.nav-tab { padding: 8px 12px; white-space: nowrap; }
+@media (min-width: 1500px) {
+  .topbar .nav { order: 0; width: auto; }
+}
