@@ -82,7 +82,7 @@ export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers
             origin: origin.trim() || undefined,
             destination: destination.trim() || undefined,
             amount: Number(amount),
-        paid,
+            paid,
             notes: notes.trim() || undefined,
             containers: rows.map((r) => ({
               containerNumber: r.containerNumber.trim() || undefined,
@@ -98,6 +98,7 @@ export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers
             origin: origin.trim() || undefined,
             destination: destination.trim() || undefined,
             amount: Number(amount),
+            paid,
             notes: notes.trim() || undefined,
             containers: rows.map((r) => ({
               containerNumber: r.containerNumber.trim() || undefined,
