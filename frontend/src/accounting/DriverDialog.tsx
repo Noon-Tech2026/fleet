@@ -16,6 +16,7 @@ export function DriverDialog({ driver, onCancel, onSaved }: Props) {
   const [fullName, setFullName] = useState(driver?.fullName ?? '');
   const [phone, setPhone] = useState(driver?.phone ?? '');
   const [licenseNumber, setLicenseNumber] = useState(driver?.licenseNumber ?? '');
+  const [tripFee, setTripFee] = useState(driver?.tripFee != null ? String(driver.tripFee) : '0');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,6 +40,7 @@ export function DriverDialog({ driver, onCancel, onSaved }: Props) {
             fullName: fullName.trim(),
             phone: phone.trim() || null,
             licenseNumber: licenseNumber.trim() || null,
+        tripFee: Number(tripFee) || 0,
           })
         : await api.createDriver({
             fullName: fullName.trim(),
@@ -77,6 +79,12 @@ export function DriverDialog({ driver, onCancel, onSaved }: Props) {
         <label className="field">
           <span>{t('drivers.licenseOpt')}</span>
           <input value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} />
+        </label>
+
+        <label className="field">
+          <span>{t('drivers.tripFee')}</span>
+          <input type="number" min="0" step="1" value={tripFee} onChange={(e) => setTripFee(e.target.value)} />
+          <p className="hint">{t('drivers.tripFeeHint')}</p>
         </label>
 
         {error && <p className="error">{error}</p>}

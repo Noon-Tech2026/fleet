@@ -21,6 +21,10 @@ export class Driver {
   @Column({ name: 'license_number', type: 'varchar', length: 64, nullable: true })
   licenseNumber: string | null;
 
+  /** Prime versee au chauffeur pour chaque voyage confirme (MRU). 0 = pas de prime. */
+  @Column({ name: 'trip_fee', type: 'decimal', precision: 10, scale: 2, default: 0 })
+  tripFee: string;
+
   @Column({ default: true })
   active: boolean;
 

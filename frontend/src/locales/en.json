@@ -148,7 +148,8 @@
       "toll": "Toll",
       "salary": "Salary",
       "fine": "Fine",
-      "other": "Other"
+      "other": "Other",
+      "driver": "Driver fee"
     },
     "investment": {
       "purchase": "Purchase",
@@ -506,7 +507,12 @@
     "phoneOpt": "Phone (optional)",
     "licenseOpt": "Licence no. (optional)",
     "editTitle": "Edit driver",
-    "add": "Add driver"
+    "add": "Add driver",
+    "tripFee": "Fee per trip (MRU)",
+    "tripFeeHint": "Automatically recorded as a “Driver” expense of the truck for each confirmed trip.",
+    "fees": "Fees",
+    "feesTotal": "Total fees",
+    "feesCount": "{{n}} trip(s)"
   },
   "clients": {
     "title": "Clients",

@@ -69,12 +69,14 @@ class DriverDto {
   @IsString() @MinLength(2) @MaxLength(120) fullName: string;
   @IsOptional() @IsString() @MaxLength(32) phone?: string;
   @IsOptional() @IsString() @MaxLength(64) licenseNumber?: string;
+  @IsOptional() @IsNumber() @Min(0) @Max(1_000_000) tripFee?: number;
 }
 
 class UpdateDriverDto {
   @IsOptional() @IsString() @MinLength(2) @MaxLength(120) fullName?: string;
   @IsOptional() @IsString() @MaxLength(32) phone?: string;
   @IsOptional() @IsString() @MaxLength(64) licenseNumber?: string;
+  @IsOptional() @IsNumber() @Min(0) @Max(1_000_000) tripFee?: number;
   @IsOptional() @IsBoolean() active?: boolean;
 }
 
@@ -150,6 +152,12 @@ export class AccountingController {
   @Get('accounting/clients')
   clients() {
     return this.accounting.clients();
+  }
+
+  /** Releve des primes d'un chauffeur (voyages confirmes), periode optionnelle. */
+  @Get('accounting/drivers/:id/fees')
+  driverFees(@Param('id') id: string, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.accounting.driverFees(id, { from, to });
   }
 
   @Get('accounting/drivers')

@@ -148,7 +148,8 @@
       "toll": "Péage",
       "salary": "Salaire",
       "fine": "Amende",
-      "other": "Autre"
+      "other": "Autre",
+      "driver": "Prime chauffeur"
     },
     "investment": {
       "purchase": "Achat",
@@ -496,7 +497,12 @@
     "phoneOpt": "Téléphone (optionnel)",
     "licenseOpt": "N° de permis (optionnel)",
     "editTitle": "Modifier le chauffeur",
-    "add": "Ajouter le chauffeur"
+    "add": "Ajouter le chauffeur",
+    "tripFee": "Prime par voyage (MRU)",
+    "tripFeeHint": "Enregistrée automatiquement comme charge « Chauffeur » du camion à chaque voyage confirmé.",
+    "fees": "Primes",
+    "feesTotal": "Total primes",
+    "feesCount": "{{n}} voyage(s)"
   },
   "clients": {
     "title": "Clients",

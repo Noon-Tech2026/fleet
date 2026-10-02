@@ -194,14 +194,16 @@ export const api = {
   /** Refuse (409) si le client a deja des voyages : il faut alors le desactiver. */
   deleteClient: (id: string) => request<void>(`/api/accounting/clients/${id}`, { method: 'DELETE' }),
 
+  driverFees: (id: string, range?: { from?: string; to?: string }) =>
+    request<{ driverId: string; count: number; total: number; items: { expenseId: string; tripId: string | null; vehicleId: string; at: string; amount: number; origin: string | null; destination: string | null }[] }>(`/api/accounting/drivers/${id}/fees${rangeQs(range)}`),
   drivers: () => request<DriverRecord[]>('/api/accounting/drivers'),
 
-  createDriver: (input: { fullName: string; phone?: string; licenseNumber?: string }) =>
+  createDriver: (input: { fullName: string; phone?: string; licenseNumber?: string | null; tripFee?: number }) =>
     request<DriverRecord>('/api/accounting/drivers', { method: 'POST', body: JSON.stringify(input) }),
 
   updateDriver: (
     id: string,
-    patch: { fullName?: string; phone?: string | null; licenseNumber?: string | null; active?: boolean },
+    patch: { fullName?: string; phone?: string | null; licenseNumber?: string | null; tripFee?: number; active?: boolean },
   ) => request<DriverRecord>(`/api/accounting/drivers/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
 
   deleteDriver: (id: string) => request<void>(`/api/accounting/drivers/${id}`, { method: 'DELETE' }),

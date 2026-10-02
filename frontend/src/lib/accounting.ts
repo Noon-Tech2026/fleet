@@ -1,6 +1,7 @@
 import type { VehicleExpenseCategory, VehicleInvestmentKind } from './types';
 
 export const EXPENSE_CATEGORY_LABEL: Record<VehicleExpenseCategory, string> = {
+  driver: 'Prime chauffeur',
   fuel: 'Carburant',
   tires: 'Pneus',
   insurance: 'Assurance',

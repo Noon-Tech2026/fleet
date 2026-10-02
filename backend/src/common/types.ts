@@ -173,6 +173,7 @@ export interface DriverRecord {
   fullName: string;
   phone: string | null;
   licenseNumber: string | null;
+  tripFee: number;
   active: boolean;
 }
 
@@ -211,7 +212,7 @@ export type VehicleExpenseCategory =
   | 'tires' // pneus
   | 'insurance' // assurance
   | 'toll' // péage
-  | 'salary' // salaire
+  | 'salary' | 'driver' // salaire
   | 'fine' // amende
   | 'other'; // autre
 

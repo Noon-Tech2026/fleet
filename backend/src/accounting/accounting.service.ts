@@ -105,12 +105,14 @@ export class AccountingService {
     fullName: string;
     phone?: string | null;
     licenseNumber?: string | null;
+    tripFee?: number;
   }): Promise<DriverRecord> {
     const saved = await this.driversRepo.save(
       this.driversRepo.create({
         fullName: data.fullName,
         phone: data.phone ?? null,
         licenseNumber: data.licenseNumber ?? null,
+        tripFee: (data.tripFee ?? 0).toFixed(2),
         active: true,
       }),
     );
@@ -119,11 +121,13 @@ export class AccountingService {
 
   async updateDriver(
     id: string,
-    patch: { fullName?: string; phone?: string | null; licenseNumber?: string | null; active?: boolean },
+    patch: { fullName?: string; phone?: string | null; licenseNumber?: string | null; tripFee?: number; active?: boolean },
   ): Promise<DriverRecord> {
     const driver = await this.driversRepo.findOne({ where: { id } });
     if (!driver) throw new NotFoundException('Chauffeur inconnu');
-    Object.assign(driver, patch);
+    const { tripFee, ...rest } = patch;
+    Object.assign(driver, rest);
+    if (tripFee !== undefined) driver.tripFee = tripFee.toFixed(2);
     return toDriverRecord(await this.driversRepo.save(driver));
   }
 
@@ -172,6 +176,26 @@ export class AccountingService {
         }),
       ),
     );
+
+    // Prime chauffeur : figee au moment de la confirmation (un changement ulterieur
+    // du tarif du chauffeur ne modifie pas les voyages passes).
+    const driver = await this.driversRepo.findOne({ where: { id: input.driverId } });
+    const fee = Number(driver?.tripFee ?? 0);
+    if (driver && fee > 0) {
+      await this.expensesRepo.save(
+        this.expensesRepo.create({
+          vehicleId: input.vehicleId,
+          category: 'driver' as VehicleExpenseCategory,
+          amount: fee.toFixed(2),
+          at: input.startedAt,
+          reference: `Prime chauffeur — ${driver.fullName}`,
+          notes: null,
+          tripId: trip.id,
+          driverId: driver.id,
+          createdBy,
+        }),
+      );
+    }
 
     const [entry] = await this.toEntries([trip]);
     return entry;
@@ -364,6 +388,19 @@ export class AccountingService {
 
   /* --- synthèse ------------------------------------------------------------ */
 
+  /** Primes d'un chauffeur : une ligne par voyage confirme, avec total. */
+  async driverFees(driverId: string, range?: DateRange) {
+    const d = dateWhere(range);
+    const rows = await this.expensesRepo.find({ where: { driverId, ...(d ? { at: d } : {}) }, order: { at: 'DESC' }, take: 500 });
+    const trips = rows.length > 0 ? await this.tripsRepo.find({ where: { id: In(rows.map((r) => r.tripId ?? '')) } }) : [];
+    const byTrip = new Map(trips.map((t) => [t.id, t]));
+    const items = rows.map((r) => {
+      const t = r.tripId ? byTrip.get(r.tripId) : undefined;
+      return { expenseId: r.id, tripId: r.tripId, vehicleId: r.vehicleId, at: r.at.toISOString(), amount: Number(r.amount), origin: t?.origin ?? null, destination: t?.destination ?? null };
+    });
+    return { driverId, count: items.length, total: items.reduce((a, b) => a + b.amount, 0), items };
+  }
+
   async summaryFor(vehicleId: string, range?: DateRange): Promise<VehicleAccountingSummary> {
     const [summary] = await this.summaryForMany([vehicleId], range);
     return summary;
@@ -472,6 +509,7 @@ function toDriverRecord(row: Driver): DriverRecord {
     fullName: row.fullName,
     phone: row.phone,
     licenseNumber: row.licenseNumber,
+    tripFee: Number(row.tripFee ?? 0),
     active: row.active,
   };
 }

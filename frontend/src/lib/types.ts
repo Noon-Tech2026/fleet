@@ -170,6 +170,7 @@ export interface DriverRecord {
   fullName: string;
   phone: string | null;
   licenseNumber: string | null;
+  tripFee: number;
   active: boolean;
 }
 
@@ -203,7 +204,7 @@ export interface TripEntry {
 
 /** Catalogue volontairement sans "entretien" : déjà suivi par
  *  `maintenance_logs.cost`, compter les deux compterait deux fois. */
-export type VehicleExpenseCategory = 'fuel' | 'tires' | 'insurance' | 'toll' | 'salary' | 'fine' | 'other';
+export type VehicleExpenseCategory = 'fuel' | 'tires' | 'insurance' | 'toll' | 'salary' | 'driver' | 'fine' | 'other';
 
 export interface VehicleExpenseEntry {
   id: string;

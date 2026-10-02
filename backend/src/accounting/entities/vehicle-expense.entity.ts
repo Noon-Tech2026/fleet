@@ -33,6 +33,13 @@ export class VehicleExpense {
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 
+  /** Renseigne pour les primes chauffeur generees automatiquement a la confirmation d'un voyage. */
+  @Column({ name: 'trip_id', type: 'varchar', length: 36, nullable: true })
+  tripId: string | null;
+
+  @Column({ name: 'driver_id', type: 'varchar', length: 36, nullable: true })
+  driverId: string | null;
+
   @Column({ name: 'created_by', length: 190 })
   createdBy: string;
 
