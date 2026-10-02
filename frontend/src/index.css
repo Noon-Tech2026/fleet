@@ -2732,3 +2732,5 @@ h3 {
 
 .text-danger { color: var(--red, #c0392b); }
 .text-success { color: var(--mint, #1f7a4d); }
+
+.ledger-total td { border-top: 2px solid var(--line, #ddd); background: #fafafa; }

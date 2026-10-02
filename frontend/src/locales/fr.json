@@ -544,7 +544,9 @@
       "labelPh": "ex. virement du 15/10, pénalité, avoir",
       "add": "Enregistrer",
       "empty": "Aucune écriture sur la période.",
-      "confirmDelete": "Supprimer cette écriture ?"
+      "confirmDelete": "Supprimer cette écriture ?",
+      "total": "Total période",
+      "solde": "Solde"
     }
   },
   "users": {

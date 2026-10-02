@@ -554,7 +554,9 @@
       "labelPh": "e.g. transfer 15/10, penalty, credit note",
       "add": "Record",
       "empty": "No entries in this period.",
-      "confirmDelete": "Delete this entry?"
+      "confirmDelete": "Delete this entry?",
+      "total": "Period total",
+      "solde": "Balance"
     }
   },
   "users": {

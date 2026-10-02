@@ -83,9 +83,15 @@ export function ClientLedgerDialog({ client, onClose }: Props) {
               </form>
             )}
 
-            {ledger.lines.length === 0 ? <p className="muted small">{t('clients.ledger.empty')}</p> : (
+            {ledger.lines.length === 0 ? <p className="muted small">{t('clients.ledger.empty')}</p> : (() => {
+              // Solde cumule : on parcourt du plus ancien au plus recent, puis on reaffiche du plus recent.
+              const asc = [...ledger.lines].sort((a, b) => a.at.localeCompare(b.at));
+              let run = 0;
+              const withBalance = new Map<string, number>();
+              for (const l of asc) { run += l.kind === 'debit' ? l.amount : -l.amount; withBalance.set(l.id, run); }
+              return (
               <table className="table small">
-                <thead><tr><th>{t('common.date')}</th><th>{t('clients.ledger.label')}</th><th>{t('clients.ledger.debit')}</th><th>{t('clients.ledger.credit')}</th>{isAdmin && <th />}</tr></thead>
+                <thead><tr><th>{t('common.date')}</th><th>{t('clients.ledger.label')}</th><th>{t('clients.ledger.debit')}</th><th>{t('clients.ledger.credit')}</th><th>{t('clients.ledger.solde')}</th>{isAdmin && <th />}</tr></thead>
                 <tbody>
                   {ledger.lines.map((l) => (
                     <tr key={l.id}>
@@ -93,12 +99,23 @@ export function ClientLedgerDialog({ client, onClose }: Props) {
                       <td>{l.label}</td>
                       <td className="text-danger">{l.kind === 'debit' ? formatMoney(l.amount) : ''}</td>
                       <td className="text-success">{l.kind === 'credit' ? formatMoney(l.amount) : ''}</td>
+                      <td className={(withBalance.get(l.id) ?? 0) > 0 ? 'text-danger' : 'text-success'}><b>{formatMoney(withBalance.get(l.id) ?? 0)}</b></td>
                       {isAdmin && <td>{l.deletable && <button className="btn ghost small danger" onClick={() => void remove(l.id)}>{t('common.delete')}</button>}</td>}
                     </tr>
                   ))}
                 </tbody>
+                <tfoot>
+                  <tr className="ledger-total">
+                    <td colSpan={2}><b>{t('clients.ledger.total')}</b></td>
+                    <td className="text-danger"><b>{formatMoney(ledger.period.debit)}</b></td>
+                    <td className="text-success"><b>{formatMoney(ledger.period.credit)}</b></td>
+                    <td className={ledger.period.balance > 0 ? 'text-danger' : 'text-success'}><b>{formatMoney(ledger.period.balance)}</b></td>
+                    {isAdmin && <td />}
+                  </tr>
+                </tfoot>
               </table>
-            )}
+              );
+            })()}
           </>
         )}
       </div>
