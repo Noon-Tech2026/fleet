@@ -19,7 +19,8 @@
     "logout": "Sign out",
     "role": "Administrator",
     "zones": "Zones",
-    "cash": "Cash"
+    "cash": "Cash",
+    "versements": "Withdrawals"
   },
   "overview": {
     "title": "Overview",

@@ -19,7 +19,8 @@
     "logout": "Se déconnecter",
     "role": "Administrateur",
     "zones": "Zones",
-    "cash": "Caisse"
+    "cash": "Caisse",
+    "versements": "Versements"
   },
   "overview": {
     "title": "Vue d'ensemble",

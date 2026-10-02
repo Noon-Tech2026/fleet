@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { VersementsPanel } from './VersementsPanel';
 import { api as apiClient, type AccountingOverview } from '../api/client';
 import { ExpenseCategoriesDialog } from './ExpenseCategoriesDialog';
 import { useTranslation } from 'react-i18next';
@@ -21,8 +20,7 @@ export function AccountingPage() {
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>({});
   const [overview, setOverview] = useState<AccountingOverview | null>(null);
-  const [ovTick, setOvTick] = useState(0);
-  useEffect(() => { apiClient.accountingOverview(period).then(setOverview).catch(() => setOverview(null)); }, [period, ovTick]);
+  useEffect(() => { apiClient.accountingOverview(period).then(setOverview).catch(() => setOverview(null)); }, [period]);
   const [catalogOpen, setCatalogOpen] = useState(false);
 
   const canRecordTrip = can('operator');
@@ -101,7 +99,6 @@ export function AccountingPage() {
             </div>
           )}
 
-          <VersementsPanel period={period} onChanged={() => setOvTick((v) => v + 1)} />
 
           {!summaries ? (
             <p className="empty">{t('accounting.loadingSummary')}</p>

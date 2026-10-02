@@ -21,6 +21,7 @@ import { ZonesPage } from './zones/ZonesPage';
 import { DriversPage } from './accounting/DriversPage';
 import { ClientsPage } from './accounting/ClientsPage';
 import { CashPage } from './accounting/CashPage';
+import { VersementsPage } from './accounting/VersementsPage';
 
 const SIMULATOR_MODE = import.meta.env.DEV;
 
@@ -86,7 +87,7 @@ function Dashboard({
   const [trackVehicleId, setTrackVehicleId] = useState<string | null>(null);
   const [feedOpen, setFeedOpen] = useState(true);
   const [view, setView] = useState<
-    'overview' | 'fleet' | 'maintenance' | 'accounting' | 'drivers' | 'clients' | 'cash' | 'users' | 'zones'
+    'overview' | 'fleet' | 'maintenance' | 'accounting' | 'drivers' | 'clients' | 'cash' | 'versements' | 'users' | 'zones'
   >('overview');
   const { can } = useAuth();
   const isAdmin = can('admin');
@@ -131,6 +132,9 @@ function Dashboard({
           <button className={`nav-tab ${view === 'cash' ? 'active' : ''}`} onClick={() => setView('cash')}>
             {t('nav.cash')}
           </button>
+          <button className={`nav-tab ${view === 'versements' ? 'active' : ''}`} onClick={() => setView('versements')}>
+            {t('nav.versements')}
+          </button>
           {canManageZones && (
             <button className={`nav-tab ${view === 'zones' ? 'active' : ''}`} onClick={() => setView('zones')}>
               {t('nav.zones')}
@@ -165,6 +169,8 @@ function Dashboard({
         <ZonesPage vehicles={vehicles} directory={directory} isAdmin={isAdmin} />
       ) : view === 'drivers' ? (
         <DriversPage />
+      ) : view === 'versements' ? (
+        <VersementsPage />
       ) : view === 'cash' ? (
         <CashPage />
       ) : view === 'clients' ? (

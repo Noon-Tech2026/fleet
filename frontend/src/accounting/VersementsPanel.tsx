@@ -5,10 +5,10 @@ import { formatMoney } from '../lib/accounting';
 import { useAuth } from '../auth/AuthContext';
 import type { Period } from './PeriodFilter';
 
-interface Props { period: Period; onChanged: () => void }
+interface Props { period: Period; onChanged: () => void; showTotal?: boolean }
 
 /** Versements (retraits des associes) : saisie et liste sur la periode. */
-export function VersementsPanel({ period, onChanged }: Props) {
+export function VersementsPanel({ period, onChanged, showTotal = false }: Props) {
   const { t, i18n } = useTranslation();
   const { can } = useAuth();
   const canWrite = can('supervisor');
@@ -40,7 +40,8 @@ export function VersementsPanel({ period, onChanged }: Props) {
 
   return (
     <section className="versements">
-      <h3>{t('versements.title')}</h3>
+      {!showTotal && <h3>{t('versements.title')}</h3>}
+      {showTotal && <div className="fleet-summary compact"><div className="summary-cell warn"><b>{formatMoney(rows.reduce((a, v) => a + v.amount, 0))}</b><span>{t('overview.versements')}</span></div></div>}
       {error && <p className="banner err">{error}</p>}
       {canWrite && (
         <form className="ledger-pay" onSubmit={submit}>
@@ -51,7 +52,7 @@ export function VersementsPanel({ period, onChanged }: Props) {
         </form>
       )}
       {rows.length === 0 ? <p className="muted small">{t('versements.empty')}</p> : (
-        <table className="table small">
+        <table className="table">
           <thead><tr><th>{t('common.date')}</th><th>{t('versements.label')}</th><th>{t('common.amount')}</th>{isAdmin && <th />}</tr></thead>
           <tbody>{rows.map((v) => (
             <tr key={v.id}><td>{fmtDate(v.at)}</td><td>{v.label}</td><td className="text-danger">{formatMoney(v.amount)}</td>{isAdmin && <td><button className="btn ghost small danger" onClick={() => void remove(v.id)}>{t('common.delete')}</button></td>}</tr>
