@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { formatMoney } from '../lib/accounting';
 import { DriverLedgerDialog } from './DriverLedgerDialog';
 import { useTranslation } from 'react-i18next';
 import type { DriverRecord } from '../lib/types';
@@ -122,6 +123,7 @@ export function DriversPage() {
                 <th>{t('common.driver')}</th>
                 <th>{t('common.phone')}</th>
                 <th>{t('drivers.license')}</th>
+                <th>{t('common.balance')}</th>
                 <th>{t('common.status')}</th>
                 {canManage && <th aria-label={t('common.actions')} />}
               </tr>
@@ -143,6 +145,7 @@ export function DriversPage() {
                     </td>
                     <td className="cell-muted">{d.phone ?? '—'}</td>
                     <td className="cell-muted">{d.licenseNumber ?? '—'}</td>
+                    <td className={(d.balance ?? 0) > 0 ? 'text-danger' : 'cell-muted'}><b>{formatMoney(d.balance ?? 0)}</b></td>
                     <td>
                       <button
                         className={`switch ${d.active ? 'on' : ''}`}

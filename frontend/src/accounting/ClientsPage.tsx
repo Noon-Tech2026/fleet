@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { formatMoney } from '../lib/accounting';
 import { ClientLedgerDialog } from './ClientLedgerDialog';
 import { useTranslation } from 'react-i18next';
 import type { ClientRecord } from '../lib/types';
@@ -122,6 +123,7 @@ export function ClientsPage() {
                 <th>{t('common.client')}</th>
                 <th>{t('common.contact')}</th>
                 <th>{t('common.notes')}</th>
+                <th>{t('common.balance')}</th>
                 <th>{t('common.status')}</th>
                 {canManage && <th aria-label={t('common.actions')} />}
               </tr>
@@ -143,6 +145,7 @@ export function ClientsPage() {
                     </td>
                     <td className="cell-muted">{c.contact ?? '—'}</td>
                     <td className="cell-muted">{c.notes ?? '—'}</td>
+                    <td className={(c.balance ?? 0) > 0 ? 'text-danger' : 'cell-muted'}><b>{formatMoney(c.balance ?? 0)}</b></td>
                     <td>
                       <button
                         className={`switch ${c.active ? 'on' : ''}`}

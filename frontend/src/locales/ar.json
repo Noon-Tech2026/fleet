@@ -492,7 +492,8 @@
     "reference": "المرجع",
     "phone": "الهاتف",
     "contact": "جهة الاتصال",
-    "truck": "الشاحنة"
+    "truck": "الشاحنة",
+    "balance": "الرصيد"
   },
   "drivers": {
     "title": "السائقون",

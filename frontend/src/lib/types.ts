@@ -163,6 +163,8 @@ export interface ClientRecord {
   contact: string | null;
   notes: string | null;
   active: boolean;
+  /** Solde du (voyages + debits - credits). */
+  balance?: number;
 }
 
 export interface DriverRecord {
@@ -172,6 +174,8 @@ export interface DriverRecord {
   licenseNumber: string | null;
   tripFee: number;
   active: boolean;
+  /** Reste du au chauffeur (primes - paiements). */
+  balance?: number;
 }
 
 /** Conteneurs standard : 20 ou 40 pieds. */

@@ -73,9 +73,33 @@ export class AccountingService {
 
   /* --- référentiels ------------------------------------------------------ */
 
+  /** Solde du par client : voyages + ecritures debit - ecritures credit. */
+  private async clientBalances(): Promise<Map<string, number>> {
+    const [trips, entries] = await Promise.all([
+      this.tripsRepo.createQueryBuilder('t').select('t.clientId', 'id').addSelect('COALESCE(SUM(t.amount),0)', 'total').groupBy('t.clientId').getRawMany<{ id: string; total: string }>(),
+      this.clientEntriesRepo.createQueryBuilder('e').select('e.clientId', 'id').addSelect("COALESCE(SUM(CASE WHEN e.kind='debit' THEN e.amount ELSE -e.amount END),0)", 'total').groupBy('e.clientId').getRawMany<{ id: string; total: string }>(),
+    ]);
+    const m = new Map<string, number>();
+    for (const r of [...trips, ...entries]) m.set(r.id, (m.get(r.id) ?? 0) + Number(r.total));
+    return m;
+  }
+
+  /** Reste du a chaque chauffeur : primes - paiements. */
+  private async driverBalances(): Promise<Map<string, number>> {
+    const [fees, pays] = await Promise.all([
+      this.expensesRepo.createQueryBuilder('x').select('x.driverId', 'id').addSelect('COALESCE(SUM(x.amount),0)', 'total').where('x.driverId IS NOT NULL').groupBy('x.driverId').getRawMany<{ id: string; total: string }>(),
+      this.paymentsRepo.createQueryBuilder('p').select('p.driverId', 'id').addSelect('COALESCE(SUM(p.amount),0)', 'total').groupBy('p.driverId').getRawMany<{ id: string; total: string }>(),
+    ]);
+    const m = new Map<string, number>();
+    for (const r of fees) m.set(r.id, (m.get(r.id) ?? 0) + Number(r.total));
+    for (const r of pays) m.set(r.id, (m.get(r.id) ?? 0) - Number(r.total));
+    return m;
+  }
+
   async clients(): Promise<ClientRecord[]> {
     const rows = await this.clientsRepo.find({ order: { name: 'ASC' } });
-    return rows.map(toClientRecord);
+    const bal = await this.clientBalances();
+    return rows.map((r) => ({ ...toClientRecord(r), balance: bal.get(r.id) ?? 0 }));
   }
 
   async createClient(data: { name: string; contact?: string | null; notes?: string | null }): Promise<ClientRecord> {
@@ -102,7 +126,8 @@ export class AccountingService {
 
   async drivers(): Promise<DriverRecord[]> {
     const rows = await this.driversRepo.find({ order: { fullName: 'ASC' } });
-    return rows.map(toDriverRecord);
+    const bal = await this.driverBalances();
+    return rows.map((r) => ({ ...toDriverRecord(r), balance: bal.get(r.id) ?? 0 }));
   }
 
   async createDriver(data: {

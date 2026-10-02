@@ -492,7 +492,8 @@
     "reference": "Reference",
     "phone": "Phone",
     "contact": "Contact",
-    "truck": "Truck"
+    "truck": "Truck",
+    "balance": "Balance"
   },
   "drivers": {
     "title": "Drivers",

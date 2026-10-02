@@ -482,7 +482,8 @@
     "reference": "Référence",
     "phone": "Téléphone",
     "contact": "Contact",
-    "truck": "Camion"
+    "truck": "Camion",
+    "balance": "Solde"
   },
   "drivers": {
     "title": "Chauffeurs",
