@@ -10,6 +10,15 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DriverDialog } from './DriverDialog';
 
 export function DriversPage() {
+  const [plates, setPlates] = useState<Record<string, string>>({});
+  useEffect(() => {
+    api.fleetVehicles().then((v) => {
+      const m: Record<string, string> = {};
+      for (const x of v as { id: string; plate?: string | null }[]) if (x.plate) m[x.id] = x.plate;
+      setPlates(m);
+    }).catch(() => undefined);
+  }, []);
+  const plateOf = (id: string | null) => (id ? (plates[id] ? `${id} · ${plates[id]}` : id) : null);
   const { t } = useTranslation();
   const { can } = useAuth();
   const canManage = can('supervisor');
@@ -124,6 +133,7 @@ export function DriversPage() {
                 <th>{t('common.phone')}</th>
                 <th>{t('drivers.license')}</th>
                 <th>{t('common.truck')}</th>
+                <th>{t('drivers.salary')}</th>
                 <th>{t('common.balance')}</th>
                 <th>{t('common.status')}</th>
                 {canManage && <th aria-label={t('common.actions')} />}
@@ -146,7 +156,8 @@ export function DriversPage() {
                     </td>
                     <td className="cell-muted">{d.phone ?? '—'}</td>
                     <td className="cell-muted">{d.licenseNumber ?? '—'}</td>
-                    <td>{d.vehicleId ? <span className="badge idle">{d.vehicleId}</span> : <span className="cell-muted">—</span>}</td>
+                    <td>{d.vehicleId ? <span className="badge idle">{plateOf(d.vehicleId)}</span> : <span className="cell-muted">—</span>}</td>
+                    <td className="cell-muted">{formatMoney(d.monthlySalary ?? 0)}<div className="cell-sub">{t('drivers.tripFee')} {formatMoney(d.tripFee ?? 0)}</div></td>
                     <td className={(d.balance ?? 0) > 0 ? 'text-danger' : 'cell-muted'}><b>{formatMoney(d.balance ?? 0)}</b></td>
                     <td>
                       <button

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
 import { DriverSalary } from './entities/driver-salary.entity';
 import { CashEntry } from './entities/cash-entry.entity';
 import { ExpenseCategory } from './entities/expense-category.entity';
@@ -62,7 +62,7 @@ export interface TripFilter {
  * n'apporterait rien ici, seulement de la synchronisation à gérer en plus.
  */
 @Injectable()
-export class AccountingService {
+export class AccountingService implements OnModuleInit {
   constructor(
     @InjectRepository(Client) private readonly clientsRepo: Repository<Client>,
     @InjectRepository(Driver) private readonly driversRepo: Repository<Driver>,
@@ -103,6 +103,46 @@ export class AccountingService {
     for (const r of sals) m.set(r.id, (m.get(r.id) ?? 0) + Number(r.total));
     for (const r of pays) m.set(r.id, (m.get(r.id) ?? 0) - Number(r.total));
     return m;
+  }
+
+  /* --- salaires automatiques --------------------------------------------- */
+  private readonly log = new Logger('Salaires');
+
+  onModuleInit(): void {
+    // Verification quotidienne ; premiere passe 2 min apres le demarrage.
+    setTimeout(() => void this.autoDeclareSalaries(), 2 * 60_000);
+    setInterval(() => void this.autoDeclareSalaries(), 24 * 3600_000);
+  }
+
+  /**
+   * Declare le salaire du mois pour chaque chauffeur actif (salaire > 0) :
+   * le mois courant a partir de son dernier jour, et le mois precedent en rattrapage.
+   */
+  async autoDeclareSalaries(): Promise<void> {
+    try {
+      const now = new Date();
+      const ym = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const targets = [ym(new Date(now.getFullYear(), now.getMonth() - 1, 1))];
+      if (now.getDate() >= lastDay) targets.push(ym(now));
+      const drivers = await this.driversRepo.find({ where: { active: true } });
+      let created = 0;
+      for (const d of drivers) {
+        const salary = Number(d.monthlySalary ?? 0);
+        if (salary <= 0) continue;
+        for (const month of targets) {
+          // Pas de rattrapage avant l'entree du chauffeur dans le systeme
+          if (d.createdAt && month < ym(d.createdAt)) continue;
+          const exists = await this.salariesRepo.findOne({ where: { driverId: d.id, month } });
+          if (exists) continue;
+          await this.salariesRepo.save(this.salariesRepo.create({ driverId: d.id, month, amount: salary.toFixed(2), driverPaymentId: null, createdBy: 'system' }));
+          created++;
+        }
+      }
+      if (created > 0) this.log.log(`${created} salaire(s) declare(s) automatiquement`);
+    } catch (e) {
+      this.log.warn(`declaration automatique des salaires : ${(e as Error).message}`);
+    }
   }
 
   /* --- journal de caisse ------------------------------------------------ */
