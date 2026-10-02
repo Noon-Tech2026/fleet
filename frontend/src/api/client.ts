@@ -104,7 +104,17 @@ export interface ClientLedger {
   lines: { id: string; type: 'trip' | 'entry'; kind: 'debit' | 'credit'; at: string; amount: number; label: string; tripId: string | null; vehicleId: string | null; deletable: boolean }[];
 }
 
+export interface CashJournal {
+  period: { debit: number; credit: number; balance: number };
+  overall: { debit: number; credit: number; balance: number };
+  lines: { id: string; kind: 'debit' | 'credit'; at: string; amount: number; label: string; source: 'client' | 'driver' | 'manual'; deletable: boolean }[];
+}
+
 export const api = {
+  cashJournal: (range?: { from?: string; to?: string }) => request<CashJournal>(`/api/accounting/cash${rangeQs(range)}`),
+  addCashEntry: (input: { kind: 'debit' | 'credit'; amount: number; at?: string; label: string }) =>
+    request<unknown>('/api/accounting/cash/entries', { method: 'POST', body: JSON.stringify(input) }),
+  deleteCashEntry: (id: string) => request<{ ok: true }>(`/api/accounting/cash/entries/${id}`, { method: 'DELETE' }),
   expenseCategories: (all = false) => request<ExpenseCategoryRecord[]>(`/api/accounting/expense-categories${all ? '?all=1' : ''}`),
   saveExpenseCategory: (input: { id?: string; labelFr: string; labelEn?: string; labelAr?: string; active?: boolean; sortOrder?: number }) =>
     request<ExpenseCategoryRecord>('/api/accounting/expense-categories', { method: 'POST', body: JSON.stringify(input) }),

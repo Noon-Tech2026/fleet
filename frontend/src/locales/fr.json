@@ -18,7 +18,8 @@
     "clients": "Clients",
     "logout": "Se déconnecter",
     "role": "Administrateur",
-    "zones": "Zones"
+    "zones": "Zones",
+    "cash": "Caisse"
   },
   "overview": {
     "title": "Vue d'ensemble",
@@ -637,5 +638,22 @@
     "disable": "Désactiver",
     "enable": "Activer",
     "confirmDelete": "Supprimer la catégorie « {{label}} » ?"
+  },
+  "cash": {
+    "title": "Journal de caisse",
+    "debit": "Débit (entrées)",
+    "credit": "Crédit (sorties)",
+    "balance": "Solde de caisse",
+    "debitEntry": "Débit — entrée de caisse",
+    "creditEntry": "Crédit — sortie de caisse",
+    "labelPh": "ex. apport, achat fournitures, retrait",
+    "source": "Origine",
+    "empty": "Aucun mouvement sur la période.",
+    "confirmDelete": "Supprimer cette écriture ?",
+    "src": {
+      "client": "Client",
+      "driver": "Chauffeur",
+      "manual": "Manuel"
+    }
   }
 }

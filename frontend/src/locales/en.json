@@ -18,7 +18,8 @@
     "clients": "Clients",
     "logout": "Sign out",
     "role": "Administrator",
-    "zones": "Zones"
+    "zones": "Zones",
+    "cash": "Cash"
   },
   "overview": {
     "title": "Overview",
@@ -647,5 +648,22 @@
     "disable": "Disable",
     "enable": "Enable",
     "confirmDelete": "Delete category “{{label}}”?"
+  },
+  "cash": {
+    "title": "Cash journal",
+    "debit": "Debit (in)",
+    "credit": "Credit (out)",
+    "balance": "Cash balance",
+    "debitEntry": "Debit — cash in",
+    "creditEntry": "Credit — cash out",
+    "labelPh": "e.g. capital, supplies, withdrawal",
+    "source": "Source",
+    "empty": "No movement in this period.",
+    "confirmDelete": "Delete this entry?",
+    "src": {
+      "client": "Client",
+      "driver": "Driver",
+      "manual": "Manual"
+    }
   }
 }

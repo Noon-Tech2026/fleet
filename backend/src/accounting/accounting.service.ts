@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { CashEntry } from './entities/cash-entry.entity';
 import { ExpenseCategory } from './entities/expense-category.entity';
 import { ClientEntry } from './entities/client-entry.entity';
 import { DriverPayment } from './entities/driver-payment.entity';
@@ -67,6 +68,7 @@ export class AccountingService {
     @InjectRepository(DriverPayment) private readonly paymentsRepo: Repository<DriverPayment>,
     @InjectRepository(ClientEntry) private readonly clientEntriesRepo: Repository<ClientEntry>,
     @InjectRepository(ExpenseCategory) private readonly categoriesRepo: Repository<ExpenseCategory>,
+    @InjectRepository(CashEntry) private readonly cashRepo: Repository<CashEntry>,
     @InjectRepository(Trip) private readonly tripsRepo: Repository<Trip>,
     @InjectRepository(TripContainer) private readonly containersRepo: Repository<TripContainer>,
     @InjectRepository(VehicleExpense) private readonly expensesRepo: Repository<VehicleExpense>,
@@ -97,6 +99,55 @@ export class AccountingService {
     for (const r of fees) m.set(r.id, (m.get(r.id) ?? 0) + Number(r.total));
     for (const r of pays) m.set(r.id, (m.get(r.id) ?? 0) - Number(r.total));
     return m;
+  }
+
+  /* --- journal de caisse ------------------------------------------------ */
+  /**
+   * Debit (entrees) : paiements recus des clients (ecritures credit client + voyages payes comptant) + debits manuels.
+   * Credit (sorties) : paiements aux chauffeurs + credits manuels.
+   */
+  async cashJournal(range?: DateRange) {
+    const d = dateWhere(range);
+    const [clientCredits, paidTrips, driverPays, manual, clients, drivers] = await Promise.all([
+      this.clientEntriesRepo.find({ where: { kind: 'credit', ...(d ? { at: d } : {}) }, take: 2000 }),
+      this.tripsRepo.find({ where: { paid: true, ...(d ? { startedAt: d } : {}) }, take: 2000 }),
+      this.paymentsRepo.find({ where: d ? { at: d } : {}, take: 2000 }),
+      this.cashRepo.find({ where: d ? { at: d } : {}, take: 2000 }),
+      this.clientsRepo.find(),
+      this.driversRepo.find(),
+    ]);
+    const cname = new Map(clients.map((c) => [c.id, c.name]));
+    const dname = new Map(drivers.map((x) => [x.id, x.fullName]));
+    const lines = [
+      ...clientCredits.map((e) => ({ id: `cc:${e.id}`, kind: 'debit' as const, at: e.at.toISOString(), amount: Number(e.amount), label: `${cname.get(e.clientId) ?? e.clientId} — ${e.label}`, source: 'client' as const, deletable: false })),
+      ...paidTrips.map((t) => ({ id: `pt:${t.id}`, kind: 'debit' as const, at: t.startedAt.toISOString(), amount: Number(t.amount), label: `${cname.get(t.clientId) ?? t.clientId} — voyage ${t.vehicleId} (comptant)`, source: 'client' as const, deletable: false })),
+      ...driverPays.map((p) => ({ id: `dp:${p.id}`, kind: 'credit' as const, at: p.at.toISOString(), amount: Number(p.amount), label: `${dname.get(p.driverId) ?? p.driverId} — ${p.notes ?? 'paiement chauffeur'}`, source: 'driver' as const, deletable: false })),
+      ...manual.map((m) => ({ id: m.id, kind: m.kind, at: m.at.toISOString(), amount: Number(m.amount), label: m.label, source: 'manual' as const, deletable: true })),
+    ].sort((a, b) => b.at.localeCompare(a.at));
+    const sum = (k: string) => lines.filter((l) => l.kind === k).reduce((a, l) => a + l.amount, 0);
+    const debit = sum('debit'), credit = sum('credit');
+    // Solde global toutes periodes (solde de caisse reel), par agregats
+    const num = async (q: Promise<{ total: string | null } | undefined>) => Number((await q)?.total ?? 0);
+    const [allCc, allPt, allDp, allMd, allMc] = await Promise.all([
+      num(this.clientEntriesRepo.createQueryBuilder('e').select('COALESCE(SUM(e.amount),0)', 'total').where("e.kind = 'credit'").getRawOne()),
+      num(this.tripsRepo.createQueryBuilder('t').select('COALESCE(SUM(t.amount),0)', 'total').where('t.paid = 1').getRawOne()),
+      num(this.paymentsRepo.createQueryBuilder('p').select('COALESCE(SUM(p.amount),0)', 'total').getRawOne()),
+      num(this.cashRepo.createQueryBuilder('m').select('COALESCE(SUM(m.amount),0)', 'total').where("m.kind = 'debit'").getRawOne()),
+      num(this.cashRepo.createQueryBuilder('m').select('COALESCE(SUM(m.amount),0)', 'total').where("m.kind = 'credit'").getRawOne()),
+    ]);
+    const allDebit = allCc + allPt + allMd, allCredit = allDp + allMc;
+    return { period: { debit, credit, balance: debit - credit }, overall: { debit: allDebit, credit: allCredit, balance: allDebit - allCredit }, lines };
+  }
+
+  async addCashEntry(input: { kind: 'debit' | 'credit'; amount: number; at: Date; label: string }, createdBy: string) {
+    if (input.amount <= 0) throw new BadRequestException('Le montant doit être positif');
+    const e = await this.cashRepo.save(this.cashRepo.create({ kind: input.kind, amount: input.amount.toFixed(2), at: input.at, label: input.label.trim(), createdBy }));
+    return { id: e.id, kind: e.kind, at: e.at.toISOString(), amount: Number(e.amount), label: e.label };
+  }
+
+  async removeCashEntry(id: string): Promise<{ ok: true }> {
+    await this.cashRepo.delete({ id });
+    return { ok: true };
   }
 
   /* --- catalogue des charges ------------------------------------------- */

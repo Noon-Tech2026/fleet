@@ -72,6 +72,13 @@ class ExpenseCategoryDto {
   @IsOptional() @IsInt() @Min(0) @Max(9999) sortOrder?: number;
 }
 
+class CashEntryDto {
+  @IsIn(['debit', 'credit']) kind: 'debit' | 'credit';
+  @IsNumber() @Min(1) @Max(100_000_000) amount: number;
+  @IsOptional() @IsString() at?: string;
+  @IsString() @MinLength(2) @MaxLength(160) label: string;
+}
+
 class ClientEntryDto {
   @IsIn(['debit', 'credit']) kind: 'debit' | 'credit';
   @IsNumber() @Min(1) @Max(100_000_000) amount: number;
@@ -171,6 +178,25 @@ export class AccountingController {
     return this.accounting.clients();
   }
 
+
+  /** Journal de caisse : entrees (clients + manuel), sorties (chauffeurs + manuel), solde. */
+  @RequireRole(Role.Supervisor)
+  @Get('accounting/cash')
+  cashJournal(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.accounting.cashJournal({ from, to });
+  }
+
+  @RequireRole(Role.Supervisor)
+  @Post('accounting/cash/entries')
+  addCashEntry(@Body() dto: CashEntryDto, @CurrentUser() user: JwtPayload) {
+    return this.accounting.addCashEntry({ kind: dto.kind, amount: dto.amount, at: dto.at ? new Date(dto.at) : new Date(), label: dto.label }, user.email);
+  }
+
+  @RequireRole(Role.Admin)
+  @Delete('accounting/cash/entries/:id')
+  removeCashEntry(@Param('id') id: string) {
+    return this.accounting.removeCashEntry(id);
+  }
 
   /** Catalogue des charges (actives). ?all=1 : y compris desactivees (admin). */
   @Get('accounting/expense-categories')
