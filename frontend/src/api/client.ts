@@ -89,6 +89,14 @@ function rangeQs(range?: { from?: string; to?: string }): string {
   return s ? `?${s}` : '';
 }
 
+export interface DriverLedger {
+  driverId: string;
+  period: { fees: number; feesCount: number; paid: number; balance: number };
+  overall: { fees: number; paid: number; balance: number };
+  fees: { expenseId: string; tripId: string | null; vehicleId: string; at: string; amount: number; origin: string | null; destination: string | null }[];
+  payments: { id: string; at: string; amount: number; notes: string | null; createdBy: string }[];
+}
+
 export const api = {
   /* --- session --- */
   login: (email: string, password: string) =>
@@ -194,6 +202,12 @@ export const api = {
   /** Refuse (409) si le client a deja des voyages : il faut alors le desactiver. */
   deleteClient: (id: string) => request<void>(`/api/accounting/clients/${id}`, { method: 'DELETE' }),
 
+  driverLedger: (id: string, range?: { from?: string; to?: string }) =>
+    request<DriverLedger>(`/api/accounting/drivers/${id}/ledger${rangeQs(range)}`),
+  addDriverPayment: (id: string, input: { amount: number; at?: string; notes?: string }) =>
+    request<DriverLedger['payments'][number]>(`/api/accounting/drivers/${id}/payments`, { method: 'POST', body: JSON.stringify(input) }),
+  deleteDriverPayment: (paymentId: string) =>
+    request<{ ok: true }>(`/api/accounting/drivers/payments/${paymentId}`, { method: 'DELETE' }),
   driverFees: (id: string, range?: { from?: string; to?: string }) =>
     request<{ driverId: string; count: number; total: number; items: { expenseId: string; tripId: string | null; vehicleId: string; at: string; amount: number; origin: string | null; destination: string | null }[] }>(`/api/accounting/drivers/${id}/fees${rangeQs(range)}`),
   drivers: () => request<DriverRecord[]>('/api/accounting/drivers'),

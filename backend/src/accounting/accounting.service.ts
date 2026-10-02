@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { DriverPayment } from './entities/driver-payment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, FindOptionsWhere, In, Repository, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import {
@@ -60,6 +61,7 @@ export class AccountingService {
   constructor(
     @InjectRepository(Client) private readonly clientsRepo: Repository<Client>,
     @InjectRepository(Driver) private readonly driversRepo: Repository<Driver>,
+    @InjectRepository(DriverPayment) private readonly paymentsRepo: Repository<DriverPayment>,
     @InjectRepository(Trip) private readonly tripsRepo: Repository<Trip>,
     @InjectRepository(TripContainer) private readonly containersRepo: Repository<TripContainer>,
     @InjectRepository(VehicleExpense) private readonly expensesRepo: Repository<VehicleExpense>,
@@ -387,6 +389,37 @@ export class AccountingService {
   }
 
   /* --- synthèse ------------------------------------------------------------ */
+
+  /** Releve complet : primes, paiements, solde (periode optionnelle sur les deux). */
+  async driverLedger(driverId: string, range?: DateRange) {
+    const fees = await this.driverFees(driverId, range);
+    const d = dateWhere(range);
+    const payments = await this.paymentsRepo.find({ where: { driverId, ...(d ? { at: d } : {}) }, order: { at: 'DESC' }, take: 500 });
+    const paid = payments.reduce((a, p) => a + Number(p.amount), 0);
+    // Solde global (toutes periodes) pour afficher ce qui reste du reellement
+    const allFees = await this.driverFees(driverId);
+    const allPaid = (await this.paymentsRepo.find({ where: { driverId } })).reduce((a, p) => a + Number(p.amount), 0);
+    return {
+      driverId,
+      period: { fees: fees.total, feesCount: fees.count, paid, balance: fees.total - paid },
+      overall: { fees: allFees.total, paid: allPaid, balance: allFees.total - allPaid },
+      fees: fees.items,
+      payments: payments.map((p) => ({ id: p.id, at: p.at.toISOString(), amount: Number(p.amount), notes: p.notes, createdBy: p.createdBy })),
+    };
+  }
+
+  async addDriverPayment(driverId: string, input: { amount: number; at: Date; notes?: string }, createdBy: string) {
+    if (input.amount <= 0) throw new BadRequestException('Le montant doit être positif');
+    const driver = await this.driversRepo.findOne({ where: { id: driverId } });
+    if (!driver) throw new BadRequestException('Chauffeur inconnu');
+    const p = await this.paymentsRepo.save(this.paymentsRepo.create({ driverId, amount: input.amount.toFixed(2), at: input.at, notes: input.notes ?? null, createdBy }));
+    return { id: p.id, at: p.at.toISOString(), amount: Number(p.amount), notes: p.notes, createdBy: p.createdBy };
+  }
+
+  async removeDriverPayment(id: string): Promise<{ ok: true }> {
+    await this.paymentsRepo.delete({ id });
+    return { ok: true };
+  }
 
   /** Primes d'un chauffeur : une ligne par voyage confirme, avec total. */
   async driverFees(driverId: string, range?: DateRange) {

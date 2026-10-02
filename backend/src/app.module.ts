@@ -44,6 +44,7 @@ import { AlertsService } from './rules/alerts.service';
 import { PortalController } from './portal/portal.controller';
 import { BrandingController } from './branding/branding.controller';
 import { AlertEntity } from './rules/entities/alert.entity';
+import { DriverPayment } from './accounting/entities/driver-payment.entity';
 import { ImmobilizerService } from './immobilizer/immobilizer.service';
 import { MaintenanceService } from './maintenance/maintenance.service';
 import { MaintenanceController } from './maintenance/maintenance.controller';
@@ -57,7 +58,7 @@ import { AccountingController } from './accounting/accounting.controller';
     DatabaseModule,
     AuthModule,
     UsersModule,
-    TypeOrmModule.forFeature([AlertEntity, 
+    TypeOrmModule.forFeature([DriverPayment, AlertEntity, 
       CommandLog,
       Vehicle,
       Position,

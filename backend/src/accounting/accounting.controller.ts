@@ -72,6 +72,12 @@ class DriverDto {
   @IsOptional() @IsNumber() @Min(0) @Max(1_000_000) tripFee?: number;
 }
 
+class DriverPaymentDto {
+  @IsNumber() @Min(1) @Max(10_000_000) amount: number;
+  @IsOptional() @IsString() at?: string;
+  @IsOptional() @IsString() @MaxLength(160) notes?: string;
+}
+
 class UpdateDriverDto {
   @IsOptional() @IsString() @MinLength(2) @MaxLength(120) fullName?: string;
   @IsOptional() @IsString() @MaxLength(32) phone?: string;
@@ -152,6 +158,25 @@ export class AccountingController {
   @Get('accounting/clients')
   clients() {
     return this.accounting.clients();
+  }
+
+
+  /** Releve complet d'un chauffeur : primes, paiements, solde. */
+  @Get('accounting/drivers/:id/ledger')
+  driverLedger(@Param('id') id: string, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.accounting.driverLedger(id, { from, to });
+  }
+
+  @RequireRole(Role.Supervisor)
+  @Post('accounting/drivers/:id/payments')
+  addDriverPayment(@Param('id') id: string, @Body() dto: DriverPaymentDto, @CurrentUser() user: JwtPayload) {
+    return this.accounting.addDriverPayment(id, { amount: dto.amount, at: dto.at ? new Date(dto.at) : new Date(), notes: dto.notes }, user.email);
+  }
+
+  @RequireRole(Role.Admin)
+  @Delete('accounting/drivers/payments/:paymentId')
+  removeDriverPayment(@Param('paymentId') paymentId: string) {
+    return this.accounting.removeDriverPayment(paymentId);
   }
 
   /** Releve des primes d'un chauffeur (voyages confirmes), periode optionnelle. */

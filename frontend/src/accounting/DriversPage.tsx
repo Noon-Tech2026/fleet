@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { DriverLedgerDialog } from './DriverLedgerDialog';
 import { useTranslation } from 'react-i18next';
 import type { DriverRecord } from '../lib/types';
 import { initials } from '../lib/roles';
@@ -18,6 +19,7 @@ export function DriversPage() {
   // null : fermé. 'new' : création. Une fiche : modification.
   const [editing, setEditing] = useState<DriverRecord | 'new' | null>(null);
   const [deleting, setDeleting] = useState<DriverRecord | null>(null);
+  const [ledgerFor, setLedgerFor] = useState<DriverRecord | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   // Relue après chaque écriture : la base fait foi, pas la réponse d'un PATCH,
@@ -155,6 +157,7 @@ export function DriversPage() {
                     </td>
                     {canManage && (
                       <td className="cell-actions">
+                        <button className="btn ghost small" onClick={() => setLedgerFor(d)}>{t('drivers.ledger.button')}</button>
                         <button className="btn ghost small" onClick={() => setEditing(d)} disabled={busy}>
                           {t('common.edit')}
                         </button>
@@ -201,6 +204,7 @@ export function DriversPage() {
           }}
         />
       )}
+      {ledgerFor && <DriverLedgerDialog driver={ledgerFor} onClose={() => setLedgerFor(null)} />}
     </main>
   );
 }

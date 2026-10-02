@@ -2722,3 +2722,10 @@ h3 {
 .period-filter { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 14px; margin: 8px 0 14px; }
 .field.inline { display: flex; flex-direction: column; gap: 4px; min-width: 150px; }
 .field.inline input { padding: 6px 8px; }
+
+.ledger-modal { max-width: 960px; width: min(96vw, 960px); }
+.ledger-pay { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin: 12px 0; padding: 10px; border: 1px dashed var(--line, #ddd); border-radius: 10px; }
+.ledger-pay .grow { flex: 1; min-width: 200px; }
+.ledger-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 800px) { .ledger-grid { grid-template-columns: 1fr; } }
+.table.small td, .table.small th { padding: 6px 8px; font-size: 13px; }

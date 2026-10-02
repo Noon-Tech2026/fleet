@@ -1,4 +1,5 @@
 import { User } from '../auth/entities/user.entity';
+import { DriverPayment } from '../accounting/entities/driver-payment.entity';
 import { AlertEntity } from '../rules/entities/alert.entity';
 import { RefreshSession } from '../auth/entities/refresh-session.entity';
 import { CommandLog } from '../auth/entities/command-log.entity';
@@ -24,6 +25,7 @@ import { VehicleInvestment } from '../accounting/entities/vehicle-investment.ent
  * tables que l'application ne connait pas — ou l'inverse.
  */
 export const ENTITIES = [
+  DriverPayment,
   AlertEntity,
   User,
   RefreshSession,

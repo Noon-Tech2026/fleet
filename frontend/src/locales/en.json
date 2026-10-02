@@ -512,7 +512,22 @@
     "tripFeeHint": "Automatically recorded as a “Driver” expense of the truck for each confirmed trip.",
     "fees": "Fees",
     "feesTotal": "Total fees",
-    "feesCount": "{{n}} trip(s)"
+    "feesCount": "{{n}} trip(s)",
+    "ledger": {
+      "button": "Statement",
+      "title": "Driver statement",
+      "fees": "Fees",
+      "paid": "Paid",
+      "balance": "Balance due (total)",
+      "payments": "Payments",
+      "amount": "Amount (MRU)",
+      "notes": "Note",
+      "notesPh": "e.g. advance, monthly settlement",
+      "pay": "Record a payment",
+      "noFees": "No fees in this period.",
+      "noPayments": "No payments in this period.",
+      "confirmDelete": "Delete this payment?"
+    }
   },
   "clients": {
     "title": "Clients",
