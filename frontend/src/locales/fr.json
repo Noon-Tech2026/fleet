@@ -400,7 +400,11 @@
       "notesPlaceholder": "ex. attente au port",
       "save": "Enregistrer le voyage",
       "selectRefs": "Sélectionnez un client et un chauffeur.",
-      "editLocked": "Client, chauffeur, date et conteneurs ne se modifient pas après enregistrement. Supprimez et recréez le voyage si nécessaire."
+      "editLocked": "Client, chauffeur, date et conteneurs ne se modifient pas après enregistrement. Supprimez et recréez le voyage si nécessaire.",
+      "settlement": "Règlement",
+      "credit": "À crédit (dû par le client)",
+      "paid": "Payé comptant",
+      "settlementHint": "Payé : un crédit du même montant est porté automatiquement au journal du client."
     }
   },
   "zones": {

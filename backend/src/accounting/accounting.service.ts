@@ -37,6 +37,7 @@ export interface TripInput {
   origin?: string | null;
   destination?: string | null;
   amount: number;
+  paid?: boolean;
   notes?: string | null;
   containers: ContainerInput[];
 }
@@ -76,7 +77,7 @@ export class AccountingService {
   /** Solde du par client : voyages + ecritures debit - ecritures credit. */
   private async clientBalances(): Promise<Map<string, number>> {
     const [trips, entries] = await Promise.all([
-      this.tripsRepo.createQueryBuilder('t').select('t.clientId', 'id').addSelect('COALESCE(SUM(t.amount),0)', 'total').groupBy('t.clientId').getRawMany<{ id: string; total: string }>(),
+      this.tripsRepo.createQueryBuilder('t').select('t.clientId', 'id').addSelect('COALESCE(SUM(t.amount),0)', 'total').where('t.paid = 0').groupBy('t.clientId').getRawMany<{ id: string; total: string }>(),
       this.clientEntriesRepo.createQueryBuilder('e').select('e.clientId', 'id').addSelect("COALESCE(SUM(CASE WHEN e.kind='debit' THEN e.amount ELSE -e.amount END),0)", 'total').groupBy('e.clientId').getRawMany<{ id: string; total: string }>(),
     ]);
     const m = new Map<string, number>();
@@ -189,6 +190,7 @@ export class AccountingService {
         origin: input.origin ?? null,
         destination: input.destination ?? null,
         amount: input.amount.toFixed(2),
+        paid: input.paid ?? false,
         notes: input.notes ?? null,
         createdBy,
       }),
@@ -241,6 +243,7 @@ export class AccountingService {
       origin?: string | null;
       destination?: string | null;
       amount?: number;
+      paid?: boolean;
       notes?: string | null;
     },
   ): Promise<TripEntry> {
@@ -260,6 +263,7 @@ export class AccountingService {
     if (patch.origin !== undefined) trip.origin = patch.origin;
     if (patch.destination !== undefined) trip.destination = patch.destination;
     if (patch.notes !== undefined) trip.notes = patch.notes;
+    if (patch.paid !== undefined) trip.paid = patch.paid;
     if (patch.amount !== undefined) {
       if (patch.amount < 0) throw new BadRequestException('Le montant ne peut pas être négatif');
       trip.amount = patch.amount.toFixed(2);
@@ -426,14 +430,25 @@ export class AccountingService {
       this.tripsRepo.find({ where: { clientId } }),
       this.clientEntriesRepo.find({ where: { clientId } }),
     ]);
+    const containers = trips.length > 0 ? await this.containersRepo.find({ where: { tripId: In(trips.map((t) => t.id)) } }) : [];
+    const byTrip = new Map<string, typeof containers>();
+    for (const c of containers) byTrip.set(c.tripId, [...(byTrip.get(c.tripId) ?? []), c]);
+    const tripLabel = (t: Trip) => {
+      const cs = byTrip.get(t.id) ?? [];
+      const sizes = Array.from(new Set(cs.map((c) => String(c.size)))).map((sz) => `${cs.filter((c) => String(c.size) === sz).length}× ${sz}'`).join(' + ');
+      const nums = cs.map((c) => c.containerNumber).filter((n): n is string => !!n).join(', ');
+      const route = t.origin || t.destination ? ` · ${t.origin ?? '—'} → ${t.destination ?? '—'}` : '';
+      return `Voyage ${t.vehicleId}${sizes ? ' · ' + sizes : ''}${nums ? ' (' + nums + ')' : ''}${route}`;
+    };
     const lines = [
-      ...trips.map((t) => ({ id: `trip:${t.id}`, type: 'trip' as const, kind: 'debit' as const, at: t.startedAt.toISOString(), amount: Number(t.amount), label: `Voyage ${t.vehicleId} — ${t.origin ?? '—'} → ${t.destination ?? '—'}`, tripId: t.id, vehicleId: t.vehicleId, deletable: false })),
+      ...trips.map((t) => ({ id: `trip:${t.id}`, type: 'trip' as const, kind: 'debit' as const, at: t.startedAt.toISOString(), amount: Number(t.amount), label: tripLabel(t), tripId: t.id, vehicleId: t.vehicleId, deletable: false })),
+      ...trips.filter((t) => t.paid).map((t) => ({ id: `paid:${t.id}`, type: 'trip' as const, kind: 'credit' as const, at: t.startedAt.toISOString(), amount: Number(t.amount), label: `Paiement comptant — voyage ${t.vehicleId}`, tripId: t.id, vehicleId: t.vehicleId, deletable: false })),
       ...entries.map((e) => ({ id: e.id, type: 'entry' as const, kind: e.kind, at: e.at.toISOString(), amount: Number(e.amount), label: e.label, tripId: null, vehicleId: null, deletable: true })),
     ].sort((a, b) => b.at.localeCompare(a.at));
     const sum = (rows: { kind: string; amount: number }[], kind: string) => rows.filter((r) => r.kind === kind).reduce((a, r) => a + r.amount, 0);
     const periodDebit = sum(lines, 'debit'), periodCredit = sum(lines, 'credit');
     const allDebit = allTrips.reduce((a, t) => a + Number(t.amount), 0) + allEntries.filter((e) => e.kind === 'debit').reduce((a, e) => a + Number(e.amount), 0);
-    const allCredit = allEntries.filter((e) => e.kind === 'credit').reduce((a, e) => a + Number(e.amount), 0);
+    const allCredit = allTrips.filter((t) => t.paid).reduce((a, t) => a + Number(t.amount), 0) + allEntries.filter((e) => e.kind === 'credit').reduce((a, e) => a + Number(e.amount), 0);
     return {
       clientId,
       period: { debit: periodDebit, credit: periodCredit, balance: periodDebit - periodCredit },
@@ -567,6 +582,7 @@ export class AccountingService {
     }
 
     return trips.map((trip) => ({
+      paid: Boolean(trip.paid),
       id: trip.id,
       vehicleId: trip.vehicleId,
       driverId: trip.driverId,

@@ -109,6 +109,7 @@ class CreateTripDto {
   @IsOptional() @IsString() @MaxLength(160) origin?: string;
   @IsOptional() @IsString() @MaxLength(160) destination?: string;
   @IsNumber() @Min(0) @Max(1_000_000) amount: number;
+  @IsOptional() @IsBoolean() paid?: boolean;
   @IsOptional() @IsString() @MaxLength(2000) notes?: string;
 
   @IsArray()
@@ -126,6 +127,7 @@ class UpdateTripDto {
   @IsOptional() @IsString() @MaxLength(160) origin?: string;
   @IsOptional() @IsString() @MaxLength(160) destination?: string;
   @IsOptional() @IsNumber() @Min(0) @Max(1_000_000) amount?: number;
+  @IsOptional() @IsBoolean() paid?: boolean;
   @IsOptional() @IsString() @MaxLength(2000) notes?: string;
 
   @IsOptional()
@@ -303,6 +305,7 @@ export class AccountingController {
         origin: dto.origin ?? null,
         destination: dto.destination ?? null,
         amount: dto.amount,
+        paid: dto.paid ?? false,
         notes: dto.notes ?? null,
         containers: dto.containers.map((c) => ({
           containerNumber: c.containerNumber ?? null,

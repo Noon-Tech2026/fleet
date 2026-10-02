@@ -201,6 +201,7 @@ export interface TripEntry {
   origin: string | null;
   destination: string | null;
   amount: number;
+  paid: boolean;
   containers: TripContainerEntry[];
   notes: string | null;
   createdBy: string;

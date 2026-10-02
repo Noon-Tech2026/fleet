@@ -410,7 +410,11 @@
       "notesPlaceholder": "e.g. waiting at port",
       "save": "Save trip",
       "selectRefs": "Select a client and a driver.",
-      "editLocked": "Client, driver, date and containers cannot be changed after recording. Delete and re-create the trip if needed."
+      "editLocked": "Client, driver, date and containers cannot be changed after recording. Delete and re-create the trip if needed.",
+      "settlement": "Settlement",
+      "credit": "On credit (owed by client)",
+      "paid": "Paid in full",
+      "settlementHint": "Paid: a matching credit is automatically posted to the client ledger."
     }
   },
   "zones": {

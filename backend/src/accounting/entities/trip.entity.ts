@@ -42,6 +42,10 @@ export class Trip {
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 
+  /** Regle comptant a la saisie : le journal client porte alors un credit automatique. */
+  @Column({ default: false })
+  paid: boolean;
+
   @Column({ name: 'created_by', length: 190 })
   createdBy: string;
 

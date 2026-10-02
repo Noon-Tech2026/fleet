@@ -42,6 +42,7 @@ export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers
   const [destination, setDestination] = useState(initial?.destination ?? '');
   const [amount, setAmount] = useState(initial ? String(initial.amount) : '');
   const [notes, setNotes] = useState(initial?.notes ?? '');
+  const [paid, setPaid] = useState<boolean>(initial?.paid ?? false);
   const [rows, setRows] = useState<ContainerRow[]>(() =>
     initial
       ? initial.containers.map((c) => ({ key: rowKey++, containerNumber: c.containerNumber ?? '', size: c.size, loaded: c.loaded }))
@@ -81,6 +82,7 @@ export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers
             origin: origin.trim() || undefined,
             destination: destination.trim() || undefined,
             amount: Number(amount),
+        paid,
             notes: notes.trim() || undefined,
             containers: rows.map((r) => ({
               containerNumber: r.containerNumber.trim() || undefined,
@@ -220,6 +222,22 @@ export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers
             </div>
           ))}
         </div>
+
+        <label className="field">
+
+          <span>{t('dialog.trip.settlement')}</span>
+
+          <select value={paid ? 'paid' : 'credit'} onChange={(e) => setPaid(e.target.value === 'paid')}>
+
+            <option value="credit">{t('dialog.trip.credit')}</option>
+
+            <option value="paid">{t('dialog.trip.paid')}</option>
+
+          </select>
+
+          <p className="hint">{t('dialog.trip.settlementHint')}</p>
+
+        </label>
 
         <label className="field">
           <span>{t('dialog.trip.notes')}</span>
