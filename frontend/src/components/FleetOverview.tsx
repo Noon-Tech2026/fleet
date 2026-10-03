@@ -145,10 +145,8 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
                       {v.driver || t('overview.driverUnassigned')}
                     </div>
                     <div>
-                      <div className="ov-truck-id">{v.id}</div>
-                      <div className="ov-truck-sub" style={{ color: palette.glassPale }}>
-                        SHACMAN F3000 · {v.plate}
-                      </div>
+                      <div className="ov-truck-id">{v.id}{v.plate ? <span className="plate-badge ov" dir="ltr">{v.plate}</span> : null}</div>
+                      <div className="ov-truck-sub" style={{ color: palette.glassPale }}>SHACMAN F3000</div>
                     </div>
                   </div>
                 </div>

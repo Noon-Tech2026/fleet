@@ -2821,3 +2821,11 @@ input::placeholder, textarea::placeholder { color: #64748b; opacity: 1; }
   line-height: 1.2; white-space: nowrap;
 }
 .plate-badge.sm { margin-inline-start: 0; padding: 1px 7px; font-size: 13px; border-width: 1.5px; border-radius: 5px; }
+
+/* === cartes-plaque-v1 === */
+.ov-truck-id { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }
+.plate-badge.ov {
+  margin: 0; padding: 1px 8px; font-size: 14px; line-height: 1.3;
+  border-width: 1.5px; border-color: rgba(23, 30, 36, 0.85);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}

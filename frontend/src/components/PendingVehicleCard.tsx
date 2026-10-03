@@ -19,10 +19,8 @@ export function PendingVehicleCard({ entry, canEdit, onEdit }: Props) {
             {t('overview.driverUnassigned')}
           </div>
           <div>
-            <div className="ov-truck-id">{entry.id}</div>
-            <div className="ov-truck-sub" style={{ color: '#EEF0F2' }}>
-              {entry.model || 'SHACMAN F3000'} · {entry.plate}
-            </div>
+            <div className="ov-truck-id">{entry.id}{entry.plate ? <span className="plate-badge ov" dir="ltr">{entry.plate}</span> : null}</div>
+            <div className=\"ov-truck-sub\" style={{ color: '#EEF0F2' }}>{entry.model || 'SHACMAN F3000'}</div>
           </div>
         </div>
       </div>
