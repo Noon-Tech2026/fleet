@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { openPrintReport, periodLabel } from '../lib/printReport';
 import { useTranslation } from 'react-i18next';
 import { api, type VersementRecord } from '../api/client';
 import { formatMoney } from '../lib/accounting';
@@ -34,6 +35,18 @@ export function VersementsPanel({ period, onChanged, showTotal = false }: Props)
     catch (err) { setError(err instanceof Error ? err.message : String(err)); }
     finally { setBusy(false); }
   }
+  async function print() {
+    const lang = i18n.language;
+    const total = rows.reduce((a, v) => a + v.amount, 0);
+    await openPrintReport({
+      title: t('versements.title'), period: periodLabel(period, lang, t('period.all')), lang, rtl: lang.startsWith('ar'),
+      labels: { printedOn: t('print.printedOn'), period: t('print.period'), page: '', total: t('clients.ledger.total') },
+      kpis: [{ label: t('overview.versements'), value: formatMoney(total), tone: 'warn' }, { label: t('versements.title'), value: String(rows.length), tone: 'neutral' }],
+      sections: [{ title: t('versements.title'), columns: [{ label: t('common.date'), width: '14%' }, { label: t('versements.label') }, { label: t('common.amount'), align: 'right', width: '18%' }],
+        rows: rows.map((v) => [fmtDate(v.at), v.label, formatMoney(v.amount)]),
+        total: [t('clients.ledger.total'), String(rows.length), formatMoney(total)], empty: t('versements.empty') }],
+    });
+  }
   async function remove(id: string) {
     if (window.confirm(t('versements.confirmDelete')) === false) return;
     await api.deleteVersement(id); await load(); onChanged();
@@ -42,6 +55,7 @@ export function VersementsPanel({ period, onChanged, showTotal = false }: Props)
   return (
     <section className="versements">
       {!showTotal && <h3>{t('versements.title')}</h3>}
+      {showTotal && <div className="chips" style={{ justifyContent: 'flex-end' }}><button className="btn ghost" onClick={() => void print()}>{t('common.print')}</button></div>}
       {showTotal && <div className="fleet-summary compact"><div className="summary-cell warn"><b>{formatMoney(rows.reduce((a, v) => a + v.amount, 0))}</b><span>{t('overview.versements')}</span></div></div>}
       {error && <p className="banner err">{error}</p>}
       {canWrite && (
