@@ -626,7 +626,14 @@
     "noExpenses": "Aucune charge enregistrée pour ce camion.",
     "noInvest": "Aucun investissement enregistré pour ce camion.",
     "route": "Trajet",
-    "containers": "Conteneurs"
+    "containers": "Conteneurs",
+    "expensesTitle": "Charges",
+    "investmentsTitle": "Investissements",
+    "category": "Catégorie",
+    "reference": "Référence",
+    "description": "Description",
+    "noInvestments": "Aucun investissement",
+    "noVehicles": "Aucun camion"
   },
   "starter": {
     "neverMoving": "Cette commande ne coupe jamais un moteur en marche.",
@@ -691,6 +698,8 @@
   },
   "print": {
     "period": "Période",
-    "printedOn": "Imprimé le"
+    "printedOn": "Imprimé le",
+    "fleetReport": "Rapport de synthèse de la flotte",
+    "byVehicle": "Détail par camion"
   }
 }

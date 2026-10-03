@@ -636,7 +636,14 @@
     "noExpenses": "No expenses recorded for this truck.",
     "noInvest": "No investments recorded for this truck.",
     "route": "Route",
-    "containers": "Containers"
+    "containers": "Containers",
+    "expensesTitle": "Expenses",
+    "investmentsTitle": "Investments",
+    "category": "Category",
+    "reference": "Reference",
+    "description": "Description",
+    "noInvestments": "No investment",
+    "noVehicles": "No truck"
   },
   "starter": {
     "neverMoving": "This command never cuts the engine of a moving truck.",
@@ -701,6 +708,8 @@
   },
   "print": {
     "period": "Period",
-    "printedOn": "Printed on"
+    "printedOn": "Printed on",
+    "fleetReport": "Fleet summary report",
+    "byVehicle": "Detail by truck"
   }
 }

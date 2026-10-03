@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { PrintHeader } from '../components/PrintHeader';
+import { openPrintReport, periodLabel } from '../lib/printReport';
 import { useExpenseCategories } from '../lib/useExpenseCategories';
 import { useTranslation } from 'react-i18next';
 import type {
@@ -37,7 +37,7 @@ export function VehicleAccountingPanel({
   onBack,
 }: Props) {
   const { label: categoryLabel } = useExpenseCategories();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [summary, setSummary] = useState<VehicleAccountingSummary | null>(null);
   const [trips, setTrips] = useState<TripEntry[] | null>(null);
   const [expenses, setExpenses] = useState<VehicleExpenseEntry[] | null>(null);
@@ -107,15 +107,42 @@ export function VehicleAccountingPanel({
     void load();
   }, [load]);
 
+  async function printVehicle() {
+    const lang = i18n.language;
+    const d = (iso: string) => new Date(iso).toLocaleDateString(lang);
+    const tr = trips ?? [], ex = expenses ?? [], inv = investments ?? [];
+    await openPrintReport({
+      title: `${t('accounting.title')} — ${vehicleId}`, subtitle: plate ?? undefined,
+      period: periodLabel(period, lang, t('period.all')), lang, rtl: lang.startsWith('ar'),
+      labels: { printedOn: t('print.printedOn'), period: t('print.period'), page: '', total: t('clients.ledger.total') },
+      kpis: [
+        { label: t('accounting.revenue'), value: formatMoney(summary?.revenue ?? 0), tone: 'ok' },
+        { label: t('accounting.expenses'), value: formatMoney(summary?.expenses ?? 0), tone: 'danger' },
+        { label: t('accounting.investments'), value: formatMoney(summary?.investments ?? 0), tone: 'neutral' },
+        { label: t('accounting.net'), value: formatMoney(summary?.netResult ?? 0), tone: (summary?.netResult ?? 0) >= 0 ? 'ok' : 'danger' },
+      ],
+      sections: [
+        { title: t('accounting.trips'), columns: [{ label: t('common.date'), width: '11%' }, { label: t('common.client') }, { label: t('common.driver') }, { label: t('accounting.route') }, { label: t('accounting.containers') }, { label: t('common.amount'), align: 'right', width: '14%' }],
+          rows: tr.map((x) => [d(x.startedAt), x.clientName, x.driverName, `${x.origin ?? '—'} → ${x.destination ?? '—'}`, x.containers.map((c) => `${c.containerNumber ?? '?'} (${c.size}')`).join(' · ') || '—', formatMoney(x.amount) + (x.paid ? ' ✓' : '')]),
+          total: [t('clients.ledger.total'), '', '', '', String(tr.length), formatMoney(tr.reduce((a, x) => a + x.amount, 0))], empty: t('accounting.noTrips') },
+        { title: t('accounting.expensesTitle'), columns: [{ label: t('common.date'), width: '11%' }, { label: t('accounting.category') }, { label: t('accounting.reference') }, { label: t('common.amount'), align: 'right', width: '14%' }],
+          rows: ex.map((x) => [d(x.at), categoryLabel(x.category), [x.reference, x.tripContainers].filter(Boolean).join(' · ') || '—', formatMoney(x.amount)]),
+          total: [t('clients.ledger.total'), '', '', formatMoney(ex.reduce((a, x) => a + x.amount, 0))], empty: t('accounting.noExpenses') },
+        { title: t('accounting.investmentsTitle'), columns: [{ label: t('common.date'), width: '11%' }, { label: t('common.type') }, { label: t('accounting.description') }, { label: t('common.amount'), align: 'right', width: '14%' }],
+          rows: inv.map((x) => [d(x.at), INVESTMENT_KIND_LABEL[x.kind], x.description ?? '—', formatMoney(x.amount)]),
+          total: [t('clients.ledger.total'), '', '', formatMoney(inv.reduce((a, x) => a + x.amount, 0))], empty: t('accounting.noInvestments') },
+      ],
+    });
+  }
+
   return (
     <div className="accounting-detail">
-      <PrintHeader title={`${t('accounting.title')} — ${vehicleId}${plate ? ' · ' + plate : ''}`} period={period} />
       <div className="page-toolbar">
         <div className="toolbar-right">
           <button className="btn ghost small" onClick={onBack}>
             {t('accounting.back')}
           </button>
-          <button className="btn ghost small no-print" onClick={() => window.print()}>{t('common.print')}</button>
+          <button className="btn ghost small no-print" onClick={() => void printVehicle()}>{t('common.print')}</button>
           <PeriodFilter value={period} onChange={setPeriod} />
           <h3 className="col-title">
             {vehicleId} <span className="cell-sub">{plate}</span>

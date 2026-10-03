@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { PrintHeader } from '../components/PrintHeader';
+import { openPrintReport, periodLabel } from '../lib/printReport';
+import { useTranslation as useT2 } from 'react-i18next';
 import { api as apiClient, type AccountingOverview } from '../api/client';
 import { ExpenseCategoriesDialog } from './ExpenseCategoriesDialog';
 import { useTranslation } from 'react-i18next';
@@ -59,16 +60,43 @@ export function AccountingPage() {
 
   const selectedVehicle = selectedVehicleId ? byVehicle.get(selectedVehicleId) : undefined;
 
+  const { i18n } = useT2();
+  async function printOverview() {
+    if (!overview) return;
+    const lang = i18n.language;
+    await openPrintReport({
+      title: t('accounting.title'), subtitle: t('print.fleetReport'),
+      period: periodLabel(period, lang, t('period.all')), lang, rtl: lang.startsWith('ar'),
+      labels: { printedOn: t('print.printedOn'), period: t('print.period'), page: '', total: t('clients.ledger.total') },
+      kpis: [
+        { label: t('overview.revenue'), value: formatMoney(overview.revenue), tone: 'ok' },
+        { label: t('overview.driverCharges'), value: formatMoney(overview.driverCharges), tone: 'danger' },
+        { label: t('overview.truckCharges'), value: formatMoney(overview.truckCharges), tone: 'danger' },
+        { label: t('overview.afterCharges'), value: formatMoney(overview.afterCharges), tone: overview.afterCharges >= 0 ? 'ok' : 'danger' },
+        { label: t('overview.versements'), value: formatMoney(overview.versements), tone: 'warn' },
+        { label: t('overview.afterVersements'), value: formatMoney(overview.afterVersements), tone: overview.afterVersements >= 0 ? 'ok' : 'danger' },
+        { label: t('overview.investments'), value: formatMoney(overview.investments), tone: 'neutral' },
+        { label: t('overview.afterInvestments'), value: formatMoney(overview.afterInvestments), tone: overview.afterInvestments >= 0 ? 'ok' : 'danger' },
+      ],
+      sections: [{
+        title: t('print.byVehicle'),
+        columns: [{ label: t('common.truck') }, { label: t('accounting.trips'), align: 'center', width: '9%' }, { label: t('accounting.fleetRevenue'), align: 'right' }, { label: t('accounting.fleetExpenses'), align: 'right' }, { label: t('accounting.fleetInvest'), align: 'right' }, { label: t('accounting.fleetNet'), align: 'right' }],
+        rows: (summaries ?? []).map((x) => [`${x.vehicleId}${byVehicle.get(x.vehicleId)?.plate ? ' · ' + byVehicle.get(x.vehicleId)?.plate : ''}`, x.tripsCount, formatMoney(x.revenue), formatMoney(x.expenses), formatMoney(x.investments), formatMoney(x.netResult)]),
+        total: [t('clients.ledger.total'), (summaries ?? []).reduce((a, x) => a + x.tripsCount, 0), formatMoney((summaries ?? []).reduce((a, x) => a + x.revenue, 0)), formatMoney((summaries ?? []).reduce((a, x) => a + x.expenses, 0)), formatMoney((summaries ?? []).reduce((a, x) => a + x.investments, 0)), formatMoney((summaries ?? []).reduce((a, x) => a + x.netResult, 0))],
+        empty: t('accounting.noVehicles'),
+      }],
+    });
+  }
+
   return (
     <main className="page">
-      {selectedVehicleId === null && <PrintHeader title={t('accounting.title')} period={period} />}
       <header className="page-head">
         <div>
           <h2>{t('accounting.title')}</h2>
           {selectedVehicleId === null && <PeriodFilter value={period} onChange={setPeriod} />}
         </div>
         <div className="chips no-print">
-          {selectedVehicleId === null && <button className="btn ghost" onClick={() => window.print()}>{t('common.print')}</button>}
+          {selectedVehicleId === null && <button className="btn ghost" onClick={() => void printOverview()}>{t('common.print')}</button>}
           {can('admin') && <button className="btn ghost" onClick={() => setCatalogOpen(true)}>{t('expenseCat.button')}</button>}
         </div>
       </header>

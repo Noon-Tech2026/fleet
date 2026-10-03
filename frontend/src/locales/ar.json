@@ -636,7 +636,14 @@
     "noExpenses": "لا مصاريف مسجلة لهذه الشاحنة.",
     "noInvest": "لا استثمارات مسجلة لهذه الشاحنة.",
     "route": "المسار",
-    "containers": "الحاويات"
+    "containers": "الحاويات",
+    "expensesTitle": "المصاريف",
+    "investmentsTitle": "الاستثمارات",
+    "category": "الفئة",
+    "reference": "المرجع",
+    "description": "الوصف",
+    "noInvestments": "لا استثمارات",
+    "noVehicles": "لا شاحنات"
   },
   "starter": {
     "neverMoving": "هذا الأمر لا يقطع محرك شاحنة تتحرك أبداً.",
@@ -701,6 +708,8 @@
   },
   "print": {
     "period": "الفترة",
-    "printedOn": "تاريخ الطباعة"
+    "printedOn": "تاريخ الطباعة",
+    "fleetReport": "تقرير ملخص الأسطول",
+    "byVehicle": "التفصيل حسب الشاحنة"
   }
 }
