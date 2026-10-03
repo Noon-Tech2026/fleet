@@ -30,7 +30,7 @@ import { CommandLog } from '../auth/entities/command-log.entity';
  * ============================================================================
  */
 
-const SPEED_THRESHOLD = 9; // km/h — decision client 19/09/2026 (la vitesse GPS saute de 9 a 0 ; 3 km/h etait juge trop strict)
+const SPEED_THRESHOLD = 3; // km/h — decision client 19/09/2026 (la vitesse GPS saute de 9 a 0 ; 3 km/h etait juge trop strict)
 const STATIONARY_MS = 10_000; // duree d'immobilite requise
 const ACK_TIMEOUT_MS = 15_000; // delai max pour que le boitier confirme DOUT1
 
