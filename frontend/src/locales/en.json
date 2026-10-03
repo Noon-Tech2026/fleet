@@ -506,7 +506,8 @@
     "phone": "Phone",
     "contact": "Contact",
     "truck": "Truck",
-    "balance": "Balance"
+    "balance": "Balance",
+    "print": "Print"
   },
   "drivers": {
     "title": "Drivers",
@@ -697,5 +698,9 @@
     "add": "Record withdrawal",
     "empty": "No withdrawal in this period.",
     "confirmDelete": "Delete this withdrawal?"
+  },
+  "print": {
+    "period": "Period",
+    "printedOn": "Printed on"
   }
 }

@@ -481,13 +481,22 @@ export class AccountingService implements OnModuleInit {
   /* --- charges -------------------------------------------------------------- */
 
   async expensesFor(vehicleId: string, limit = 200, range?: DateRange): Promise<VehicleExpenseEntry[]> {
+    // Conteneurs des voyages lies (pour les primes chauffeur)
+    const contOf = async (rows: { tripId: string | null }[]) => {
+      const ids = Array.from(new Set(rows.map((r) => r.tripId).filter((x): x is string => !!x)));
+      const cs = ids.length ? await this.containersRepo.find({ where: { tripId: In(ids) } }) : [];
+      const m = new Map<string, string>();
+      for (const c of cs) m.set(c.tripId, [m.get(c.tripId), `${c.containerNumber ?? '?'} (${c.size}')`].filter(Boolean).join(' · '));
+      return m;
+    };
     const d = dateWhere(range);
     const rows = await this.expensesRepo.find({
       where: { vehicleId, ...(d ? { at: d } : {}) },
       order: { at: 'DESC' },
       take: limit,
     });
-    return rows.map(toExpenseEntry);
+    const cont = await contOf(rows);
+    return rows.map((r) => ({ ...toExpenseEntry(r), tripContainers: r.tripId ? cont.get(r.tripId) ?? null : null }));
   }
 
   async addExpense(
@@ -602,6 +611,8 @@ export class AccountingService implements OnModuleInit {
     const trip = await this.tripsRepo.findOne({ where: { id } });
     if (!trip) throw new NotFoundException('Voyage inconnu');
     await this.containersRepo.delete({ tripId: id });
+    // Charges rattachees au voyage (prime chauffeur) : supprimees avec lui
+    await this.expensesRepo.delete({ tripId: id });
     await this.tripsRepo.delete({ id });
   }
 

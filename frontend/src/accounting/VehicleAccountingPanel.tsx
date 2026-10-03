@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { PrintHeader } from '../components/PrintHeader';
 import { useExpenseCategories } from '../lib/useExpenseCategories';
 import { useTranslation } from 'react-i18next';
 import type {
@@ -108,11 +109,13 @@ export function VehicleAccountingPanel({
 
   return (
     <div className="accounting-detail">
+      <PrintHeader title={`${t('accounting.title')} — ${vehicleId}${plate ? ' · ' + plate : ''}`} period={period} />
       <div className="page-toolbar">
         <div className="toolbar-right">
           <button className="btn ghost small" onClick={onBack}>
             {t('accounting.back')}
           </button>
+          <button className="btn ghost small no-print" onClick={() => window.print()}>{t('common.print')}</button>
           <PeriodFilter value={period} onChange={setPeriod} />
           <h3 className="col-title">
             {vehicleId} <span className="cell-sub">{plate}</span>
@@ -275,7 +278,7 @@ export function VehicleAccountingPanel({
                   <tr key={e.id}>
                     <td>{new Date(e.at).toLocaleDateString('fr-FR')}</td>
                     <td>{categoryLabel(e.category)}</td>
-                    <td className="cell-muted">{e.reference ?? '—'}</td>
+                    <td className="cell-muted">{e.reference ?? '—'}{e.tripContainers && <div className="cell-sub">{e.tripContainers}</div>}</td>
                     <td>{formatMoney(e.amount)}</td>
                     {canManageMoney && (
                       <td className="cell-actions">

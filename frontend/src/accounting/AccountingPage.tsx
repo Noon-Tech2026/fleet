@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { PrintHeader } from '../components/PrintHeader';
 import { api as apiClient, type AccountingOverview } from '../api/client';
 import { ExpenseCategoriesDialog } from './ExpenseCategoriesDialog';
 import { useTranslation } from 'react-i18next';
@@ -60,12 +61,16 @@ export function AccountingPage() {
 
   return (
     <main className="page">
+      {selectedVehicleId === null && <PrintHeader title={t('accounting.title')} period={period} />}
       <header className="page-head">
         <div>
           <h2>{t('accounting.title')}</h2>
           {selectedVehicleId === null && <PeriodFilter value={period} onChange={setPeriod} />}
         </div>
-        {can('admin') && <button className="btn ghost" onClick={() => setCatalogOpen(true)}>{t('expenseCat.button')}</button>}
+        <div className="chips no-print">
+          {selectedVehicleId === null && <button className="btn ghost" onClick={() => window.print()}>{t('common.print')}</button>}
+          {can('admin') && <button className="btn ghost" onClick={() => setCatalogOpen(true)}>{t('expenseCat.button')}</button>}
+        </div>
       </header>
       {catalogOpen && <ExpenseCategoriesDialog onClose={() => setCatalogOpen(false)} />}
 

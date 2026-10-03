@@ -496,7 +496,8 @@
     "phone": "Téléphone",
     "contact": "Contact",
     "truck": "Camion",
-    "balance": "Solde"
+    "balance": "Solde",
+    "print": "Imprimer"
   },
   "drivers": {
     "title": "Chauffeurs",
@@ -687,5 +688,9 @@
     "add": "Enregistrer le versement",
     "empty": "Aucun versement sur la période.",
     "confirmDelete": "Supprimer ce versement ?"
+  },
+  "print": {
+    "period": "Période",
+    "printedOn": "Imprimé le"
   }
 }

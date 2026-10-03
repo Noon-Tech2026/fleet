@@ -2762,3 +2762,29 @@ strong, b, th, label > span, .summary-cell b, .nav-tab, .btn { font-weight: 700;
 @media (min-width: 1500px) {
   .topbar .nav { order: 0; width: auto; }
 }
+
+/* ---- Impression ---- */
+.print-header { display: none; }
+@media print {
+  @page { size: A4 portrait; margin: 12mm; }
+  html { font-size: 12px; }
+  body { background: #fff !important; color: #000 !important; }
+  .topbar, .nav, .no-print, .btn, .page-toolbar .dropdown, .period-filter, .switch, .cell-actions, .dialog, .modal-backdrop, .map, .sidebar { display: none !important; }
+  .page, .accounting-detail { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+  .print-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 12px; }
+  .print-brand { font-size: 18px; font-weight: 800; letter-spacing: .04em; }
+  .print-title { font-size: 14px; font-weight: 600; }
+  .print-meta { font-size: 11px; text-align: right; color: #333; }
+  .fleet-summary { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 6px !important; }
+  .summary-cell { border: 1px solid #999 !important; box-shadow: none !important; background: #fff !important; padding: 6px 8px !important; break-inside: avoid; }
+  .summary-cell b { font-size: 14px !important; color: #000 !important; }
+  .summary-cell span { color: #333 !important; }
+  table, .table { width: 100% !important; border-collapse: collapse !important; font-size: 11px !important; }
+  th, td { border: 1px solid #bbb !important; padding: 4px 6px !important; color: #000 !important; background: #fff !important; }
+  th { background: #eee !important; }
+  tr { break-inside: avoid; }
+  h2, h3 { color: #000 !important; break-after: avoid; margin: 10px 0 6px !important; }
+  .text-danger { color: #a00 !important; } .text-success { color: #060 !important; }
+  .badge { border: 1px solid #999 !important; background: #fff !important; color: #000 !important; }
+  a[href]::after { content: '' !important; }
+}

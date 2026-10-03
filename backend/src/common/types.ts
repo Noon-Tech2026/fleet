@@ -224,6 +224,8 @@ export interface VehicleExpenseEntry {
   amount: number;
   at: string;
   reference: string | null;
+  /** Conteneurs du voyage lie (prime chauffeur). */
+  tripContainers?: string | null;
   notes: string | null;
   createdBy: string;
 }
