@@ -11,8 +11,8 @@ interface Props {
 export function PendingVehicleCard({ entry, canEdit, onEdit }: Props) {
   const { t } = useTranslation();
   return (
-    <article className="ov-card" style={{ opacity: 0.85 }}>
-      <div className="ov-truck-wrap" style={{ background: '#9AA3AC', minHeight: 96 }}>
+    <article className="ov-card" style={{ opacity: 1 }}>
+      <div className="ov-truck-wrap" style={{ background: '#4B5563', minHeight: 96 }}>
         <div className="ov-truck-info">
           <div className="ov-truck-driver" style={{ color: '#EEF0F2' }}>
             <span className="dot" style={{ background: '#D8DCE0' }} />
@@ -20,7 +20,7 @@ export function PendingVehicleCard({ entry, canEdit, onEdit }: Props) {
           </div>
           <div>
             <div className="ov-truck-id">{entry.id}{entry.plate ? <span className="plate-badge ov" dir="ltr">{entry.plate}</span> : null}</div>
-            <div className=\"ov-truck-sub\" style={{ color: '#EEF0F2' }}>{entry.model || 'SHACMAN F3000'}</div>
+            <div className="ov-truck-sub" style={{ color: '#EEF0F2' }}>{entry.model || 'SHACMAN F3000'}</div>
           </div>
         </div>
       </div>
