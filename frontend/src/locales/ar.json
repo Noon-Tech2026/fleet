@@ -645,7 +645,8 @@
     "reference": "المرجع",
     "description": "الوصف",
     "noInvestments": "لا استثمارات",
-    "noVehicles": "لا شاحنات"
+    "noVehicles": "لا شاحنات",
+    "searchVehicle": "بحث عن شاحنة أو لوحة"
   },
   "starter": {
     "neverMoving": "هذا الأمر لا يقطع محرك شاحنة تتحرك أبداً.",

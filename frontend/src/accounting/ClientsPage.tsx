@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { openPrintReport } from '../lib/printReport';
 import { formatMoney } from '../lib/accounting';
 import { ClientLedgerDialog } from './ClientLedgerDialog';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +11,22 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ClientDialog } from './ClientDialog';
 
 export function ClientsPage() {
+  const { i18n } = useTranslation();
+  async function printList(rows: ClientRecord[]) {
+    const lang = i18n.language;
+    await openPrintReport({
+      title: t('nav.clients'), period: '—', lang, rtl: lang.startsWith('ar'),
+      labels: { printedOn: t('print.printedOn'), period: t('print.period'), page: '', total: t('clients.ledger.total') },
+      kpis: [
+        { label: t('nav.clients'), value: String(rows.length), tone: 'neutral' },
+        { label: t('common.active'), value: String(rows.filter((c) => c.active).length), tone: 'ok' },
+        { label: t('clients.ledger.balance'), value: formatMoney(rows.reduce((a, c) => a + (c.balance ?? 0), 0)), tone: 'warn' },
+      ],
+      sections: [{ title: t('nav.clients'), columns: [{ label: t('common.client') }, { label: t('common.contact') }, { label: t('common.notes') }, { label: t('common.status'), align: 'center', width: '10%' }, { label: t('common.balance'), align: 'right', width: '16%' }],
+        rows: rows.map((c) => [c.name, c.contact ?? '—', c.notes ?? '—', c.active ? t('common.active') : t('common.inactive'), formatMoney(c.balance ?? 0)]),
+        total: [t('clients.ledger.total'), '', '', String(rows.length), formatMoney(rows.reduce((a, c) => a + (c.balance ?? 0), 0))] }],
+    });
+  }
   const { t } = useTranslation();
   const { can } = useAuth();
   const canManage = can('supervisor');
@@ -78,9 +95,12 @@ export function ClientsPage() {
           <h2>{t('clients.title')}</h2>
         </div>
         {canManage && (
-          <button className="btn primary" onClick={() => setEditing('new')}>
-            {t('clients.new')}
-          </button>
+          <div className="chips">
+            <button className="btn ghost" onClick={() => void printList(clients ?? [])}>{t('common.print')}</button>
+            <button className="btn primary" onClick={() => setEditing('new')}>
+              {t('clients.new')}
+            </button>
+          </div>
         )}
       </header>
 

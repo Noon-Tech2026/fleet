@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { openPrintReport } from '../lib/printReport';
 import { formatMoney } from '../lib/accounting';
 import { DriverLedgerDialog } from './DriverLedgerDialog';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +11,22 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DriverDialog } from './DriverDialog';
 
 export function DriversPage() {
+  const { i18n } = useTranslation();
+  async function printList(rows: DriverRecord[]) {
+    const lang = i18n.language;
+    await openPrintReport({
+      title: t('nav.drivers'), period: '—', lang, rtl: lang.startsWith('ar'),
+      labels: { printedOn: t('print.printedOn'), period: t('print.period'), page: '', total: t('clients.ledger.total') },
+      kpis: [
+        { label: t('nav.drivers'), value: String(rows.length), tone: 'neutral' },
+        { label: t('common.active'), value: String(rows.filter((d) => d.active).length), tone: 'ok' },
+        { label: t('drivers.ledger.balance'), value: formatMoney(rows.reduce((a, d) => a + (d.balance ?? 0), 0)), tone: 'warn' },
+      ],
+      sections: [{ title: t('nav.drivers'), columns: [{ label: t('common.driver') }, { label: t('common.phone') }, { label: t('drivers.license') }, { label: t('common.truck') }, { label: t('drivers.salary'), align: 'right' }, { label: t('drivers.tripFee'), align: 'right' }, { label: t('common.balance'), align: 'right' }],
+        rows: rows.map((d) => [d.fullName, d.phone ?? '—', d.licenseNumber ?? '—', d.vehicleId ? (plateOf(d.vehicleId) ?? d.vehicleId) : '—', formatMoney(d.monthlySalary ?? 0), formatMoney(d.tripFee ?? 0), formatMoney(d.balance ?? 0)]),
+        total: [t('clients.ledger.total'), '', '', String(rows.length), '', '', formatMoney(rows.reduce((a, d) => a + (d.balance ?? 0), 0))] }],
+    });
+  }
   const [plates, setPlates] = useState<Record<string, string>>({});
   useEffect(() => {
     api.fleetVehicles().then((v) => {
@@ -87,9 +104,12 @@ export function DriversPage() {
           <h2>{t('drivers.title')}</h2>
         </div>
         {canManage && (
-          <button className="btn primary" onClick={() => setEditing('new')}>
-            {t('drivers.new')}
-          </button>
+          <div className="chips">
+            <button className="btn ghost" onClick={() => void printList(drivers ?? [])}>{t('common.print')}</button>
+            <button className="btn primary" onClick={() => setEditing('new')}>
+              {t('drivers.new')}
+            </button>
+          </div>
         )}
       </header>
 

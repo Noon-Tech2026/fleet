@@ -645,7 +645,8 @@
     "reference": "Reference",
     "description": "Description",
     "noInvestments": "No investment",
-    "noVehicles": "No truck"
+    "noVehicles": "No truck",
+    "searchVehicle": "Search a truck or a plate"
   },
   "starter": {
     "neverMoving": "This command never cuts the engine of a moving truck.",

@@ -635,7 +635,8 @@
     "reference": "Référence",
     "description": "Description",
     "noInvestments": "Aucun investissement",
-    "noVehicles": "Aucun camion"
+    "noVehicles": "Aucun camion",
+    "searchVehicle": "Rechercher un camion ou une plaque"
   },
   "starter": {
     "neverMoving": "Cette commande ne coupe jamais un moteur en marche.",

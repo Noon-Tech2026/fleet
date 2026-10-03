@@ -21,6 +21,7 @@ export function AccountingPage() {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>({});
+  const [vehicleQuery, setVehicleQuery] = useState('');
   const [overview, setOverview] = useState<AccountingOverview | null>(null);
   useEffect(() => { apiClient.accountingOverview(period).then(setOverview).catch(() => setOverview(null)); }, [period]);
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -96,6 +97,7 @@ export function AccountingPage() {
           {selectedVehicleId === null && <PeriodFilter value={period} onChange={setPeriod} />}
         </div>
         <div className="chips no-print">
+          {selectedVehicleId === null && <input className="search" value={vehicleQuery} onChange={(e) => setVehicleQuery(e.target.value)} placeholder={t('accounting.searchVehicle')} />}
           {selectedVehicleId === null && <button className="btn ghost" onClick={() => void printOverview()}>{t('common.print')}</button>}
           {can('admin') && <button className="btn ghost" onClick={() => setCatalogOpen(true)}>{t('expenseCat.button')}</button>}
         </div>
@@ -150,7 +152,12 @@ export function AccountingPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {summaries.map((s) => (
+                  {summaries.filter((s) => {
+                    const q = vehicleQuery.trim().toLowerCase();
+                    if (!q) return true;
+                    const plate = (byVehicle.get(s.vehicleId)?.plate ?? '').toLowerCase().replace(/\s+/g, '');
+                    return s.vehicleId.toLowerCase().includes(q) || plate.includes(q.replace(/\s+/g, ''));
+                  }).map((s) => (
                     <tr key={s.vehicleId}>
                       <td>
                         <strong>{s.vehicleId}</strong>

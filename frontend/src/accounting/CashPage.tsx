@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { openPrintReport, periodLabel } from '../lib/printReport';
 import { useTranslation } from 'react-i18next';
 import { api, type CashJournal } from '../api/client';
 import { formatMoney } from '../lib/accounting';
@@ -41,6 +42,22 @@ export function CashPage() {
     } catch (err) { setError(err instanceof Error ? err.message : String(err)); }
     finally { setBusy(false); }
   }
+  async function print() {
+    if (!journal) return;
+    const lang = i18n.language;
+    await openPrintReport({
+      title: t('cash.title'), period: periodLabel(period, lang, t('period.all')), lang, rtl: lang.startsWith('ar'),
+      labels: { printedOn: t('print.printedOn'), period: t('print.period'), page: '', total: t('clients.ledger.total') },
+      kpis: [
+        { label: t('cash.debit'), value: formatMoney(journal.period.debit), tone: 'ok' },
+        { label: t('cash.credit'), value: formatMoney(journal.period.credit), tone: 'danger' },
+        { label: t('cash.balance'), value: formatMoney(journal.overall.balance), tone: journal.overall.balance >= 0 ? 'ok' : 'danger' },
+      ],
+      sections: [{ title: t('cash.title'), columns: [{ label: t('common.date'), width: '11%' }, { label: t('clients.ledger.label') }, { label: t('cash.source'), width: '11%' }, { label: t('cash.debit'), align: 'right', width: '13%' }, { label: t('cash.credit'), align: 'right', width: '13%' }, { label: t('clients.ledger.solde'), align: 'right', width: '13%' }],
+        rows: rows.map((l) => [fmtDate(l.at), l.label, t(`cash.src.${l.source}`), l.kind === 'debit' ? formatMoney(l.amount) : '', l.kind === 'credit' ? formatMoney(l.amount) : '', formatMoney(l.balance)]),
+        total: [t('clients.ledger.total'), '', '', formatMoney(journal.period.debit), formatMoney(journal.period.credit), formatMoney(journal.period.balance)], empty: t('cash.empty') }],
+    });
+  }
   async function remove(id: string) {
     if (window.confirm(t('cash.confirmDelete')) === false) return;
     await api.deleteCashEntry(id); await load();
@@ -60,6 +77,7 @@ export function CashPage() {
           <h2>{t('cash.title')}</h2>
           <PeriodFilter value={period} onChange={setPeriod} />
         </div>
+        <button className="btn ghost" onClick={() => void print()}>{t('common.print')}</button>
       </header>
       {error && <p className="banner err">{error}</p>}
 
