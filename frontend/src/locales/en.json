@@ -559,7 +559,9 @@
         "salary": "Salary",
         "advance": "Salary advance",
         "other": "Other"
-      }
+      },
+      "retourVide": "Empty return",
+      "markRetour": "Slip received"
     },
     "salary": "Monthly salary (MRU)",
     "vehicle": "Assigned truck",

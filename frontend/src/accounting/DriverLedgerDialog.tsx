@@ -99,9 +99,9 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
         { label: ledger.overall.balance < 0 ? t('drivers.ledger.driverOwes') : t('drivers.ledger.balance'), value: formatMoney(ledger.overall.balance), tone: ledger.overall.balance > 0 ? 'warn' : ledger.overall.balance < 0 ? 'danger' : 'ok' },
       ],
       sections: [
-        { title: t('drivers.ledger.fees'), columns: [{ label: t('common.date'), width: '11%' }, { label: t('common.truck'), width: '10%' }, { label: t('drivers.ledger.containers') }, { label: t('common.amount'), align: 'right', width: '14%' }, { label: t('common.status'), align: 'center', width: '10%' }],
-          rows: ledger.fees.map((f) => [fmtDate(f.at), f.vehicleId, (f.containers || '—') + (f.origin || f.destination ? ` · ${f.origin ?? '—'} → ${f.destination ?? '—'}` : ''), formatMoney(f.amount), f.paid ? t('drivers.ledger.paidBadge') : t('drivers.ledger.dueBadge')]),
-          total: [t('clients.ledger.total'), '', String(ledger.fees.length), formatMoney(ledger.fees.reduce((a, f) => a + f.amount, 0)), ''], empty: t('drivers.ledger.noFees') },
+        { title: t('drivers.ledger.fees'), columns: [{ label: t('common.date'), width: '11%' }, { label: t('common.truck'), width: '10%' }, { label: t('drivers.ledger.containers') }, { label: t('common.amount'), align: 'right', width: '14%' }, { label: t('common.status'), align: 'center', width: '10%' }, { label: t('drivers.ledger.retourVide'), align: 'center', width: '12%' }],
+          rows: ledger.fees.map((f) => [fmtDate(f.at), f.vehicleId, (f.containers || '—') + (f.origin || f.destination ? ` · ${f.origin ?? '—'} → ${f.destination ?? '—'}` : ''), formatMoney(f.amount), f.paid ? t('drivers.ledger.paidBadge') : t('drivers.ledger.dueBadge'), f.retourVideAt ? `✓ ${fmtDate(f.retourVideAt)}` : '—']),
+          total: [t('clients.ledger.total'), '', String(ledger.fees.length), formatMoney(ledger.fees.reduce((a, f) => a + f.amount, 0)), '', String(ledger.fees.filter((f) => f.retourVideAt).length) + ' ✓'], empty: t('drivers.ledger.noFees') },
         { title: t('drivers.ledger.salaries'), columns: [{ label: t('drivers.ledger.month'), width: '20%' }, { label: t('common.amount'), align: 'right', width: '20%' }, { label: t('common.status'), align: 'center', width: '15%' }],
           rows: ledger.salaries.map((x) => [x.month, formatMoney(x.amount), x.paid ? t('drivers.ledger.paidBadge') : t('drivers.ledger.dueBadge')]),
           total: [t('clients.ledger.total'), formatMoney(ledger.salaries.reduce((a, x) => a + x.amount, 0)), ''], empty: t('drivers.ledger.noSalaries') },
@@ -110,6 +110,13 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
           total: [t('clients.ledger.total'), '', '', formatMoney(ledger.payments.reduce((a, x) => a + x.amount, 0))], empty: t('drivers.ledger.noPayments') },
       ],
     });
+  }
+
+  async function toggleRetour(f: { expenseId: string; retourVideAt: string | null }) {
+    setBusy(true);
+    try { await api.setRetourVide(f.expenseId, !f.retourVideAt); await load(); }
+    catch (err) { setError(err instanceof Error ? err.message : String(err)); }
+    finally { setBusy(false); }
   }
 
   async function remove(id: string) {
@@ -194,7 +201,7 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
                       <button className="btn primary small" disabled={busy} onClick={() => void paySelection()}>{t('drivers.ledger.paySelection')}</button>
                     </div>
                   )}
-                  <table className="table small"><thead><tr>{canPay && <th />}<th>{t('common.date')}</th><th>{t('common.truck')}</th><th>{t('drivers.ledger.containers')}</th><th>{t('common.amount')}</th><th /></tr></thead>
+                  <table className="table small"><thead><tr>{canPay && <th />}<th>{t('common.date')}</th><th>{t('common.truck')}</th><th>{t('drivers.ledger.containers')}</th><th>{t('common.amount')}</th><th /><th>{t('drivers.ledger.retourVide')}</th></tr></thead>
                     <tbody>{ledger.fees.map((f) => (
                       <tr key={f.expenseId} className={f.paid ? 'is-off' : ''}>
                         {canPay && <td>{!f.paid && <input type="checkbox" checked={selected.has(f.expenseId)} onChange={() => toggle(f.expenseId)} />}</td>}
@@ -202,6 +209,13 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
                         <td className="cell-muted">{f.containers || '—'}{f.origin || f.destination ? ` · ${f.origin ?? '—'} → ${f.destination ?? '—'}` : ''}</td>
                         <td>{formatMoney(f.amount)}</td>
                         <td>{f.paid ? <span className="badge ok">{t('drivers.ledger.paidBadge')}</span> : <span className="badge warn">{t('drivers.ledger.dueBadge')}</span>}</td>
+                        <td>
+                          {canPay ? (
+                            <button className={`btn small ${f.retourVideAt ? 'mint' : 'ghost'}`} disabled={busy} title={f.retourVideAt ? `${fmtDate(f.retourVideAt)} · ${f.retourVideBy ?? ''}` : ''} onClick={() => void toggleRetour(f)}>
+                              {f.retourVideAt ? `✓ ${fmtDate(f.retourVideAt)}` : t('drivers.ledger.markRetour')}
+                            </button>
+                          ) : (f.retourVideAt ? <span className="badge ok">✓ {fmtDate(f.retourVideAt)}</span> : <span className="cell-muted">—</span>)}
+                        </td>
                       </tr>
                     ))}</tbody></table>
                   </>

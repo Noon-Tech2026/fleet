@@ -297,6 +297,12 @@ export class AccountingController {
     return this.accounting.removeDriverSalary(salaryId);
   }
 
+  @RequireRole(Role.Supervisor)
+  @Post('accounting/drivers/fees/:expenseId/retour-vide')
+  setRetourVide(@Param('expenseId') expenseId: string, @Body() body: { received?: boolean }, @CurrentUser() user: JwtPayload) {
+    return this.accounting.setRetourVide(expenseId, body?.received !== false, user.email);
+  }
+
   @RequireRole(Role.Admin)
   @Delete('accounting/drivers/payments/:paymentId')
   removeDriverPayment(@Param('paymentId') paymentId: string) {

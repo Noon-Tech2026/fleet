@@ -40,6 +40,13 @@ export class VehicleExpense {
   @Column({ name: 'driver_id', type: 'varchar', length: 36, nullable: true })
   driverId: string | null;
 
+  /** Bon de retour a vide (conteneur rendu) recu pour ce voyage : date de reception. */
+  @Column({ name: 'retour_vide_at', type: 'datetime', nullable: true })
+  retourVideAt: Date | null;
+
+  @Column({ name: 'retour_vide_by', type: 'varchar', length: 190, nullable: true })
+  retourVideBy: string | null;
+
   /** Paiement qui a regle cette prime (null = encore due). */
   @Column({ name: 'driver_payment_id', type: 'varchar', length: 36, nullable: true })
   driverPaymentId: string | null;

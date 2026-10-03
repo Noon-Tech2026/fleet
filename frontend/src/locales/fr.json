@@ -549,7 +549,9 @@
         "salary": "Salaire",
         "advance": "Avance sur salaire",
         "other": "Autre"
-      }
+      },
+      "retourVide": "Retour à vide",
+      "markRetour": "Bon reçu"
     },
     "salary": "Salaire mensuel (MRU)",
     "vehicle": "Camion attribué",

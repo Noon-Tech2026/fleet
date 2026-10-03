@@ -738,6 +738,16 @@ export class AccountingService implements OnModuleInit {
     return { id: p.id, kind: p.kind, at: p.at.toISOString(), amount: Number(p.amount), notes: p.notes, createdBy: p.createdBy };
   }
 
+  /** Marque / annule la reception du bon de retour a vide sur une prime. */
+  async setRetourVide(expenseId: string, received: boolean, actor: string): Promise<{ ok: true; retourVideAt: string | null }> {
+    const x = await this.expensesRepo.findOne({ where: { id: expenseId } });
+    if (!x || !x.driverId) throw new BadRequestException('Prime inconnue');
+    x.retourVideAt = received ? new Date() : null;
+    x.retourVideBy = received ? actor : null;
+    await this.expensesRepo.save(x);
+    return { ok: true, retourVideAt: x.retourVideAt ? x.retourVideAt.toISOString() : null };
+  }
+
   async removeDriverPayment(id: string): Promise<{ ok: true }> {
     await this.expensesRepo.update({ driverPaymentId: id }, { driverPaymentId: null });
     await this.salariesRepo.update({ driverPaymentId: id }, { driverPaymentId: null });
@@ -756,7 +766,7 @@ export class AccountingService implements OnModuleInit {
     for (const c of containers) contByTrip.set(c.tripId, [contByTrip.get(c.tripId), `${c.containerNumber ?? '?'} (${c.size}')`].filter(Boolean).join(' · '));
     const items = rows.map((r) => {
       const t = r.tripId ? byTrip.get(r.tripId) : undefined;
-      return { expenseId: r.id, tripId: r.tripId, vehicleId: r.vehicleId, at: r.at.toISOString(), amount: Number(r.amount), origin: t?.origin ?? null, destination: t?.destination ?? null, containers: r.tripId ? contByTrip.get(r.tripId) ?? '' : '', paid: r.driverPaymentId !== null };
+      return { expenseId: r.id, tripId: r.tripId, vehicleId: r.vehicleId, at: r.at.toISOString(), amount: Number(r.amount), origin: t?.origin ?? null, destination: t?.destination ?? null, containers: r.tripId ? contByTrip.get(r.tripId) ?? '' : '', paid: r.driverPaymentId !== null, retourVideAt: r.retourVideAt ? r.retourVideAt.toISOString() : null, retourVideBy: r.retourVideBy };
     });
     return { driverId, count: items.length, total: items.reduce((a, b) => a + b.amount, 0), items };
   }

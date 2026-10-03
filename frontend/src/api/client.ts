@@ -94,7 +94,7 @@ export interface DriverLedger {
   period: { fees: number; feesCount: number; salaries: number; paid: number; balance: number };
   overall: { fees: number; salaries: number; paid: number; balance: number };
   salaries: { id: string; month: string; amount: number; paid: boolean }[];
-  fees: { expenseId: string; tripId: string | null; vehicleId: string; at: string; amount: number; origin: string | null; destination: string | null; containers: string; paid: boolean }[];
+  fees: { expenseId: string; tripId: string | null; vehicleId: string; at: string; amount: number; origin: string | null; destination: string | null; containers: string; paid: boolean; retourVideAt: string | null; retourVideBy: string | null }[];
   payments: { id: string; kind: 'fee' | 'salary' | 'advance' | 'other'; at: string; amount: number; notes: string | null; createdBy: string }[];
 }
 
@@ -247,6 +247,8 @@ export const api = {
   deleteDriverSalary: (salaryId: string) => request<{ ok: true }>(`/api/accounting/drivers/salaries/${salaryId}`, { method: 'DELETE' }),
   addDriverPayment: (id: string, input: { amount?: number; feeIds?: string[]; salaryId?: string; kind?: 'fee' | 'salary' | 'advance' | 'other'; at?: string; notes?: string }) =>
     request<DriverLedger['payments'][number]>(`/api/accounting/drivers/${id}/payments`, { method: 'POST', body: JSON.stringify(input) }),
+  setRetourVide: (expenseId: string, received: boolean) =>
+    request<{ ok: true; retourVideAt: string | null }>(`/api/accounting/drivers/fees/${expenseId}/retour-vide`, { method: 'POST', body: JSON.stringify({ received }) }),
   deleteDriverPayment: (paymentId: string) =>
     request<{ ok: true }>(`/api/accounting/drivers/payments/${paymentId}`, { method: 'DELETE' }),
   driverFees: (id: string, range?: { from?: string; to?: string }) =>
