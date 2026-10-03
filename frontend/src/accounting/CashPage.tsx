@@ -4,6 +4,7 @@ import { api, type CashJournal } from '../api/client';
 import { formatMoney } from '../lib/accounting';
 import { useAuth } from '../auth/AuthContext';
 import { PeriodFilter, type Period } from './PeriodFilter';
+import DateInput from '../components/DateInput';
 
 /** Journal de caisse : entrees (debit), sorties (credit), solde cumule. */
 export function CashPage() {
@@ -79,7 +80,7 @@ export function CashPage() {
                 </select>
               </label>
               <label className="field inline"><span>{t('common.amount')}</span><input type="number" min="1" step="1" value={amount} onChange={(e) => setAmount(e.target.value)} required /></label>
-              <label className="field inline"><span>{t('common.date')}</span><input type="date" value={at} onChange={(e) => setAt(e.target.value)} /></label>
+              <label className="field inline"><span>{t('common.date')}</span><DateInput value={at} onChange={(e) => setAt(e.target.value)} /></label>
               <label className="field inline grow"><span>{t('clients.ledger.label')}</span><input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={t('cash.labelPh')} required /></label>
               <button className="btn primary" disabled={busy || !(Number(amount) > 0) || label.trim().length < 2}>{t('clients.ledger.add')}</button>
             </form>

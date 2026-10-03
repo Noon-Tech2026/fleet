@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ClientRecord, ContainerSize, DriverRecord, TripEntry } from '../lib/types';
 import { api } from '../api/client';
+import DateInput from '../components/DateInput';
 
 interface ContainerRow {
   key: number;
@@ -154,7 +155,7 @@ export function TripDialog({ vehicleId, clients: allClients, drivers: allDrivers
         <div className="field-grid">
           <label className="field">
             <span>{t('dialog.trip.date')}</span>
-            <input type="date" value={startedAt} onChange={(e) => setStartedAt(e.target.value)} required />
+            <DateInput value={startedAt} onChange={(e) => setStartedAt(e.target.value)} required />
           </label>
 
           <label className="field">

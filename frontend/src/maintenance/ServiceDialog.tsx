@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { MaintenancePlanState, VehicleState } from '../lib/types';
 import { intervalText, lastServiceText } from '../lib/maintenance';
 import { api } from '../api/client';
+import DateInput from '../components/DateInput';
 
 interface Props {
   plan: MaintenancePlanState;
@@ -82,7 +83,7 @@ export function ServiceDialog({ plan, vehicle, onCancel, onDone }: Props) {
 
         <label className="field">
           <span>Date de l'intervention</span>
-          <input type="date" value={at} onChange={(e) => setAt(e.target.value)} required />
+          <DateInput value={at} onChange={(e) => setAt(e.target.value)} required />
         </label>
 
         <div className="field-grid">

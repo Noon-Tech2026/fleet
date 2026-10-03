@@ -302,7 +302,7 @@ export function ZonesPage({ vehicles, directory, isAdmin }: Props) {
                         checked={vehicleIds.includes(d.id)}
                         onChange={(e) => setVehicleIds(e.target.checked ? [...vehicleIds, d.id] : vehicleIds.filter((x) => x !== d.id))}
                       />
-                      {d.id} <span className="muted" dir="ltr">{d.plate}</span>
+                      {d.id} {d.plate ? <span className="plate-badge sm" dir="ltr">{d.plate}</span> : null}
                     </label>
                   ))}
                 </div>

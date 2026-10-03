@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import DateInput from '../components/DateInput';
 
 export interface Period { from?: string; to?: string }
 
@@ -27,11 +28,11 @@ export function PeriodFilter({ value, onChange }: Props) {
     <div className="period-filter">
       <label className="field inline">
         <span>{t('period.from')}</span>
-        <input type="date" value={value.from ?? ''} onChange={(e) => onChange({ ...value, from: e.target.value || undefined })} />
+        <DateInput value={value.from ?? ''} onChange={(e) => onChange({ ...value, from: e.target.value || undefined })} />
       </label>
       <label className="field inline">
         <span>{t('period.to')}</span>
-        <input type="date" value={value.to ?? ''} onChange={(e) => onChange({ ...value, to: e.target.value || undefined })} />
+        <DateInput value={value.to ?? ''} onChange={(e) => onChange({ ...value, to: e.target.value || undefined })} />
       </label>
       <div className="chips">
         {(['month', 'lastMonth', 'year', 'all'] as const).map((k) => (

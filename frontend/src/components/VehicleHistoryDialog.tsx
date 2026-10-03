@@ -7,6 +7,7 @@ import { useAuth } from '../auth/AuthContext';
 import { TripDialog } from '../accounting/TripDialog';
 import { ExpenseDialog } from '../accounting/ExpenseDialog';
 import { InvestmentDialog } from '../accounting/InvestmentDialog';
+import DateInput from './DateInput';
 
 interface Props {
   vehicleId: string;
@@ -274,11 +275,11 @@ export function VehicleHistoryDialog({ vehicleId, plate, onClose }: Props) {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'end', marginBottom: 16 }}>
             <label className="field" style={{ margin: 0 }}>
               <span>{t('history.from')}</span>
-              <input type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} />
+              <DateInput value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} />
             </label>
             <label className="field" style={{ margin: 0 }}>
               <span>{t('history.to')}</span>
-              <input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} />
+              <DateInput value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} />
             </label>
             <div style={{ display: 'flex', gap: 6 }}>
               <button className="btn ghost small" onClick={() => quickRange(7)}>7j</button>

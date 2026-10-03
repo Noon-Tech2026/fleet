@@ -143,7 +143,7 @@ export function VehicleAccountingPanel({
             {t('accounting.back')}
           </button>
           <h3 className="col-title">
-            {vehicleId} <span className="cell-sub">{plate}</span>
+            {vehicleId} {plate ? <span className="plate-badge" dir="ltr">{plate}</span> : null}
           </h3>
         </div>
         <PeriodFilter value={period} onChange={setPeriod} />

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { VehicleInvestmentEntry, VehicleInvestmentKind } from '../lib/types';
 import { api } from '../api/client';
+import DateInput from '../components/DateInput';
 
 interface Props {
   vehicleId: string;
@@ -82,7 +83,7 @@ export function InvestmentDialog({ vehicleId, initial, onCancel, onDone }: Props
         <div className="field-grid">
           <label className="field">
             <span>{t('dialog.common.date')}</span>
-            <input type="date" value={at} onChange={(e) => setAt(e.target.value)} required />
+            <DateInput value={at} onChange={(e) => setAt(e.target.value)} required />
           </label>
 
           <label className="field">

@@ -154,7 +154,7 @@ export function AccountingPage() {
                     <tr key={s.vehicleId}>
                       <td>
                         <strong>{s.vehicleId}</strong>
-                        <div className="cell-sub">{byVehicle.get(s.vehicleId)?.plate ?? '—'}</div>
+                        <div className="cell-sub">{byVehicle.get(s.vehicleId)?.plate ? <span className="plate-badge sm" dir="ltr">{byVehicle.get(s.vehicleId)?.plate}</span> : '—'}</div>
                       </td>
                       <td>{s.tripsCount}</td>
                       <td>{formatMoney(s.revenue)}</td>

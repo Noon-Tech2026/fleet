@@ -5,6 +5,7 @@ import { api, type DriverLedger } from '../api/client';
 import { formatMoney } from '../lib/accounting';
 import { useAuth } from '../auth/AuthContext';
 import { PeriodFilter, type Period } from './PeriodFilter';
+import DateInput from '../components/DateInput';
 
 interface Props { driver: DriverRecord; onClose: () => void }
 
@@ -121,7 +122,7 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
                   </select>
                 </label>
                 <label className="field inline"><span>{t('drivers.ledger.amount')}</span><input type="number" min="1" step="1" value={amount} onChange={(e) => setAmount(e.target.value)} required /></label>
-                <label className="field inline"><span>{t('period.from')}</span><input type="date" value={at} onChange={(e) => setAt(e.target.value)} /></label>
+                <label className="field inline"><span>{t('period.from')}</span><DateInput value={at} onChange={(e) => setAt(e.target.value)} /></label>
                 <label className="field inline grow"><span>{t('drivers.ledger.notes')}</span><input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t('drivers.ledger.notesPh')} /></label>
                 <button className="btn primary" disabled={busy || !(Number(amount) > 0)}>{t('drivers.ledger.pay')}</button>
               </form>
