@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { openPrintReport, periodLabel } from '../lib/printReport';
 import { useTranslation } from 'react-i18next';
 import type { DriverRecord } from '../lib/types';
 import { api, type DriverLedger } from '../api/client';
@@ -84,6 +85,33 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
     catch (err) { setError(err instanceof Error ? err.message : String(err)); }
   }
 
+  async function print() {
+    if (!ledger) return;
+    const lang = i18n.language;
+    await openPrintReport({
+      title: t('drivers.ledger.title'), subtitle: `${driver.fullName}${driver.vehicleId ? ' · ' + driver.vehicleId : ''}`,
+      period: periodLabel(period, lang, t('period.all')), lang, rtl: lang.startsWith('ar'),
+      labels: { printedOn: t('print.printedOn'), period: t('print.period'), page: '', total: t('clients.ledger.total') },
+      kpis: [
+        { label: t('drivers.ledger.fees'), value: formatMoney(ledger.period.fees), tone: 'ok' },
+        { label: t('drivers.ledger.salaries'), value: formatMoney(ledger.period.salaries), tone: 'neutral' },
+        { label: t('drivers.ledger.paid'), value: formatMoney(ledger.period.paid), tone: 'neutral' },
+        { label: ledger.overall.balance < 0 ? t('drivers.ledger.driverOwes') : t('drivers.ledger.balance'), value: formatMoney(ledger.overall.balance), tone: ledger.overall.balance > 0 ? 'warn' : ledger.overall.balance < 0 ? 'danger' : 'ok' },
+      ],
+      sections: [
+        { title: t('drivers.ledger.fees'), columns: [{ label: t('common.date'), width: '11%' }, { label: t('common.truck'), width: '10%' }, { label: t('drivers.ledger.containers') }, { label: t('common.amount'), align: 'right', width: '14%' }, { label: t('common.status'), align: 'center', width: '10%' }],
+          rows: ledger.fees.map((f) => [fmtDate(f.at), f.vehicleId, (f.containers || '—') + (f.origin || f.destination ? ` · ${f.origin ?? '—'} → ${f.destination ?? '—'}` : ''), formatMoney(f.amount), f.paid ? t('drivers.ledger.paidBadge') : t('drivers.ledger.dueBadge')]),
+          total: [t('clients.ledger.total'), '', String(ledger.fees.length), formatMoney(ledger.fees.reduce((a, f) => a + f.amount, 0)), ''], empty: t('drivers.ledger.noFees') },
+        { title: t('drivers.ledger.salaries'), columns: [{ label: t('drivers.ledger.month'), width: '20%' }, { label: t('common.amount'), align: 'right', width: '20%' }, { label: t('common.status'), align: 'center', width: '15%' }],
+          rows: ledger.salaries.map((x) => [x.month, formatMoney(x.amount), x.paid ? t('drivers.ledger.paidBadge') : t('drivers.ledger.dueBadge')]),
+          total: [t('clients.ledger.total'), formatMoney(ledger.salaries.reduce((a, x) => a + x.amount, 0)), ''], empty: t('drivers.ledger.noSalaries') },
+        { title: t('drivers.ledger.payments'), columns: [{ label: t('common.date'), width: '11%' }, { label: t('common.type'), width: '18%' }, { label: t('drivers.ledger.notes') }, { label: t('common.amount'), align: 'right', width: '14%' }],
+          rows: ledger.payments.map((x) => [fmtDate(x.at), t(`drivers.ledger.kind.${x.kind}`), x.notes ?? '—', formatMoney(x.amount)]),
+          total: [t('clients.ledger.total'), '', '', formatMoney(ledger.payments.reduce((a, x) => a + x.amount, 0))], empty: t('drivers.ledger.noPayments') },
+      ],
+    });
+  }
+
   async function remove(id: string) {
     if (window.confirm(t('drivers.ledger.confirmDelete')) === false) return;
     await api.deleteDriverPayment(id); await load();
@@ -97,7 +125,10 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
             <h2>{t('drivers.ledger.title')} — {driver.fullName}</h2>
             <p>{t('drivers.tripFee')} : {formatMoney(driver.tripFee)} · {t('drivers.salary')} : {formatMoney(driver.monthlySalary ?? 0)}</p>
           </div>
-          <button className="btn ghost" onClick={onClose}>{t('track.close')}</button>
+          <div className="chips">
+            <button className="btn ghost" onClick={() => void print()}>{t('common.print')}</button>
+            <button className="btn ghost" onClick={onClose}>{t('track.close')}</button>
+          </div>
         </header>
 
         <PeriodFilter value={period} onChange={setPeriod} />

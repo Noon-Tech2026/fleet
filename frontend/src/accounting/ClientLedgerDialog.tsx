@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { openPrintReport, periodLabel } from '../lib/printReport';
 import { useTranslation } from 'react-i18next';
 import type { ClientRecord } from '../lib/types';
 import { api, type ClientLedger } from '../api/client';
@@ -45,6 +46,31 @@ export function ClientLedgerDialog({ client, onClose }: Props) {
     finally { setBusy(false); }
   }
 
+  async function print() {
+    if (!ledger) return;
+    const lang = i18n.language;
+    const asc = [...ledger.lines].sort((a, b) => a.at.localeCompare(b.at));
+    let run = 0; const bal = new Map<string, number>();
+    for (const l of asc) { run += l.kind === 'debit' ? l.amount : -l.amount; bal.set(l.id, run); }
+    await openPrintReport({
+      title: t('clients.ledger.title'), subtitle: client.name,
+      period: periodLabel(period, lang, t('period.all')), lang, rtl: lang.startsWith('ar'),
+      labels: { printedOn: t('print.printedOn'), period: t('print.period'), page: '', total: t('clients.ledger.total') },
+      kpis: [
+        { label: t('clients.ledger.debit'), value: formatMoney(ledger.period.debit), tone: 'danger' },
+        { label: t('clients.ledger.credit'), value: formatMoney(ledger.period.credit), tone: 'ok' },
+        { label: t('clients.ledger.balance'), value: formatMoney(ledger.overall.balance), tone: ledger.overall.balance > 0 ? 'warn' : 'ok' },
+      ],
+      sections: [{
+        title: t('clients.ledger.title'),
+        columns: [{ label: t('common.date'), width: '11%' }, { label: t('clients.ledger.label') }, { label: t('clients.ledger.debit'), align: 'right', width: '14%' }, { label: t('clients.ledger.credit'), align: 'right', width: '14%' }, { label: t('clients.ledger.solde'), align: 'right', width: '14%' }],
+        rows: ledger.lines.map((l) => [fmtDate(l.at), l.label, l.kind === 'debit' ? formatMoney(l.amount) : '', l.kind === 'credit' ? formatMoney(l.amount) : '', formatMoney(bal.get(l.id) ?? 0)]),
+        total: [t('clients.ledger.total'), '', formatMoney(ledger.period.debit), formatMoney(ledger.period.credit), formatMoney(ledger.period.balance)],
+        empty: t('clients.ledger.empty'),
+      }],
+    });
+  }
+
   async function remove(id: string) {
     if (window.confirm(t('clients.ledger.confirmDelete')) === false) return;
     await api.deleteClientEntry(id); await load();
@@ -55,7 +81,10 @@ export function ClientLedgerDialog({ client, onClose }: Props) {
       <div className="modal ledger-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <header className="modal-head">
           <div><h2>{t('clients.ledger.title')} — {client.name}</h2></div>
-          <button className="btn ghost" onClick={onClose}>{t('track.close')}</button>
+          <div className="chips">
+            <button className="btn ghost" onClick={() => void print()}>{t('common.print')}</button>
+            <button className="btn ghost" onClick={onClose}>{t('track.close')}</button>
+          </div>
         </header>
 
         <PeriodFilter value={period} onChange={setPeriod} />
