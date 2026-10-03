@@ -137,18 +137,18 @@ export function VehicleAccountingPanel({
 
   return (
     <div className="accounting-detail">
-      <div className="page-toolbar">
-        <div className="toolbar-right">
+      <div className="page-toolbar detail-toolbar">
+        <div className="toolbar-left">
           <button className="btn ghost small" onClick={onBack}>
             {t('accounting.back')}
           </button>
-          <button className="btn ghost small no-print" onClick={() => void printVehicle()}>{t('common.print')}</button>
-          <PeriodFilter value={period} onChange={setPeriod} />
           <h3 className="col-title">
             {vehicleId} <span className="cell-sub">{plate}</span>
           </h3>
         </div>
-
+        <PeriodFilter value={period} onChange={setPeriod} />
+        <div className="toolbar-actions">
+        <button className="btn ghost small no-print" onClick={() => void printVehicle()}>{t('common.print')}</button>
         {(canRecordTrip || canManageMoney) && (
           <div className="dropdown" ref={menuRef}>
             <button className="btn primary small" onClick={() => setMenuOpen((open) => !open)}>
@@ -196,6 +196,7 @@ export function VehicleAccountingPanel({
             )}
           </div>
         )}
+        </div>
       </div>
 
       {error && <p className="banner err">{error}</p>}
