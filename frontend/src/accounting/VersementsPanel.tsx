@@ -55,8 +55,12 @@ export function VersementsPanel({ period, onChanged, showTotal = false }: Props)
   return (
     <section className="versements">
       {!showTotal && <h3>{t('versements.title')}</h3>}
-      {showTotal && <div className="chips" style={{ justifyContent: 'flex-end' }}><button className="btn ghost" onClick={() => void print()}>{t('common.print')}</button></div>}
-      {showTotal && <div className="fleet-summary compact"><div className="summary-cell warn"><b>{formatMoney(rows.reduce((a, v) => a + v.amount, 0))}</b><span>{t('overview.versements')}</span></div></div>}
+      {showTotal && (
+        <div className="versements-head">
+          <div className="fleet-summary compact"><div className="summary-cell warn"><b>{formatMoney(rows.reduce((a, v) => a + v.amount, 0))}</b><span>{t('overview.versements')}</span></div></div>
+          <button className="btn ghost" onClick={() => void print()}>{t('common.print')}</button>
+        </div>
+      )}
       {error && <p className="banner err">{error}</p>}
       {canWrite && (
         <form className="ledger-pay" onSubmit={submit}>
