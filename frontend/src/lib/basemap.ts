@@ -1,5 +1,15 @@
 import maplibregl, { type IControl, type Map as MapLibreMap } from 'maplibre-gl';
 
+/* Arabe : sans ce greffon, MapLibre dessine les lettres separees et a l'envers.
+ * Charge une seule fois (ce module est importe par toutes les cartes). */
+try {
+  if (maplibregl.getRTLTextPluginStatus() === 'unavailable') {
+    void maplibregl.setRTLTextPlugin('/mapbox-gl-rtl-text.js', false);
+  }
+} catch {
+  /* deja initialise */
+}
+
 /** Fond de carte : plan (style vectoriel) ou satellite (imagerie + etiquettes du plan). */
 export type BaseMode = 'plan' | 'satellite';
 
