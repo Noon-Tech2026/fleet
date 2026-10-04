@@ -69,7 +69,7 @@ class ZoneDto {
 }
 
 class CalibrationPointDto {
-  @IsNumber() @Min(0) @Max(30) volts: number;
+  @IsNumber() @Min(0) @Max(70000) volts: number; // tension AIN ou valeur brute capteur BLE
   @IsNumber() @Min(0) @Max(2000) liters: number;
 }
 

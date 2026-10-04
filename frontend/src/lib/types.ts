@@ -53,6 +53,9 @@ export interface VehicleState {
   commandLock: { by: string; action: 'block' | 'release'; since: string } | null;
 
   fuelMain: number; // litres, réservoir 700 L (AIN1)
+  /** Capteur BLE du reservoir (absent = sonde analogique / aucun capteur). */
+  fuelMainSensor?: { raw?: number; calibrated: boolean; tempC?: number; battery?: number } | null;
+  fuelAuxSensor?: { raw?: number; calibrated: boolean; tempC?: number; battery?: number } | null;
   fuelAux: number; // litres, réservoir 300 L (AIN2)
 
   odometer: number; // km

@@ -111,8 +111,8 @@ export function VehicleDetail({ vehicle, onTrack, requests = [], onShowRequests,
 
       <h3>{t('supervision.fuel')}</h3>
       <div className="fuel-row">
-        <FuelGauge liters={vehicle.fuelMain} capacity={vehicle.tankMainCapacity} label={t('supervision.fuelMain')} />
-        <FuelGauge liters={vehicle.fuelAux} capacity={vehicle.tankAuxCapacity} label={t('supervision.fuelAux')} />
+        <FuelGauge liters={vehicle.fuelMain} capacity={vehicle.tankMainCapacity} label={t('supervision.fuelMain')} sensor={vehicle.fuelMainSensor} />
+        <FuelGauge liters={vehicle.fuelAux} capacity={vehicle.tankAuxCapacity} label={t('supervision.fuelAux')} sensor={vehicle.fuelAuxSensor} />
       </div>
 
       <h3>{t('supervision.maintenance')}</h3>

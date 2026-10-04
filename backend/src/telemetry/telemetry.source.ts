@@ -20,6 +20,13 @@ export interface RawPosition {
   outputActive: boolean | undefined; // DOUT1 — état réel du relais ; undefined si absent de la trame
   fuelMainVolts: number; // AIN1
   fuelAuxVolts: number; // AIN2
+  /** Capteurs carburant BLE : niveau brut, temperature (degC), pile (%). Absents = pas de capteur / pas lu. */
+  fuelMainBle?: number;
+  fuelMainTemp?: number;
+  fuelMainBattery?: number;
+  fuelAuxBle?: number;
+  fuelAuxTemp?: number;
+  fuelAuxBattery?: number;
   odometer: number; // km
   engineHours: number; // h
   battery: number; // V

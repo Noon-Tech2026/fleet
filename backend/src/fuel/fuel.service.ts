@@ -80,6 +80,30 @@ export class FuelService implements OnModuleInit {
     return capacity;
   }
 
+  /**
+   * Capteur BLE : valeur brute -> litres, UNIQUEMENT avec une calibration du camion.
+   * Retourne null sans calibration (jamais la courbe de repli : elle donnerait un plein).
+   * Interpolation entre points, extrapolation lineaire au-dela, borne [0, capacite].
+   */
+  toLitersBle(vehicleId: string, tank: 'main' | 'aux', raw: number): number | null {
+    const cal = this.cache.get(`${vehicleId}:${tank}`);
+    if (!cal || cal.points.length < 2) return null;
+    const pts = [...cal.points].sort((p, q) => p.volts - q.volts);
+    let a = pts[0];
+    let b = pts[1];
+    if (raw > pts[pts.length - 1].volts) {
+      a = pts[pts.length - 2];
+      b = pts[pts.length - 1];
+    } else {
+      for (let i = 1; i < pts.length; i++) {
+        if (raw <= pts[i].volts) { a = pts[i - 1]; b = pts[i]; break; }
+      }
+    }
+    if (b.volts === a.volts) return Math.round(a.liters);
+    const liters = a.liters + ((raw - a.volts) * (b.liters - a.liters)) / (b.volts - a.volts);
+    return Math.round(Math.max(0, Math.min(cal.capacity, liters)));
+  }
+
   isCalibrated(vehicleId: string): boolean {
     return this.cache.has(`${vehicleId}:main`);
   }

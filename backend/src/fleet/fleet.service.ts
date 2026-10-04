@@ -108,6 +108,30 @@ export class FleetService implements OnModuleInit {
       if (km > 0.005 && km < 5) await this.vehicles.addGpsKm(raw.vehicleId, km);
     }
 
+    // Carburant : capteur BLE prioritaire (calibration obligatoire), sinon sonde analogique.
+    const fuelOf = (tank: 'main' | 'aux') => {
+      const ble = tank === 'main' ? raw.fuelMainBle : raw.fuelAuxBle;
+      const prevSensor = tank === 'main' ? previous?.fuelMainSensor : previous?.fuelAuxSensor;
+      if (ble === undefined && !prevSensor) {
+        const volts = tank === 'main' ? raw.fuelMainVolts : raw.fuelAuxVolts;
+        return { liters: this.fuel.toLiters(raw.vehicleId, tank, volts), sensor: undefined };
+      }
+      // Lecture BLE absente sur cette trame : derniere valeur connue.
+      const value = ble ?? prevSensor?.raw;
+      const liters = value === undefined ? null : this.fuel.toLitersBle(raw.vehicleId, tank, value);
+      return {
+        liters: liters ?? 0,
+        sensor: {
+          raw: value,
+          calibrated: liters !== null,
+          tempC: (tank === 'main' ? raw.fuelMainTemp : raw.fuelAuxTemp) ?? prevSensor?.tempC,
+          battery: (tank === 'main' ? raw.fuelMainBattery : raw.fuelAuxBattery) ?? prevSensor?.battery,
+        },
+      };
+    };
+    const fuelMainR = fuelOf('main');
+    const fuelAuxR = fuelOf('aux');
+
     const current: VehicleState = {
       id: raw.vehicleId,
       plate: meta.plate,
@@ -129,8 +153,10 @@ export class FleetService implements OnModuleInit {
       starter: previous?.starter ?? this.immobilizer.initialStarter(raw.vehicleId, raw.outputActive),
       commandLock: this.immobilizer.lockOf(raw.vehicleId),
 
-      fuelMain: this.fuel.toLiters(raw.vehicleId, 'main', raw.fuelMainVolts),
-      fuelAux: this.fuel.toLiters(raw.vehicleId, 'aux', raw.fuelAuxVolts),
+      fuelMain: fuelMainR.liters,
+      fuelAux: fuelAuxR.liters,
+      fuelMainSensor: fuelMainR.sensor,
+      fuelAuxSensor: fuelAuxR.sensor,
 
       odometer: Math.round(meta.initialOdometer + Number(meta.gpsKm ?? 0)),
       engineHours: raw.engineHours,

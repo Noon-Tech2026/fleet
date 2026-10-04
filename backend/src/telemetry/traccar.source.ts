@@ -226,6 +226,7 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
       outputActive: a.out1 === undefined ? undefined : DOUT1_INVERTED ? Boolean(a.out1) === false : Boolean(a.out1),
       fuelMainVolts: Number(a.adc1 ?? 0),
       fuelAuxVolts: Number(a.adc2 ?? 0),
+      ...bleFuel(a as Record<string, unknown>),
       odometer: Math.round(Number(a.totalDistance ?? 0) / 1000),
       engineHours: Math.round(Number(a.hours ?? 0) / 3_600_000),
       battery: Number(a.power ?? 0),
@@ -358,4 +359,30 @@ interface TraccarPosition {
   deviceTime?: string;
   fixTime: string;
   attributes?: Record<string, unknown>;
+}
+
+/* --- capteurs carburant BLE (Eurosens Dominator BT, FMC650 Advanced BLE) ---
+ * Slot n (1|2) : io72n = niveau brut, io70n = temperature + 40, io70(n+4) = pile %.
+ * GAT TRUCK : slot 2 = reservoir principal (grand), slot 1 = auxiliaire (petit).
+ */
+const BLE_MAIN_SLOT: 1 | 2 = (process.env.BLE_FUEL_MAIN_SLOT ?? '2').trim() === '1' ? 1 : 2;
+
+function bleSlot(a: Record<string, unknown>, n: 1 | 2): { raw?: number; temp?: number; bat?: number } {
+  const raw = Number(a[`io72${n}`]);
+  const t = Number(a[`io70${n}`]);
+  const b = Number(a[`io70${n + 4}`]);
+  return {
+    raw: Number.isFinite(raw) && raw > 0 ? raw : undefined,
+    temp: Number.isFinite(t) && t > 0 && t < 200 ? t - 40 : undefined,
+    bat: Number.isFinite(b) && b > 0 && b <= 100 ? b : undefined,
+  };
+}
+
+function bleFuel(a: Record<string, unknown>) {
+  const m = bleSlot(a, BLE_MAIN_SLOT);
+  const x = bleSlot(a, BLE_MAIN_SLOT === 1 ? 2 : 1);
+  return {
+    fuelMainBle: m.raw, fuelMainTemp: m.temp, fuelMainBattery: m.bat,
+    fuelAuxBle: x.raw, fuelAuxTemp: x.temp, fuelAuxBattery: x.bat,
+  };
 }
