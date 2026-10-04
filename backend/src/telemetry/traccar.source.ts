@@ -6,7 +6,9 @@ import { TelemetrySource, PositionHandler, RawPosition, IoReport, IoReportHandle
 // Relais démarreur câblé en NO : DOUT1=1 ferme le circuit (démarrage autorisé),
 // DOUT1=0 le coupe (bloqué). Inversion ici pour garder la convention interne
 // outputActive = démarreur bloqué. Passer à false si le relais est recâblé en NC (87a).
-const DOUT1_INVERTED = true;
+// Configurable par instance (.env) : true = relais NO sur circuit demarreur (DOUT1=1 autorise),
+// false = relais sur fil d'arret moteur (DOUT1=1 = moteur coupe, cablage GAT TRUCK / SHACMAN).
+const DOUT1_INVERTED = (process.env.DOUT1_INVERTED ?? 'true').trim().toLowerCase() !== 'false';
 
 /**
  * Connexion réelle à Traccar.
