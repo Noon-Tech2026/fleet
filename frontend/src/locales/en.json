@@ -698,7 +698,8 @@
       "client": "Client",
       "driver": "Driver",
       "manual": "Manual",
-      "versement": "Withdrawal"
+      "versement": "Withdrawal",
+      "expense": "Expense"
     }
   },
   "versements": {
@@ -714,5 +715,25 @@
     "printedOn": "Printed on",
     "fleetReport": "Fleet summary report",
     "byVehicle": "Detail by truck"
+  },
+  "payables": {
+    "title": "Unpaid expenses",
+    "total": "Total due",
+    "payDate": "Payment date",
+    "empty": "No credit expense awaiting payment.",
+    "vehicle": "Truck",
+    "pay": "Mark as paid",
+    "confirmPay": "Confirm payment? The expense will leave the cash box on the chosen date.",
+    "paidBadge": "Credit paid",
+    "unpaidBadge": "Unpaid"
+  },
+  "expensePay": {
+    "label": "Payment",
+    "legacy": "Legacy (not in cash box)",
+    "cash": "Paid in cash (leaves the cash box)",
+    "credit": "On credit (pay later)",
+    "supplier": "Supplier",
+    "supplierPh": "e.g. station, garage…",
+    "paidOn": "Debt paid on"
   }
 }

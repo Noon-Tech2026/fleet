@@ -307,7 +307,7 @@ export function VehicleAccountingPanel({
                     <td>{new Date(e.at).toLocaleDateString('fr-FR')}</td>
                     <td>{categoryLabel(e.category)}</td>
                     <td className="cell-muted">{e.reference ?? '—'}{e.tripContainers && <div className="cell-sub">{e.tripContainers}</div>}</td>
-                    <td>{formatMoney(e.amount)}</td>
+                    <td>{formatMoney(e.amount)}{e.payment === 'credit' && (<div className={e.paidAt ? 'cell-sub' : 'cell-sub text-danger'}>{e.paidAt ? t('payables.paidBadge', 'Crédit réglé') : t('payables.unpaidBadge', 'À payer')}</div>)}</td>
                     {canManageMoney && (
                       <td className="cell-actions">
                         <button className="btn ghost small" onClick={() => setEditingExpense(e)}>{t('common.edit')}</button>

@@ -688,7 +688,8 @@
       "client": "Client",
       "driver": "Chauffeur",
       "manual": "Manuel",
-      "versement": "Versement"
+      "versement": "Versement",
+      "expense": "Charge"
     }
   },
   "versements": {
@@ -704,5 +705,25 @@
     "printedOn": "Imprimé le",
     "fleetReport": "Rapport de synthèse de la flotte",
     "byVehicle": "Détail par camion"
+  },
+  "payables": {
+    "title": "Charges à payer",
+    "total": "Total dû",
+    "payDate": "Date de paiement",
+    "empty": "Aucune charge à crédit en attente de paiement.",
+    "vehicle": "Camion",
+    "pay": "Marquer payée",
+    "confirmPay": "Confirmer le paiement ? La charge sortira de la caisse à la date choisie.",
+    "paidBadge": "Crédit réglé",
+    "unpaidBadge": "À payer"
+  },
+  "expensePay": {
+    "label": "Règlement",
+    "legacy": "Historique (hors caisse)",
+    "cash": "Payée comptant (sort de la caisse)",
+    "credit": "À crédit (à payer plus tard)",
+    "supplier": "Fournisseur",
+    "supplierPh": "ex. station, garage…",
+    "paidOn": "Dette réglée le"
   }
 }

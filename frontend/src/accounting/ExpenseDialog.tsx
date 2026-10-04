@@ -22,6 +22,8 @@ export function ExpenseDialog({ vehicleId, initial, onCancel, onDone }: Props) {
   const [at, setAt] = useState(() => (initial ? initial.at : new Date().toISOString()).slice(0, 10));
   const [reference, setReference] = useState(initial?.reference ?? '');
   const [notes, setNotes] = useState(initial?.notes ?? '');
+  const [payment, setPayment] = useState<'cash' | 'credit' | 'legacy'>(initial ? (initial.payment ?? 'legacy') : 'cash');
+  const [supplier, setSupplier] = useState(initial?.supplier ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,6 +45,8 @@ export function ExpenseDialog({ vehicleId, initial, onCancel, onDone }: Props) {
       at: new Date(`${at}T12:00:00`).toISOString(),
       reference: reference.trim() || undefined,
       notes: notes.trim() || undefined,
+      ...(payment !== 'legacy' ? { payment } : {}),
+      supplier: supplier.trim() || undefined,
     };
     try {
       const expense = initial
@@ -100,6 +104,24 @@ export function ExpenseDialog({ vehicleId, initial, onCancel, onDone }: Props) {
           <span>{t('dialog.expense.notes')}</span>
           <input value={notes} onChange={(e) => setNotes(e.target.value)} />
         </label>
+
+        <div className="field-grid">
+          <label className="field">
+            <span>{t('expensePay.label', 'Règlement')}</span>
+            <select className="select" value={payment} onChange={(e) => setPayment(e.target.value as 'cash' | 'credit' | 'legacy')}>
+              {payment === 'legacy' && <option value="legacy">{t('expensePay.legacy', 'Historique (hors caisse)')}</option>}
+              <option value="cash">{t('expensePay.cash', 'Payée comptant (sort de la caisse)')}</option>
+              <option value="credit">{t('expensePay.credit', 'À crédit (à payer plus tard)')}</option>
+            </select>
+          </label>
+          <label className="field">
+            <span>{t('expensePay.supplier', 'Fournisseur')}</span>
+            <input value={supplier} onChange={(e) => setSupplier(e.target.value)} placeholder={t('expensePay.supplierPh', 'ex. station, garage…')} />
+          </label>
+        </div>
+        {initial?.payment === 'credit' && initial.paidAt && (
+          <p className="muted small">{t('expensePay.paidOn', 'Dette réglée le')} {new Date(initial.paidAt).toLocaleDateString()}</p>
+        )}
 
         {error && <p className="error">{error}</p>}
 

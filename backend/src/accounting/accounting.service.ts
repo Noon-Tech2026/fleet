@@ -6,7 +6,7 @@ import { ExpenseCategory } from './entities/expense-category.entity';
 import { ClientEntry } from './entities/client-entry.entity';
 import { DriverPayment } from './entities/driver-payment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, FindOptionsWhere, In, Repository, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { Between, FindOptionsWhere, In, IsNull, Repository, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import {
   ClientRecord,
   DriverRecord,
@@ -199,6 +199,7 @@ export class AccountingService implements OnModuleInit {
    */
   async cashJournal(range?: DateRange) {
     const d = dateWhere(range);
+    const exLines = await this.paidExpenseLines(range);
     const [clientCredits, paidTrips, driverPays, manual, vers, clients, drivers] = await Promise.all([
       this.clientEntriesRepo.find({ where: { kind: 'credit', ...(d ? { at: d } : {}) }, take: 2000 }),
       this.tripsRepo.find({ where: { paid: true, ...(d ? { startedAt: d } : {}) }, take: 2000 }),
@@ -216,6 +217,7 @@ export class AccountingService implements OnModuleInit {
       ...driverPays.map((p) => ({ id: `dp:${p.id}`, kind: 'credit' as const, at: p.at.toISOString(), amount: Number(p.amount), label: `${dname.get(p.driverId) ?? p.driverId} — ${p.notes ?? 'paiement chauffeur'}`, source: 'driver' as const, deletable: false })),
       ...manual.map((m) => ({ id: m.id, kind: m.kind, at: m.at.toISOString(), amount: Number(m.amount), label: m.label, source: 'manual' as const, deletable: true })),
       ...vers.map((v) => ({ id: `vs:${v.id}`, kind: 'credit' as const, at: v.at.toISOString(), amount: Number(v.amount), label: `Versement — ${v.label}`, source: 'versement' as const, deletable: false })),
+      ...exLines,
     ].sort((a, b) => b.at.localeCompare(a.at));
     const sum = (k: string) => lines.filter((l) => l.kind === k).reduce((a, l) => a + l.amount, 0);
     const debit = sum('debit'), credit = sum('credit');
@@ -229,7 +231,8 @@ export class AccountingService implements OnModuleInit {
       num(this.cashRepo.createQueryBuilder('m').select('COALESCE(SUM(m.amount),0)', 'total').where("m.kind = 'credit'").getRawOne()),
       num(this.versementsRepo.createQueryBuilder('v').select('COALESCE(SUM(v.amount),0)', 'total').getRawOne()),
     ]);
-    const allDebit = allCc + allPt + allMd, allCredit = allDp + allMc + allVs;
+    const allEx = await this.paidExpensesTotal();
+    const allDebit = allCc + allPt + allMd, allCredit = allDp + allMc + allVs + allEx;
     return { period: { debit, credit, balance: debit - credit }, overall: { debit: allDebit, credit: allCredit, balance: allDebit - allCredit }, lines };
   }
 
@@ -507,6 +510,8 @@ export class AccountingService implements OnModuleInit {
       at: Date;
       reference?: string | null;
       notes?: string | null;
+      payment?: 'cash' | 'credit' | null;
+      supplier?: string | null;
     },
     createdBy: string,
   ): Promise<VehicleExpenseEntry> {
@@ -519,6 +524,10 @@ export class AccountingService implements OnModuleInit {
         at: data.at,
         reference: data.reference ?? null,
         notes: data.notes ?? null,
+        payment: data.payment ?? null,
+        paidAt: data.payment === 'cash' ? data.at : null,
+        paidBy: data.payment === 'cash' ? createdBy : null,
+        supplier: data.supplier?.trim() || null,
         createdBy,
       }),
     );
@@ -564,6 +573,8 @@ export class AccountingService implements OnModuleInit {
       at?: Date;
       reference?: string | null;
       notes?: string | null;
+      payment?: 'cash' | 'credit' | null;
+      supplier?: string | null;
     },
   ): Promise<VehicleExpenseEntry> {
     const row = await this.expensesRepo.findOne({ where: { id } });
@@ -576,7 +587,80 @@ export class AccountingService implements OnModuleInit {
       if (patch.amount < 0) throw new BadRequestException('Le montant ne peut pas être négatif');
       row.amount = patch.amount.toFixed(2);
     }
+    if (patch.supplier !== undefined) row.supplier = patch.supplier?.trim() || null;
+    if (patch.payment !== undefined && patch.payment !== null && patch.payment !== row.payment) {
+      row.payment = patch.payment;
+      if (patch.payment === 'credit') { row.paidAt = null; row.paidBy = null; }
+    }
+    // Comptant : la sortie de caisse suit toujours la date de la charge.
+    if (row.payment === 'cash') { row.paidAt = row.at; row.paidBy = row.paidBy ?? row.createdBy; }
     return toExpenseEntry(await this.expensesRepo.save(row));
+  }
+
+  /* --- charges a credit (dettes fournisseurs) ---------------------------- */
+
+  /** Charges a credit non reglees, toutes periodes (une dette ne disparait pas avec le filtre). */
+  async payables() {
+    const rows = await this.expensesRepo.find({ where: { payment: 'credit', paidAt: IsNull() }, order: { at: 'ASC' }, take: 1000 });
+    const items = rows.map((r) => ({
+      id: r.id, vehicleId: r.vehicleId, category: r.category, amount: Number(r.amount),
+      at: r.at.toISOString(), supplier: r.supplier, reference: r.reference, notes: r.notes,
+    }));
+    return { total: items.reduce((a, x) => a + x.amount, 0), items };
+  }
+
+  /** Regle une dette : la charge sort de la caisse a la date de reglement. */
+  async payExpense(id: string, at: Date, actor: string): Promise<VehicleExpenseEntry> {
+    const row = await this.expensesRepo.findOne({ where: { id } });
+    if (!row) throw new NotFoundException('Charge inconnue');
+    if (row.payment !== 'credit') throw new BadRequestException("Cette charge n'est pas à crédit");
+    if (row.paidAt) throw new BadRequestException('Charge déjà réglée');
+    row.paidAt = at;
+    row.paidBy = actor;
+    return toExpenseEntry(await this.expensesRepo.save(row));
+  }
+
+  /** Annule un reglement (erreur de saisie) : la dette redevient due. Admin. */
+  async unpayExpense(id: string): Promise<VehicleExpenseEntry> {
+    const row = await this.expensesRepo.findOne({ where: { id } });
+    if (!row) throw new NotFoundException('Charge inconnue');
+    if (row.payment !== 'credit') throw new BadRequestException("Cette charge n'est pas à crédit");
+    row.paidAt = null;
+    row.paidBy = null;
+    return toExpenseEntry(await this.expensesRepo.save(row));
+  }
+
+  /** Sorties de caisse « charge » : comptant + dettes reglees, datees au reglement. Primes chauffeur exclues. */
+  private async paidExpenseLines(range?: DateRange) {
+    const qb = this.expensesRepo
+      .createQueryBuilder('x')
+      .where('x.paidAt IS NOT NULL')
+      .andWhere("x.payment IN ('cash','credit')")
+      .andWhere("x.category <> 'driver'");
+    if (range?.from) qb.andWhere('x.paidAt >= :pf', { pf: new Date(`${range.from}T00:00:00`) });
+    if (range?.to) qb.andWhere('x.paidAt <= :pt', { pt: new Date(`${range.to}T23:59:59.999`) });
+    const [rows, cats] = await Promise.all([qb.orderBy('x.paidAt', 'DESC').take(2000).getMany(), this.categoriesRepo.find()]);
+    const cl = new Map(cats.map((c) => [c.id, c.labelFr]));
+    return rows.map((x) => ({
+      id: `ex:${x.id}`,
+      kind: 'credit' as const,
+      at: (x.paidAt as Date).toISOString(),
+      amount: Number(x.amount),
+      label: `${cl.get(x.category) ?? x.category} — ${x.vehicleId}${x.supplier ? ` · ${x.supplier}` : ''}${x.payment === 'credit' ? ' (dette réglée)' : ''}`,
+      source: 'expense' as const,
+      deletable: false,
+    }));
+  }
+
+  private async paidExpensesTotal(): Promise<number> {
+    const r = await this.expensesRepo
+      .createQueryBuilder('x')
+      .select('COALESCE(SUM(x.amount),0)', 'total')
+      .where('x.paidAt IS NOT NULL')
+      .andWhere("x.payment IN ('cash','credit')")
+      .andWhere("x.category <> 'driver'")
+      .getRawOne();
+    return Number(r?.total ?? 0);
   }
 
   /** Suppression définitive — réservée à l'admin côté contrôleur. */
@@ -897,6 +981,9 @@ function toExpenseEntry(row: VehicleExpense): VehicleExpenseEntry {
     reference: row.reference,
     notes: row.notes,
     createdBy: row.createdBy,
+    payment: row.payment,
+    paidAt: row.paidAt ? row.paidAt.toISOString() : null,
+    supplier: row.supplier,
   };
 }
 

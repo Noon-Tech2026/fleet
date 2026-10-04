@@ -6,6 +6,7 @@ import { formatMoney } from '../lib/accounting';
 import { useAuth } from '../auth/AuthContext';
 import { PeriodFilter, type Period } from './PeriodFilter';
 import DateInput from '../components/DateInput';
+import { PayablesPanel } from './PayablesPanel';
 
 /** Journal de caisse : entrees (debit), sorties (credit), solde cumule. */
 export function CashPage() {
@@ -135,6 +136,7 @@ export function CashPage() {
           </div>
         </>
       )}
+      <PayablesPanel canWrite={canWrite} onChanged={() => void load()} />
     </main>
   );
 }

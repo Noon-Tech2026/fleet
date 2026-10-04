@@ -228,6 +228,10 @@ export interface VehicleExpenseEntry {
   tripContainers?: string | null;
   notes: string | null;
   createdBy: string;
+  /** 'cash' | 'credit' ; null = historique (hors caisse). */
+  payment?: 'cash' | 'credit' | null;
+  paidAt?: string | null;
+  supplier?: string | null;
 }
 
 export type VehicleInvestmentKind = 'purchase' | 'equipment' | 'overhaul' | 'other';

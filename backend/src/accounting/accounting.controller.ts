@@ -27,7 +27,13 @@ import { ContainerSize, VehicleExpenseCategory, VehicleInvestmentKind } from '..
 const INVESTMENT_KINDS: VehicleInvestmentKind[] = ['purchase', 'equipment', 'overhaul', 'other'];
 const CONTAINER_SIZES: ContainerSize[] = ['20', '40'];
 
+class PayExpenseDto {
+  @IsOptional() @IsString() at?: string;
+}
+
 class UpdateExpenseDto {
+  @IsOptional() @IsIn(['cash', 'credit']) payment?: 'cash' | 'credit';
+  @IsOptional() @IsString() @MaxLength(160) supplier?: string;
   @IsOptional() @IsString() @MaxLength(32) category?: VehicleExpenseCategory;
   @IsOptional() @IsNumber() @Min(0) amount?: number;
   @IsOptional() @IsString() at?: string;
@@ -164,6 +170,8 @@ class UpdateTripDto {
 
 class ExpenseDto {
   @IsString() @MaxLength(32) category: VehicleExpenseCategory;
+  @IsOptional() @IsIn(['cash', 'credit']) payment?: 'cash' | 'credit';
+  @IsOptional() @IsString() @MaxLength(160) supplier?: string;
   @IsNumber() @Min(0) @Max(1_000_000) amount: number;
   @IsOptional() @IsDateString() at?: string;
   @IsOptional() @IsString() @MaxLength(160) reference?: string;
@@ -457,6 +465,8 @@ export class AccountingController {
         at: dto.at ? new Date(dto.at) : new Date(),
         reference: dto.reference ?? null,
         notes: dto.notes ?? null,
+        payment: dto.payment ?? null,
+        supplier: dto.supplier ?? null,
       },
       user.email,
     );
@@ -487,6 +497,8 @@ export class AccountingController {
       at: dto.at !== undefined ? new Date(dto.at) : undefined,
       reference: dto.reference,
       notes: dto.notes,
+      payment: dto.payment,
+      supplier: dto.supplier,
     });
   }
 
@@ -510,6 +522,24 @@ export class AccountingController {
   async deleteTrip(@Param('id') id: string) {
     await this.accounting.deleteTrip(id);
     return { ok: true };
+  }
+
+  @RequireRole(Role.Supervisor)
+  @Get('accounting/payables')
+  payables() {
+    return this.accounting.payables();
+  }
+
+  @RequireRole(Role.Supervisor)
+  @Post('accounting/expenses/:id/pay')
+  payExpense(@Param('id') id: string, @Body() dto: PayExpenseDto, @CurrentUser() user: JwtPayload) {
+    return this.accounting.payExpense(id, dto.at ? new Date(dto.at) : new Date(), user.email);
+  }
+
+  @RequireRole(Role.Admin)
+  @Post('accounting/expenses/:id/unpay')
+  unpayExpense(@Param('id') id: string) {
+    return this.accounting.unpayExpense(id);
   }
 
   @RequireRole(Role.Admin)

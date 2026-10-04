@@ -51,6 +51,24 @@ export class VehicleExpense {
   @Column({ name: 'driver_payment_id', type: 'varchar', length: 36, nullable: true })
   driverPaymentId: string | null;
 
+  /**
+   * Reglement : 'cash' = paye a la saisie (sort de la caisse a `at`),
+   * 'credit' = dette fournisseur (sort de la caisse a `paidAt`, null tant que due).
+   * null = charge historique, saisie avant cette option : hors caisse.
+   */
+  @Column({ type: 'varchar', length: 8, nullable: true })
+  payment: 'cash' | 'credit' | null;
+
+  @Column({ name: 'paid_at', type: 'datetime', nullable: true })
+  paidAt: Date | null;
+
+  @Column({ name: 'paid_by', type: 'varchar', length: 190, nullable: true })
+  paidBy: string | null;
+
+  /** Fournisseur (a qui l'on doit, pour une charge a credit). */
+  @Column({ type: 'varchar', length: 160, nullable: true })
+  supplier: string | null;
+
   @Column({ name: 'created_by', length: 190 })
   createdBy: string;
 
