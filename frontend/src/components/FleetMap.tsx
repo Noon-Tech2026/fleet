@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState } from 'react';
 import maplibregl, { Map as MapLibreMap, Marker, StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { BaseMapControl } from '../lib/basemap';
 import type { VehicleState } from '../lib/types';
 
 /**
@@ -60,6 +61,7 @@ export function FleetMap({ vehicles, selectedId, onSelect }: Props) {
     });
 
     map.current.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    map.current.addControl(new BaseMapControl(), 'top-left');
     // Sans fond cartographique, l'echelle est le seul repere de distance.
     map.current.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
 

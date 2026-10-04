@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import maplibregl, { Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { BaseMapControl } from '../lib/basemap';
 import type { TrackPoint } from '../lib/types';
 import { api } from '../api/client';
 
@@ -171,6 +172,7 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
       attributionControl: false,
     });
     map.current.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    map.current.addControl(new BaseMapControl(), 'top-left');
     map.current.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
     return () => {
       map.current?.remove();

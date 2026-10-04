@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import maplibregl, { Map as MapLibreMap, MapMouseEvent, StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { BaseMapControl } from '../lib/basemap';
 import type { Zone, ZoneInput, ZoneKind, ZoneShape, VehicleState } from '../lib/types';
 import type { VehicleDirectoryEntry } from '../api/client';
 import { api } from '../api/client';
@@ -102,6 +103,7 @@ export function ZonesPage({ vehicles, directory, isAdmin }: Props) {
     });
     map.current = m;
     m.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    m.addControl(new BaseMapControl(), 'top-left');
     m.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
     m.on('load', () => {
       m.addSource('zones', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });

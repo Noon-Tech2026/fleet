@@ -2838,3 +2838,10 @@ input.search { min-width: 260px; padding: 8px 12px; border-radius: 999px; border
 .versements-head > .btn { flex: none; }
 .ledger-pay { align-items: flex-end; }
 .field .date-input { display: flex; }
+
+/* === basemap-v1 === */
+.basemap-ctrl .basemap-btn {
+  width: auto; min-width: 72px; height: 30px; padding: 0 12px;
+  font: 600 13px/30px var(--font); color: var(--bone); white-space: nowrap;
+}
+.basemap-ctrl .basemap-btn:hover { background: rgba(23, 30, 36, 0.06); }
