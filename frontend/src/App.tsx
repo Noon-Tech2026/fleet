@@ -207,7 +207,7 @@ function Dashboard({
                   {feedOpen ? t('app.hide') : t('app.show')}
                 </button>
               </div>
-              {feedOpen && <AlertFeed alerts={alerts} />}
+              {feedOpen && <AlertFeed alerts={alerts} vehicles={vehicles} directory={directory} />}
             </div>
           </section>
 
