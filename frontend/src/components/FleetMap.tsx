@@ -228,7 +228,15 @@ function paintMarker(el: HTMLElement, v: VehicleState, selected: boolean) {
   if (arrow) arrow.style.transform = moving ? `rotate(${v.course}deg)` : '';
 
   const tag = el.querySelector<HTMLElement>('.veh-tag');
-  if (tag) tag.textContent = moving ? `${v.id} · ${v.speed}` : v.id;
+  if (tag) {
+    // Ligne 1 : chauffeur (sinon numero du camion) ; ligne 2 : plaque.
+    const who = v.driver && v.driver.trim() ? v.driver.trim() : v.id;
+    const l1 = document.createElement('b');
+    l1.textContent = moving ? `${who} · ${v.speed} km/h` : who;
+    const l2 = document.createElement('small');
+    l2.textContent = v.plate || v.id;
+    tag.replaceChildren(l1, l2);
+  }
 }
 
 /* --- quadrillage ---------------------------------------------------------- */
