@@ -1,4 +1,6 @@
 import { Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+import { Driver } from '../accounting/entities/driver.entity';
 import { VehicleState } from '../common/types';
 import { TELEMETRY_SOURCE, TelemetrySource, RawPosition } from '../telemetry/telemetry.source';
 import { EventsService } from '../events/events.service';
@@ -26,17 +28,37 @@ export class FleetService implements OnModuleInit {
    */
   private readonly state = new Map<string, VehicleState>();
 
+  /** Chauffeur attribue a chaque camion (page Chauffeurs), rafraichi toutes les 30 s. */
+  private driverByVehicle = new Map<string, string>();
+  private driverTimer?: ReturnType<typeof setInterval>;
+
+  private async refreshDrivers(): Promise<void> {
+    try {
+      const rows = await this.dataSource.getRepository(Driver).find();
+      const map = new Map<string, string>();
+      for (const d of rows as Array<{ vehicleId?: string | null; fullName?: string; active?: boolean }>) {
+        if (d.vehicleId && d.fullName && d.active !== false) map.set(d.vehicleId, d.fullName);
+      }
+      this.driverByVehicle = map;
+    } catch {
+      /* base indisponible au demarrage : nouvel essai au prochain tour */
+    }
+  }
+
   constructor(
     @Inject(TELEMETRY_SOURCE) private readonly source: TelemetrySource,
     private readonly events: EventsService,
     private readonly geofence: GeofenceService,
     private readonly fuel: FuelService,
+    private readonly dataSource: DataSource,
     private readonly rules: RulesService,
     private readonly immobilizer: ImmobilizerService,
     private readonly vehicles: VehiclesService,
     private readonly positions: PositionsService,
     private readonly departures: DeparturesService,
-  ) {}
+  ) {    setTimeout(() => void this.refreshDrivers(), 3_000);
+    this.driverTimer = setInterval(() => void this.refreshDrivers(), 30_000);
+  }
 
   async onModuleInit(): Promise<void> {
     setTimeout(() => void this.immobilizer.resyncOutputs(this.vehicles.list().map((v) => v.id)), 12_000);
@@ -135,7 +157,7 @@ export class FleetService implements OnModuleInit {
     const current: VehicleState = {
       id: raw.vehicleId,
       plate: meta.plate,
-      driver: meta.driver,
+      driver: this.driverByVehicle.get(raw.vehicleId) ?? meta.driver,
       imei: meta.imei,
       tankMainCapacity: Number(meta.tankMainCapacity ?? 700),
       tankAuxCapacity: Number(meta.tankAuxCapacity ?? 300),
