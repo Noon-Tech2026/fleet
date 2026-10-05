@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
+import { Vehicle } from '../fleet/entities/vehicle.entity';
 import { Versement } from './entities/versement.entity';
 import { DriverSalary } from './entities/driver-salary.entity';
 import { CashEntry } from './entities/cash-entry.entity';
@@ -641,12 +642,14 @@ export class AccountingService implements OnModuleInit {
     if (range?.to) qb.andWhere('x.paidAt <= :pt', { pt: new Date(`${range.to}T23:59:59.999`) });
     const [rows, cats] = await Promise.all([qb.orderBy('x.paidAt', 'DESC').take(2000).getMany(), this.categoriesRepo.find()]);
     const cl = new Map(cats.map((c) => [c.id, c.labelFr]));
+    const vehs = (await this.expensesRepo.manager.getRepository(Vehicle).find()) as unknown as Array<{ id: string; plate?: string | null }>;
+    const plates = new Map(vehs.map((v) => [v.id, v.plate ?? '']));
     return rows.map((x) => ({
       id: `ex:${x.id}`,
       kind: 'credit' as const,
       at: (x.paidAt as Date).toISOString(),
       amount: Number(x.amount),
-      label: `${cl.get(x.category) ?? x.category} — ${x.vehicleId}${x.supplier ? ` · ${x.supplier}` : ''}${x.payment === 'credit' ? ' (dette réglée)' : ''}`,
+      label: `${cl.get(x.category) ?? x.category} — ${x.vehicleId}${plates.get(x.vehicleId) ? ` (${plates.get(x.vehicleId)})` : ''}${x.supplier ? ` · ${x.supplier}` : ''}${x.notes ? ` — ${x.notes}` : ''}${x.payment === 'credit' ? ' (dette réglée)' : ''}`,
       source: 'expense' as const,
       deletable: false,
     }));
