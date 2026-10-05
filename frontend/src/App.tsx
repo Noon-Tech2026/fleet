@@ -78,7 +78,10 @@ function Dashboard({
     const load = () => api.fleetVehicles().then((d) => { if (cancelled === false) setDirectory(d); }).catch(() => undefined);
     void load();
     const timer = setInterval(load, 60_000);
-    return () => { cancelled = true; clearInterval(timer); };
+    // Ecriture ailleurs (camion cree / modifie) : repertoire recharge tout de suite.
+    const onChanged = () => void load();
+    window.addEventListener('mirsad:data-changed', onChanged);
+    return () => { cancelled = true; clearInterval(timer); window.removeEventListener('mirsad:data-changed', onChanged); };
   }, []);
   const pendingVehicles = directory.filter(
     (d) => d.active !== false && vehicles.some((v) => v.id === d.id) === false,

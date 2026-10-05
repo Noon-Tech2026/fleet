@@ -10,6 +10,7 @@ import { PeriodFilter, type Period } from './PeriodFilter';
 import { api, type VehicleDirectoryEntry } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { VehicleAccountingPanel } from './VehicleAccountingPanel';
+import { useDataChanged } from '../lib/dataChanged';
 
 export function AccountingPage() {
   const { t } = useTranslation();
@@ -23,7 +24,8 @@ export function AccountingPage() {
   const [period, setPeriod] = useState<Period>({});
   const [vehicleQuery, setVehicleQuery] = useState('');
   const [overview, setOverview] = useState<AccountingOverview | null>(null);
-  useEffect(() => { apiClient.accountingOverview(period).then(setOverview).catch(() => setOverview(null)); }, [period]);
+  const [dataVersion, setDataVersion] = useState(0);
+  useEffect(() => { apiClient.accountingOverview(period).then(setOverview).catch(() => setOverview(null)); }, [period, dataVersion]);
   const [catalogOpen, setCatalogOpen] = useState(false);
 
   const canRecordTrip = can('operator');
@@ -53,6 +55,8 @@ export function AccountingPage() {
     void loadSummaries();
     void loadDirectory();
   }, [loadSummaries, loadDirectory]);
+  // Saisie ailleurs (dialogue, autre ecran) : cartes, tableau et listes se rechargent.
+  useDataChanged(() => { void loadSummaries(); void loadDirectory(); setDataVersion((n) => n + 1); });
 
   // Le repertoire, pas la telemetrie en direct : un camion tout juste cree
   // doit rester consultable ici avant meme d'avoir emis sa premiere position.
