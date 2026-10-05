@@ -7,6 +7,7 @@ import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { CreateUserDialog } from './CreateUserDialog';
 import { PasswordDialog } from './PasswordDialog';
+import { useDataChanged } from '../lib/dataChanged';
 
 export function UsersPage() {
   const { t } = useTranslation();
@@ -27,6 +28,7 @@ export function UsersPage() {
       setError(err instanceof Error ? err.message : 'Chargement impossible');
     }
   }, []);
+  useDataChanged(load);
 
   useEffect(() => {
     void load();

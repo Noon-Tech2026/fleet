@@ -7,6 +7,7 @@ import { formatMoney } from '../lib/accounting';
 import { useAuth } from '../auth/AuthContext';
 import { PeriodFilter, type Period } from './PeriodFilter';
 import DateInput from '../components/DateInput';
+import { useDataChanged } from '../lib/dataChanged';
 
 interface Props { client: ClientRecord; onClose: () => void }
 
@@ -29,6 +30,7 @@ export function ClientLedgerDialog({ client, onClose }: Props) {
     try { setLedger(await api.clientLedger(client.id, period)); setError(null); }
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
   }, [client.id, period]);
+  useDataChanged(load);
   useEffect(() => { void load(); }, [load]);
 
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' });

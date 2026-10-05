@@ -7,6 +7,7 @@ import { useAuth } from '../auth/AuthContext';
 import { ServiceDialog } from './ServiceDialog';
 import { PlanDialog } from './PlanDialog';
 import { MaintenanceLogs } from './MaintenanceLogs';
+import { useDataChanged } from '../lib/dataChanged';
 
 type Filter = 'all' | 'overdue' | 'soon';
 const FILTERS: Filter[] = ['all', 'overdue', 'soon'];
@@ -42,6 +43,7 @@ export function MaintenancePage({ vehicles }: { vehicles: VehicleState[] }) {
       setError(err instanceof Error ? err.message : t('maintenance.page.loadError'));
     }
   }, [t]);
+  useDataChanged(load);
 
   useEffect(() => {
     void load();

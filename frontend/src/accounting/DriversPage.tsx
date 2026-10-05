@@ -9,6 +9,7 @@ import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DriverDialog } from './DriverDialog';
+import { useDataChanged } from '../lib/dataChanged';
 
 export function DriversPage() {
   const { i18n } = useTranslation();
@@ -59,6 +60,7 @@ export function DriversPage() {
       setError(err instanceof Error ? err.message : 'Chargement impossible');
     }
   }, []);
+  useDataChanged(load);
 
   useEffect(() => {
     void load();

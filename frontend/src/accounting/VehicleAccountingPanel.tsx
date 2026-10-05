@@ -16,6 +16,7 @@ import { PeriodFilter, type Period } from './PeriodFilter';
 import { TripDialog } from './TripDialog';
 import { ExpenseDialog } from './ExpenseDialog';
 import { InvestmentDialog } from './InvestmentDialog';
+import { useDataChanged } from '../lib/dataChanged';
 
 interface Props {
   vehicleId: string;
@@ -102,6 +103,7 @@ export function VehicleAccountingPanel({
       setError(err instanceof Error ? err.message : 'Chargement impossible');
     }
   }, [vehicleId, period]);
+  useDataChanged(load);
 
   useEffect(() => {
     void load();

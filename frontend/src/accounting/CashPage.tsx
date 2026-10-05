@@ -7,6 +7,7 @@ import { useAuth } from '../auth/AuthContext';
 import { PeriodFilter, type Period } from './PeriodFilter';
 import DateInput from '../components/DateInput';
 import { PayablesPanel } from './PayablesPanel';
+import { useDataChanged } from '../lib/dataChanged';
 
 /** Journal de caisse : entrees (debit), sorties (credit), solde cumule. */
 export function CashPage() {
@@ -27,6 +28,7 @@ export function CashPage() {
     try { setJournal(await api.cashJournal(period)); setError(null); }
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
   }, [period]);
+  useDataChanged(load);
   useEffect(() => { void load(); }, [load]);
 
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' });

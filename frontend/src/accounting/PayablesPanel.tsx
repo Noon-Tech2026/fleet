@@ -4,6 +4,7 @@ import { api, type PayableItem } from '../api/client';
 import { formatMoney } from '../lib/accounting';
 import { useExpenseCategories } from '../lib/useExpenseCategories';
 import DateInput from '../components/DateInput';
+import { useDataChanged } from '../lib/dataChanged';
 
 interface Props {
   canWrite: boolean;
@@ -24,6 +25,7 @@ export function PayablesPanel({ canWrite, onChanged }: Props) {
     try { setItems((await api.payables()).items); setError(null); }
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
   }, []);
+  useDataChanged(load);
   useEffect(() => { void load(); }, [load]);
 
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' });

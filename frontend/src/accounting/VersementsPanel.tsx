@@ -6,6 +6,7 @@ import { formatMoney } from '../lib/accounting';
 import { useAuth } from '../auth/AuthContext';
 import type { Period } from './PeriodFilter';
 import DateInput from '../components/DateInput';
+import { useDataChanged } from '../lib/dataChanged';
 
 interface Props { period: Period; onChanged: () => void; showTotal?: boolean }
 
@@ -23,6 +24,7 @@ export function VersementsPanel({ period, onChanged, showTotal = false }: Props)
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => api.versements(period).then(setRows).catch(() => setRows([])), [period]);
+  useDataChanged(load);
   useEffect(() => { void load(); }, [load]);
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' });
 

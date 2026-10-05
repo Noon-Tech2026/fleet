@@ -1,4 +1,5 @@
 import type { Alert, AuthUser, ClientRecord, CommandAudit, ContainerSize, DriverRecord, MaintenanceKind, MaintenanceLogEntry, MaintenancePlanState, Role, TripEntry, VehicleAccountingSummary, VehicleExpenseCategory, VehicleExpenseEntry, VehicleInvestmentEntry, VehicleInvestmentKind, VehicleState, TrackPoint, Zone, ZoneInput, ExitRequestView , ExpenseCategoryRecord } from '../lib/types';
+import { notifyDataChanged } from '../lib/dataChanged';
 
 /**
  * Repertoire d'un vehicule (fiche administrative), independant de sa
@@ -54,7 +55,11 @@ async function request<T>(path: string, init?: RequestInit, retry = true): Promi
     throw new Error(await readError(res));
   }
 
-  return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
+  const method = (init?.method ?? 'GET').toUpperCase();
+  const body = res.status === 204 ? (undefined as T) : ((await res.json()) as T);
+  // Ecriture reussie : les ecrans ouverts se rechargent (useDataChanged).
+  if (method !== 'GET' && !path.includes('/auth/')) notifyDataChanged(path);
+  return body;
 }
 
 async function refreshSession(): Promise<boolean> {

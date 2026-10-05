@@ -12,6 +12,7 @@ import { CreateVehicleDialog } from './CreateVehicleDialog';
 import { EditVehicleDialog } from './EditVehicleDialog';
 import { PendingVehicleCard } from './PendingVehicleCard';
 import type { VehicleDirectoryEntry } from '../api/client';
+import { useDataChanged } from '../lib/dataChanged';
 
 interface Props {
   vehicles: VehicleState[];
@@ -44,6 +45,7 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
   const [summaries, setSummaries] = useState<Record<string, { revenue: number; expenses: number; investments: number; netResult: number }>>({});
   // Incrémenté à la fermeture du journal : les montants ont pu changer.
   const [summaryVersion, setSummaryVersion] = useState(0);
+  useDataChanged(() => setSummaryVersion((n) => n + 1));
   const [loadError, setLoadError] = useState<string | null>(null);
   const [directory, setDirectory] = useState<VehicleDirectoryEntry[]>([]);
   const [directoryVersion, setDirectoryVersion] = useState(0);
