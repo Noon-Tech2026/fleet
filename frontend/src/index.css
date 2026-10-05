@@ -2863,3 +2863,15 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .alert-feed .who { display: inline-flex; flex-direction: column; line-height: 1.2; min-width: 9.5em; }
 .alert-feed .who b { font-family: var(--mono); font-weight: 700; white-space: nowrap; }
 .alert-feed .who small { font-size: 12px; font-weight: 600; color: var(--dim); white-space: nowrap; }
+
+/* === alert-who-v2 === */
+/* Colonnes du fil : heure | plaque + chauffeur | message — sans chevauchement. */
+.alert-feed li {
+  display: grid !important;
+  grid-template-columns: 4.6em 9.5em minmax(0, 1fr) !important;
+  column-gap: 16px;
+  align-items: start;
+}
+.alert-feed .who { min-width: 0; overflow: hidden; }
+.alert-feed .who b, .alert-feed .who small { overflow: hidden; text-overflow: ellipsis; }
+.alert-feed li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
