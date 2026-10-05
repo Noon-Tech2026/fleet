@@ -2858,3 +2858,8 @@ input.search { min-width: 260px; padding: 8px 12px; border-radius: 999px; border
 .detail, .vehicle-detail, .detail-panel, aside { min-width: 0; overflow-wrap: anywhere; }
 .fuel-grid, .fuel-row, .fuels { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
 html, body { max-width: 100%; overflow-x: hidden; }
+
+/* === alert-who-v1 === */
+.alert-feed .who { display: inline-flex; flex-direction: column; line-height: 1.2; min-width: 9.5em; }
+.alert-feed .who b { font-family: var(--mono); font-weight: 700; white-space: nowrap; }
+.alert-feed .who small { font-size: 12px; font-weight: 600; color: var(--dim); white-space: nowrap; }

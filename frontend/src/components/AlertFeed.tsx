@@ -20,7 +20,9 @@ function detailOf(message: string): string {
   return '';
 }
 
-export function AlertFeed({ alerts }: { alerts: Alert[] }) {
+type VehicleRef = { id: string; plate?: string | null; driver?: string | null };
+
+export function AlertFeed({ alerts, vehicles = [], directory = [] }: { alerts: Alert[]; vehicles?: VehicleRef[]; directory?: VehicleRef[] }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language;
   const isFrench = locale.startsWith('fr');
@@ -31,6 +33,13 @@ export function AlertFeed({ alerts }: { alerts: Alert[] }) {
     if (i18n.exists(key) === false) return a.message;
     return t(key, { detail: detailOf(a.message) });
   }
+
+  // Plaque + chauffeur a la place du code camion (le code reste en infobulle).
+  const whoOf = (id: string) => {
+    const live = vehicles.find((v) => v.id === id);
+    const dir = directory.find((v) => v.id === id);
+    return { plate: live?.plate || dir?.plate || id, driver: live?.driver?.trim() || '' };
+  };
 
   if (alerts.length === 0) {
     return <p className="empty">{t('alerts.empty')}</p>;
@@ -43,7 +52,10 @@ export function AlertFeed({ alerts }: { alerts: Alert[] }) {
           <time dateTime={a.at}>
             {new Date(a.at).toLocaleString(locale, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
           </time>
-          <span className="who">{a.vehicleId}</span>
+          <span className="who" title={a.vehicleId}>
+            <b>{whoOf(a.vehicleId).plate}</b>
+            {whoOf(a.vehicleId).driver && <small>{whoOf(a.vehicleId).driver}</small>}
+          </span>
           <span>{text(a)}</span>
         </li>
       ))}
