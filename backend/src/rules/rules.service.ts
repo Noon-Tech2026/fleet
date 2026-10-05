@@ -219,6 +219,12 @@ export class RulesService {
   private async checkUnlockRequest(previous: VehicleState | undefined, current: VehicleState): Promise<void> {
     const rising = current.unlockRequested && (previous === undefined || previous.unlockRequested === false);
     if (rising === false) return;
+    // Demarrage deja autorise : rien a debloquer. Pas d'alerte, pas de bip,
+    // et la demande ne reste pas affichee (appui par habitude au demarrage).
+    if (current.starter === 'allowed') {
+      current.unlockRequested = false;
+      return;
+    }
     this.alerts.raise(current.id, 'critical', 'unlock_requested', `Le chauffeur demande le déblocage du démarreur (${current.driver || 'non affecté'})`);
     await this.immobilizer.buzzerOn(current.id, 2);
     // Voyant eteint = demande enregistree ; il se rallume apres 5 min si toujours bloque.
