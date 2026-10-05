@@ -373,7 +373,7 @@ function bleSlot(a: Record<string, unknown>, n: 1 | 2): { raw?: number; temp?: n
   const b = Number(a[`io70${n + 4}`]);
   return {
     raw: Number.isFinite(raw) && raw > 0 ? raw : undefined,
-    temp: Number.isFinite(t) && t > 0 && t < 200 ? t - 40 : undefined,
+    temp: Number.isFinite(t) && t > 0 && t < 120 ? t : undefined, // preset Dominator BT v2.0 : degres directs
     bat: Number.isFinite(b) && b > 0 && b <= 100 ? b : undefined,
   };
 }
