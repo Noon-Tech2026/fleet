@@ -103,6 +103,26 @@ export interface DriverLedger {
   payments: { id: string; kind: 'fee' | 'salary' | 'advance' | 'other'; at: string; amount: number; notes: string | null; createdBy: string }[];
 }
 
+/** Resultat de la recherche par conteneur. */
+export interface ContainerHit {
+  containerNumber: string | null;
+  size: string;
+  tripId: string;
+  clientId: string;
+  clientName: string;
+  vehicleId: string;
+  plate: string | null;
+  driverName: string | null;
+  startedAt: string;
+  endedAt: string | null;
+  origin: string | null;
+  destination: string | null;
+  amount: number;
+  paid: boolean;
+  notes: string | null;
+  otherContainers: string[];
+}
+
 export interface ClientLedger {
   clientId: string;
   period: { debit: number; credit: number; balance: number };
@@ -151,6 +171,8 @@ export const api = {
   saveExpenseCategory: (input: { id?: string; labelFr: string; labelEn?: string; labelAr?: string; active?: boolean; sortOrder?: number }) =>
     request<ExpenseCategoryRecord>('/api/accounting/expense-categories', { method: 'POST', body: JSON.stringify(input) }),
   deleteExpenseCategory: (id: string) => request<{ ok: true }>(`/api/accounting/expense-categories/${id}`, { method: 'DELETE' }),
+  searchContainers: (q: string) =>
+    request<ContainerHit[]>(`/api/accounting/containers/search?q=${encodeURIComponent(q)}`),
   clientLedger: (id: string, range?: { from?: string; to?: string }) =>
     request<ClientLedger>(`/api/accounting/clients/${id}/ledger${rangeQs(range)}`),
   addClientEntry: (id: string, input: { kind: 'debit' | 'credit'; amount: number; at?: string; label: string }) =>

@@ -725,5 +725,23 @@
     "supplier": "Fournisseur",
     "supplierPh": "ex. station, garage…",
     "paidOn": "Dette réglée le"
+  },
+  "containerSearch": {
+    "button": "Recherche avancée",
+    "title": "Recherche avancée — conteneur",
+    "number": "N° de conteneur",
+    "ph": "ex. MSKU1234567 (3 caractères minimum)",
+    "search": "Rechercher",
+    "none": "Aucun voyage trouvé pour ce conteneur.",
+    "paid": "Payé comptant",
+    "account": "Sur compte client",
+    "client": "Client",
+    "truck": "Camion",
+    "date": "Date",
+    "route": "Trajet",
+    "amount": "Montant du voyage",
+    "others": "Autres conteneurs",
+    "notes": "Notes",
+    "openLedger": "Ouvrir le journal client"
   }
 }

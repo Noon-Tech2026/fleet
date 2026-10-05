@@ -735,5 +735,23 @@
     "supplier": "Supplier",
     "supplierPh": "e.g. station, garage…",
     "paidOn": "Debt paid on"
+  },
+  "containerSearch": {
+    "button": "Advanced search",
+    "title": "Advanced search — container",
+    "number": "Container no.",
+    "ph": "e.g. MSKU1234567 (3 characters minimum)",
+    "search": "Search",
+    "none": "No trip found for this container.",
+    "paid": "Paid in cash",
+    "account": "On client account",
+    "client": "Client",
+    "truck": "Truck",
+    "date": "Date",
+    "route": "Route",
+    "amount": "Trip amount",
+    "others": "Other containers",
+    "notes": "Notes",
+    "openLedger": "Open client ledger"
   }
 }

@@ -705,6 +705,58 @@ export class AccountingService implements OnModuleInit {
 
   /* --- synthèse ------------------------------------------------------------ */
 
+  /** Recherche par numero de conteneur (partiel, sans espaces ni casse) : voyage, client, camion, chauffeur. */
+  async searchContainers(q: string) {
+    const term = (q ?? '').toUpperCase().replace(/\s+/g, '');
+    if (term.length < 3) return [];
+    const hits = await this.containersRepo
+      .createQueryBuilder('c')
+      .where("REPLACE(UPPER(c.containerNumber), ' ', '') LIKE :t", { t: `%${term}%` })
+      .take(50)
+      .getMany();
+    if (hits.length === 0) return [];
+    const tripIds = Array.from(new Set(hits.map((h) => h.tripId)));
+    const [trips, siblings] = await Promise.all([
+      this.tripsRepo.find({ where: { id: In(tripIds) } }),
+      this.containersRepo.find({ where: { tripId: In(tripIds) } }),
+    ]);
+    const tripById = new Map(trips.map((t) => [t.id, t]));
+    const [clients, drivers, vehs] = await Promise.all([
+      this.clientsRepo.find({ where: { id: In(Array.from(new Set(trips.map((t) => t.clientId)))) } }),
+      this.driversRepo.find({ where: { id: In(Array.from(new Set(trips.map((t) => t.driverId)))) } }),
+      this.tripsRepo.manager.getRepository(Vehicle).find() as unknown as Promise<Array<{ id: string; plate?: string | null }>>,
+    ]);
+    const clientName = new Map(clients.map((c) => [c.id, c.name]));
+    const driverName = new Map(drivers.map((d) => [d.id, d.fullName]));
+    const plate = new Map(vehs.map((v) => [v.id, v.plate ?? '']));
+    return hits
+      .filter((h) => tripById.has(h.tripId))
+      .map((h) => {
+        const t = tripById.get(h.tripId) as Trip;
+        return {
+          containerNumber: h.containerNumber,
+          size: h.size,
+          tripId: t.id,
+          clientId: t.clientId,
+          clientName: clientName.get(t.clientId) ?? '—',
+          vehicleId: t.vehicleId,
+          plate: plate.get(t.vehicleId) || null,
+          driverName: driverName.get(t.driverId) ?? null,
+          startedAt: t.startedAt.toISOString(),
+          endedAt: t.endedAt ? t.endedAt.toISOString() : null,
+          origin: t.origin,
+          destination: t.destination,
+          amount: Number(t.amount),
+          paid: t.paid,
+          notes: t.notes,
+          otherContainers: siblings
+            .filter((c) => c.tripId === t.id && c.id !== h.id)
+            .map((c) => `${c.containerNumber ?? '?'} (${c.size}')`),
+        };
+      })
+      .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  }
+
   /** Journal d'un client : voyages (debit auto) + ecritures manuelles, solde periode et global. */
   async clientLedger(clientId: string, range?: DateRange) {
     const d = dateWhere(range);

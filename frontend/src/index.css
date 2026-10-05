@@ -2875,3 +2875,15 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .alert-feed .who { min-width: 0; overflow: hidden; }
 .alert-feed .who b, .alert-feed .who small { overflow: hidden; text-overflow: ellipsis; }
 .alert-feed li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+
+/* === recherche-conteneur-v1 === */
+.container-hits { display: grid; gap: 12px; margin-top: 14px; }
+.container-hit { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--ink-3, #fff); }
+.container-hit header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.container-hit .container-no { font-family: var(--mono); font-size: 16px; letter-spacing: 0.02em; }
+.container-hit dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; margin: 0; }
+.container-hit dt { color: var(--dim); font-weight: 600; }
+.container-hit dd { margin: 0; overflow-wrap: anywhere; }
+.container-hit footer { margin-top: 12px; display: flex; justify-content: flex-end; }
+tr.ledger-highlight > td { background: #fff3c4 !important; box-shadow: inset 0 0 0 9999px rgba(245, 177, 61, 0.18); }
+tr.ledger-highlight > td:first-child { border-left: 4px solid #e0a020; }

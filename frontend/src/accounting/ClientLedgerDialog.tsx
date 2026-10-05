@@ -9,10 +9,10 @@ import { PeriodFilter, type Period } from './PeriodFilter';
 import DateInput from '../components/DateInput';
 import { useDataChanged } from '../lib/dataChanged';
 
-interface Props { client: ClientRecord; onClose: () => void }
+interface Props { client: ClientRecord; onClose: () => void; /** Voyage a surligner (recherche conteneur). */ highlightTripId?: string }
 
 /** Journal d'un client : debit (du), credit (recu), solde. */
-export function ClientLedgerDialog({ client, onClose }: Props) {
+export function ClientLedgerDialog({ client, onClose, highlightTripId }: Props) {
   const { t, i18n } = useTranslation();
   const { can } = useAuth();
   const canWrite = can('supervisor');
@@ -32,6 +32,12 @@ export function ClientLedgerDialog({ client, onClose }: Props) {
   }, [client.id, period]);
   useDataChanged(load);
   useEffect(() => { void load(); }, [load]);
+  // Voyage recherche : amene la ligne surlignee a l'ecran une fois le journal charge.
+  useEffect(() => {
+    if (!highlightTripId || !ledger) return;
+    const id = setTimeout(() => document.querySelector('.ledger-highlight')?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 150);
+    return () => clearTimeout(id);
+  }, [highlightTripId, ledger]);
 
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' });
 
@@ -126,7 +132,7 @@ export function ClientLedgerDialog({ client, onClose }: Props) {
                 <thead><tr><th>{t('common.date')}</th><th>{t('clients.ledger.label')}</th><th>{t('clients.ledger.debit')}</th><th>{t('clients.ledger.credit')}</th><th>{t('clients.ledger.solde')}</th>{isAdmin && <th />}</tr></thead>
                 <tbody>
                   {ledger.lines.map((l) => (
-                    <tr key={l.id}>
+                    <tr key={l.id} className={highlightTripId && l.tripId === highlightTripId && l.kind === 'debit' ? 'ledger-highlight' : undefined}>
                       <td>{fmtDate(l.at)}</td>
                       <td>{l.label}</td>
                       <td className="text-danger">{l.kind === 'debit' ? formatMoney(l.amount) : ''}</td>

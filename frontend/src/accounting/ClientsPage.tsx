@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { openPrintReport } from '../lib/printReport';
 import { formatMoney } from '../lib/accounting';
 import { ClientLedgerDialog } from './ClientLedgerDialog';
+import { ContainerSearchDialog } from './ContainerSearchDialog';
 import { useTranslation } from 'react-i18next';
 import type { ClientRecord } from '../lib/types';
 import { initials } from '../lib/roles';
@@ -39,6 +40,8 @@ export function ClientsPage() {
   const [editing, setEditing] = useState<ClientRecord | 'new' | null>(null);
   const [deleting, setDeleting] = useState<ClientRecord | null>(null);
   const [ledgerFor, setLedgerFor] = useState<ClientRecord | null>(null);
+  const [highlightTrip, setHighlightTrip] = useState<string | undefined>(undefined);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   // Relue après chaque écriture : la base fait foi, pas la réponse d'un PATCH,
@@ -99,6 +102,7 @@ export function ClientsPage() {
         {canManage && (
           <div className="chips">
             <button className="btn ghost" onClick={() => void printList(clients ?? [])}>{t('common.print')}</button>
+            <button className="btn ghost" onClick={() => setSearchOpen(true)}>{t('containerSearch.button', 'Recherche avancée')}</button>
             <button className="btn primary" onClick={() => setEditing('new')}>
               {t('clients.new')}
             </button>
@@ -229,7 +233,18 @@ export function ClientsPage() {
           }}
         />
       )}
-      {ledgerFor && <ClientLedgerDialog client={ledgerFor} onClose={() => setLedgerFor(null)} />}
+      {ledgerFor && <ClientLedgerDialog client={ledgerFor} highlightTripId={highlightTrip} onClose={() => { setLedgerFor(null); setHighlightTrip(undefined); }} />}
+      {searchOpen && (
+        <ContainerSearchDialog
+          onClose={() => setSearchOpen(false)}
+          onOpenLedger={(clientId, clientName, tripId) => {
+            const c = (clients ?? []).find((x) => x.id === clientId) ?? ({ id: clientId, name: clientName } as ClientRecord);
+            setSearchOpen(false);
+            setHighlightTrip(tripId);
+            setLedgerFor(c);
+          }}
+        />
+      )}
     </main>
   );
 }

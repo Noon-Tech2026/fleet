@@ -263,6 +263,12 @@ export class AccountingController {
     return this.accounting.deleteExpenseCategory(id);
   }
 
+  /** Recherche avancee : voyage d'un conteneur (client, camion, chauffeur, montant). */
+  @Get('accounting/containers/search')
+  searchContainers(@Query('q') q?: string) {
+    return this.accounting.searchContainers(q ?? '');
+  }
+
   /** Journal d'un client : debit (voyages + ecritures), credit (paiements), solde. */
   @Get('accounting/clients/:id/ledger')
   clientLedger(@Param('id') id: string, @Query('from') from?: string, @Query('to') to?: string) {
