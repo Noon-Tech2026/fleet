@@ -119,8 +119,8 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
             const palette = TRUCK_PALETTE[status.tone];
             const summary = summaries[v.id];
 
-            const ratioMain = Math.max(0, Math.min(1, v.fuelMain / FUEL_MAIN_CAPACITY));
-            const ratioAux = Math.max(0, Math.min(1, v.fuelAux / FUEL_AUX_CAPACITY));
+            const ratioMain = Math.max(0, Math.min(1, v.fuelMain / (v.tankMainCapacity || FUEL_MAIN_CAPACITY)));
+            const ratioAux = Math.max(0, Math.min(1, v.fuelAux / (v.tankAuxCapacity || FUEL_AUX_CAPACITY)));
 
             const moteurBlocked = v.starter === 'blocked';
             const moteurLabel = moteurBlocked ? t('overview.engineBlocked') : v.ignition ? t('overview.engineRunning') : t('overview.engineStopped');
