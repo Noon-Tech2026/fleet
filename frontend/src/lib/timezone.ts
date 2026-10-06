@@ -18,7 +18,10 @@ proto.toLocaleDateString = function (this: Date, l?: Loc, o?: Opt) { return orig
 proto.toLocaleTimeString = function (this: Date, l?: Loc, o?: Opt) { return origTime.call(this, l, withTz(o)); };
 
 const OrigDTF = Intl.DateTimeFormat;
-const PatchedDTF = function (l?: Loc, o?: Opt) { return new OrigDTF(l, withTz(o)); } as unknown as typeof Intl.DateTimeFormat;
+// Fonction ordinaire (prototype modifiable), convertie seulement a l'installation.
+function PatchedDTF(l?: Loc, o?: Opt): Intl.DateTimeFormat {
+  return new OrigDTF(l, withTz(o));
+}
 PatchedDTF.prototype = OrigDTF.prototype;
-(PatchedDTF as unknown as { supportedLocalesOf: typeof OrigDTF.supportedLocalesOf }).supportedLocalesOf = OrigDTF.supportedLocalesOf.bind(OrigDTF);
-(Intl as unknown as { DateTimeFormat: typeof Intl.DateTimeFormat }).DateTimeFormat = PatchedDTF;
+PatchedDTF.supportedLocalesOf = OrigDTF.supportedLocalesOf.bind(OrigDTF);
+(Intl as unknown as { DateTimeFormat: unknown }).DateTimeFormat = PatchedDTF;
