@@ -2887,3 +2887,10 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .container-hit footer { margin-top: 12px; display: flex; justify-content: flex-end; }
 tr.ledger-highlight > td { background: #fff3c4 !important; box-shadow: inset 0 0 0 9999px rgba(245, 177, 61, 0.18); }
 tr.ledger-highlight > td:first-child { border-left: 4px solid #e0a020; }
+
+/* === sorties-plaque-v1 === */
+.exit-who { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.exit-who strong { font-size: 17px; }
+.exit-plate { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; font-size: 13px; letter-spacing: 0.04em;
+  padding: 2px 8px; border: 1.5px solid currentColor; border-radius: 6px; background: #fff; color: #1f2937; white-space: nowrap; }
+.exit-driver { font-weight: 600; color: var(--dim, #4b5563); white-space: nowrap; }

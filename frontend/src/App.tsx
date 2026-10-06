@@ -189,7 +189,7 @@ function Dashboard({
       ) : (
         <main className="layout">
           <aside className="col left">
-            <ExitRequestsPanel requests={exitRequests} openSignal={exitOpenSignal} />
+            <ExitRequestsPanel requests={exitRequests} openSignal={exitOpenSignal} vehicles={vehicles} directory={directory} />
             <h2 className="col-title">
               {t('app.fleet')} <span className="count">{vehicles.length + pendingVehicles.length}</span>
             </h2>

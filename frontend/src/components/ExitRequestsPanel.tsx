@@ -5,8 +5,13 @@ import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { TripDialog } from '../accounting/TripDialog';
 
+type VehicleRef = { id: string; plate?: string | null; driver?: string | null };
+
 interface Props {
   requests: ExitRequestView[];
+  /** Flotte en direct et referentiel : plaque + chauffeur a cote du code camion. */
+  vehicles?: VehicleRef[];
+  directory?: VehicleRef[];
   /** Incrementer pour ouvrir la fenetre depuis un autre composant. */
   openSignal?: number;
 }
@@ -16,7 +21,7 @@ interface Props {
  * laterale, une fenetre avec la liste complete. La confirmation passe par
  * le formulaire de voyage existant ; le voyage cree est lie a la demande.
  */
-export function ExitRequestsPanel({ requests, openSignal = 0 }: Props) {
+export function ExitRequestsPanel({ requests, openSignal = 0, vehicles = [], directory = [] }: Props) {
   const { t, i18n } = useTranslation();
   const { can } = useAuth();
   const canDecide = can('supervisor');
@@ -42,10 +47,18 @@ export function ExitRequestsPanel({ requests, openSignal = 0 }: Props) {
     if (requests.length === 0) setOpen(false);
   }, [requests.length]);
 
+  // Plaque + chauffeur (flotte en direct d'abord, referentiel ensuite).
+  const whoOf = (id: string) => {
+    const live = vehicles.find((v) => v.id === id);
+    const dir = directory.find((v) => v.id === id);
+    return { plate: live?.plate || dir?.plate || '', driver: live?.driver?.trim() || dir?.driver?.trim() || '' };
+  };
+  const label = (id: string) => [id, whoOf(id).plate, whoOf(id).driver].filter(Boolean).join(' · ');
+
   if (requests.length === 0) return null;
 
   async function reject(r: ExitRequestView) {
-    if (window.confirm(t('exit.confirmReject', { id: r.vehicleId })) === false) return;
+    if (window.confirm(t('exit.confirmReject', { id: label(r.vehicleId) })) === false) return;
     setBusy(r.id);
     try { await api.rejectExit(r.id); } finally { setBusy(null); }
   }
@@ -75,7 +88,7 @@ export function ExitRequestsPanel({ requests, openSignal = 0 }: Props) {
     return Date.parse(a.exitedAt) - Date.parse(b.exitedAt);
   });
   const q = filter.trim().toLowerCase();
-  const shown = q.length === 0 ? sorted : sorted.filter((r) => r.vehicleId.toLowerCase().includes(q) || r.zoneName.toLowerCase().includes(q));
+  const shown = q.length === 0 ? sorted : sorted.filter((r) => label(r.vehicleId).toLowerCase().includes(q) || r.zoneName.toLowerCase().includes(q));
 
   return (
     <>
@@ -114,7 +127,11 @@ export function ExitRequestsPanel({ requests, openSignal = 0 }: Props) {
                 return (
                   <li key={r.id} className={waitingButton ? 'warn' : 'ready'}>
                     <div className="row">
-                      <strong>{r.vehicleId}</strong>
+                      <span className="exit-who">
+                        <strong>{r.vehicleId}</strong>
+                        {whoOf(r.vehicleId).plate && <span className="exit-plate">{whoOf(r.vehicleId).plate}</span>}
+                        {whoOf(r.vehicleId).driver && <span className="exit-driver">{whoOf(r.vehicleId).driver}</span>}
+                      </span>
                       <span className={`badge ${waitingButton ? 'warn' : 'ok'}`}>
                         {waitingButton ? t('exit.waitingButton') : t('exit.toDecide')}
                       </span>
