@@ -89,12 +89,14 @@ function Dashboard({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [trackVehicleId, setTrackVehicleId] = useState<string | null>(null);
   const [feedOpen, setFeedOpen] = useState(true);
-  const [view, setView] = useState<
-    'overview' | 'fleet' | 'maintenance' | 'accounting' | 'drivers' | 'clients' | 'cash' | 'versements' | 'users' | 'zones'
-  >('overview');
   const { can } = useAuth();
   const isAdmin = can('admin');
-  const canManageZones = isAdmin || role === 'supervisor';
+  // Hors administrateurs : seule la Supervision est accessible.
+  const canManageZones = isAdmin;
+  const [view, setView] = useState<
+    'overview' | 'fleet' | 'maintenance' | 'accounting' | 'drivers' | 'clients' | 'cash' | 'versements' | 'users' | 'zones'
+  >(isAdmin ? 'overview' : 'fleet');
+  const shownView = isAdmin ? view : 'fleet';
 
   const selected = useMemo(
     () => vehicles.find((v) => v.id === selectedId) ?? vehicles[0] ?? null,
@@ -113,31 +115,31 @@ function Dashboard({
         </div>
 
         <nav className="nav">
-          <button className={`nav-tab ${view === 'overview' ? 'active' : ''}`} onClick={() => setView('overview')}>
+          {isAdmin && <button className={`nav-tab ${view === 'overview' ? 'active' : ''}`} onClick={() => setView('overview')}>
             {t('nav.overview')}
-          </button>
-          <button className={`nav-tab ${view === 'fleet' ? 'active' : ''}`} onClick={() => setView('fleet')}>
+          </button>}
+          <button className={`nav-tab ${shownView === 'fleet' ? 'active' : ''}`} onClick={() => setView('fleet')}>
             {t('nav.supervision')}
             {exitRequests.length > 0 && <span className="nav-badge">{exitRequests.length}</span>}
           </button>
-          <button className={`nav-tab ${view === 'maintenance' ? 'active' : ''}`} onClick={() => setView('maintenance')}>
+          {isAdmin && <button className={`nav-tab ${view === 'maintenance' ? 'active' : ''}`} onClick={() => setView('maintenance')}>
             {t('nav.maintenance')}
-          </button>
-          <button className={`nav-tab ${view === 'accounting' ? 'active' : ''}`} onClick={() => setView('accounting')}>
+          </button>}
+          {isAdmin && <button className={`nav-tab ${view === 'accounting' ? 'active' : ''}`} onClick={() => setView('accounting')}>
             {t('nav.accounting')}
-          </button>
-          <button className={`nav-tab ${view === 'drivers' ? 'active' : ''}`} onClick={() => setView('drivers')}>
+          </button>}
+          {isAdmin && <button className={`nav-tab ${view === 'drivers' ? 'active' : ''}`} onClick={() => setView('drivers')}>
             {t('nav.drivers')}
-          </button>
-          <button className={`nav-tab ${view === 'clients' ? 'active' : ''}`} onClick={() => setView('clients')}>
+          </button>}
+          {isAdmin && <button className={`nav-tab ${view === 'clients' ? 'active' : ''}`} onClick={() => setView('clients')}>
             {t('nav.clients')}
-          </button>
-          <button className={`nav-tab ${view === 'cash' ? 'active' : ''}`} onClick={() => setView('cash')}>
+          </button>}
+          {isAdmin && <button className={`nav-tab ${view === 'cash' ? 'active' : ''}`} onClick={() => setView('cash')}>
             {t('nav.cash')}
-          </button>
-          <button className={`nav-tab ${view === 'versements' ? 'active' : ''}`} onClick={() => setView('versements')}>
+          </button>}
+          {isAdmin && <button className={`nav-tab ${view === 'versements' ? 'active' : ''}`} onClick={() => setView('versements')}>
             {t('nav.versements')}
-          </button>
+          </button>}
           {canManageZones && (
             <button className={`nav-tab ${view === 'zones' ? 'active' : ''}`} onClick={() => setView('zones')}>
               {t('nav.zones')}
@@ -162,23 +164,23 @@ function Dashboard({
         </div>
       </header>
 
-      {view === 'users' && isAdmin ? (
+      {shownView === 'users' && isAdmin ? (
         <UsersPage />
-      ) : view === 'maintenance' ? (
+      ) : shownView === 'maintenance' ? (
         <MaintenancePage vehicles={vehicles} />
-      ) : view === 'accounting' ? (
+      ) : shownView === 'accounting' ? (
         <AccountingPage />
-      ) : view === 'zones' ? (
+      ) : shownView === 'zones' ? (
         <ZonesPage vehicles={vehicles} directory={directory} isAdmin={isAdmin} />
-      ) : view === 'drivers' ? (
+      ) : shownView === 'drivers' ? (
         <DriversPage />
-      ) : view === 'versements' ? (
+      ) : shownView === 'versements' ? (
         <VersementsPage />
-      ) : view === 'cash' ? (
+      ) : shownView === 'cash' ? (
         <CashPage />
-      ) : view === 'clients' ? (
+      ) : shownView === 'clients' ? (
         <ClientsPage />
-      ) : view === 'overview' ? (
+      ) : shownView === 'overview' ? (
         <FleetOverview
           vehicles={vehicles}
           onTrack={(id) => {
