@@ -360,7 +360,8 @@
     "playbackSpeed": "Vitesse de lecture",
     "trip": "Voyage",
     "allTrips": "— Période libre —",
-    "tripNote": "Période réglée sur le voyage (journée entière si l'heure n'a pas été saisie). Modifiez Du / Au pour l'ajuster."
+    "tripNote": "Période réglée sur le voyage (journée entière si l'heure n'a pas été saisie). Modifiez Du / Au pour l'ajuster.",
+    "containers": "Conteneurs"
   },
   "dialog": {
     "common": {

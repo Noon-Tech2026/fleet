@@ -2902,3 +2902,7 @@ tr.ledger-highlight > td:first-child { border-left: 4px solid #e0a020; }
 .stop-badge { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #c0392b; color: #fff; font-weight: 700; font-size: 12px; }
 .track-stop-row { cursor: pointer; }
 .track-stop-row:hover td { background: rgba(18, 112, 79, 0.08); }
+
+/* === historique-conteneurs-v1 === */
+.trip-containers { margin: 6px 0 0; font-size: 15px; }
+.trip-containers bdi { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; }

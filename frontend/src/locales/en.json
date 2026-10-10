@@ -370,7 +370,8 @@
     "playbackSpeed": "Playback speed",
     "trip": "Trip",
     "allTrips": "— Free period —",
-    "tripNote": "Period set to the trip (whole day when no time was entered). Change From / To to adjust it."
+    "tripNote": "Period set to the trip (whole day when no time was entered). Change From / To to adjust it.",
+    "containers": "Containers"
   },
   "dialog": {
     "common": {

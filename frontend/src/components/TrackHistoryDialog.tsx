@@ -98,6 +98,12 @@ function fmtDuration(min: number): string {
 
 const ymd = (d: Date) => d.toISOString().slice(0, 10);
 
+/** Conteneurs d'un voyage : « MSKU1234567 (40'), TGHU7654321 (20') ». */
+function tripContainers(tr: TripEntry): string {
+  const list = ((tr as unknown as { containers?: Array<{ containerNumber?: string | null; size?: string | null }> }).containers ?? []);
+  return list.map((c) => `${c.containerNumber || '?'}${c.size ? ` (${c.size}')` : ''}`).join(', ');
+}
+
 /** Periode d'un voyage. Date sans heure (00:00 ou 12:00 pile) = journee entiere. */
 function tripRange(tr: TripEntry): { from: string; to: string } {
   const dateOnly = (d: Date) => d.getMinutes() === 0 && d.getSeconds() === 0 && (d.getHours() === 0 || d.getHours() === 12);
@@ -384,7 +390,8 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
               {trips.map((tr) => (
                 <option key={tr.id} value={tr.id}>
                   {new Date(tr.startedAt).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                  {' · '}{tr.origin || '—'} → {tr.destination || '—'}
+                  {tripContainers(tr) ? ` · ${tripContainers(tr)}` : ''}
+                  {tr.origin || tr.destination ? ` · ${tr.origin || '—'} → ${tr.destination || '—'}` : ''}
                   {tr.clientName ? ` · ${tr.clientName}` : ''}
                   {tr.driverName ? ` · ${tr.driverName}` : ''}
                 </option>
@@ -408,6 +415,7 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
         </div>
 
         {error && <p className="notice">{error}</p>}
+        {trip && tripContainers(trip) && <p className="trip-containers"><b>{t('track.containers', 'Conteneurs')} :</b> <bdi dir="ltr">{tripContainers(trip)}</bdi></p>}
         {trip && <p className="muted small">{t('track.tripNote', 'Période réglée sur le voyage (journée entière si l’heure n’a pas été saisie). Modifiez Du / Au pour l’ajuster.')}</p>}
         {points !== null && points.length >= MAX_POINTS && <p className="notice">{t('track.tooMany', { n: MAX_POINTS })}</p>}
 
