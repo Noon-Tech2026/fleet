@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import maplibregl, { Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { BaseMapControl } from '../lib/basemap';
-import type { TrackPoint } from '../lib/types';
+import type { TrackPoint, TripEntry } from '../lib/types';
 import { api } from '../api/client';
 
 interface Props {
@@ -96,6 +96,40 @@ function fmtDuration(min: number): string {
   return h > 0 ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min`;
 }
 
+const ymd = (d: Date) => d.toISOString().slice(0, 10);
+
+/** Periode d'un voyage. Date sans heure (00:00 ou 12:00 pile) = journee entiere. */
+function tripRange(tr: TripEntry): { from: string; to: string } {
+  const dateOnly = (d: Date) => d.getMinutes() === 0 && d.getSeconds() === 0 && (d.getHours() === 0 || d.getHours() === 12);
+  const s = new Date(tr.startedAt);
+  const start = dateOnly(s) ? new Date(s.getFullYear(), s.getMonth(), s.getDate(), 0, 0) : s;
+  let end: Date;
+  if (tr.endedAt) {
+    const e = new Date(tr.endedAt);
+    end = dateOnly(e) ? new Date(e.getFullYear(), e.getMonth(), e.getDate(), 23, 59) : e;
+  } else {
+    end = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 23, 59);
+  }
+  const now = new Date();
+  if (end > now) end = now;
+  return { from: toLocalInput(start), to: toLocalInput(end) };
+}
+
+/** Chevron (pointe vers la droite) : MapLibre le tourne dans le sens du trace. */
+function arrowImage(): ImageData {
+  const size = 24;
+  const c = document.createElement('canvas');
+  c.width = size;
+  c.height = size;
+  const g = c.getContext('2d') as CanvasRenderingContext2D;
+  const path = () => { g.beginPath(); g.moveTo(8, 5); g.lineTo(16, 12); g.lineTo(8, 19); };
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+  g.strokeStyle = '#ffffff'; g.lineWidth = 6; path(); g.stroke();
+  g.strokeStyle = '#0b5a3e'; g.lineWidth = 3; path(); g.stroke();
+  return g.getImageData(0, 0, size, size);
+}
+
 /**
  * Historique des mouvements d'un camion entre deux instants : trace sur
  * carte, arrets, resume. Lecture seule ; les donnees viennent de la table
@@ -111,6 +145,10 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPoints, setShowPoints] = useState(false);
+  const [trips, setTrips] = useState<TripEntry[]>([]);
+  const [tripId, setTripId] = useState('');
+  const [assignedDriver, setAssignedDriver] = useState('');
+  const trip = trips.find((x) => x.id === tripId) ?? null;
 
   const container = useRef<HTMLDivElement | null>(null);
   const map = useRef<MapLibreMap | null>(null);
@@ -145,6 +183,7 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
   function preset(hours: number | 'today') {
     const end = new Date();
     const start = hours === 'today' ? new Date(end.getFullYear(), end.getMonth(), end.getDate()) : new Date(end.getTime() - hours * 3600_000);
+    setTripId('');
     const f = toLocalInput(start);
     const tt = toLocalInput(end);
     setFrom(f);
@@ -158,6 +197,28 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vehicleId, from, to]);
+
+  // Voyages du camion (90 derniers jours) et chauffeur attribue.
+  useEffect(() => {
+    api.vehicleTrips(vehicleId, { from: ymd(new Date(Date.now() - 90 * 86_400_000)), to: ymd(new Date()) })
+      .then((list) => setTrips([...list].sort((a, b) => b.startedAt.localeCompare(a.startedAt))))
+      .catch(() => setTrips([]));
+    api.drivers()
+      .then((list) => {
+        const d = (list as unknown as Array<{ vehicleId?: string | null; fullName?: string }>).find((x) => x.vehicleId === vehicleId);
+        setAssignedDriver(d?.fullName ?? '');
+      })
+      .catch(() => setAssignedDriver(''));
+  }, [vehicleId]);
+
+  function pickTrip(id: string) {
+    setTripId(id);
+    const tr = trips.find((x) => x.id === id);
+    if (!tr) return;
+    const r = tripRange(tr);
+    setFrom(r.from);
+    setTo(r.to);
+  }
 
   const summary = useMemo(() => (points && points.length > 1 ? summarize(points) : null), [points]);
 
@@ -204,20 +265,23 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
         m.addSource('progress', { type: 'geojson', data: empty });
         m.addLayer({ id: 'track-casing', type: 'line', source: 'track', paint: { 'line-color': '#ffffff', 'line-width': 7, 'line-opacity': 0.9 } });
         m.addLayer({ id: 'track-line', type: 'line', source: 'track', paint: { 'line-color': '#12704F', 'line-width': 4, 'line-opacity': 0.55 } });
+        if (!m.hasImage('track-arrow')) m.addImage('track-arrow', arrowImage());
+        m.addLayer({ id: 'track-arrows', type: 'symbol', source: 'track', layout: { 'symbol-placement': 'line', 'symbol-spacing': 70, 'icon-image': 'track-arrow', 'icon-size': 0.85, 'icon-allow-overlap': true, 'icon-ignore-placement': true, 'icon-rotation-alignment': 'map' } });
         m.addLayer({ id: 'progress-line', type: 'line', source: 'progress', paint: { 'line-color': '#e67e22', 'line-width': 5 } });
       }
       if (coords.length === 0) return;
 
-      const mk = (lngLat: [number, number], cls: string, title: string) => {
+      const mk = (lngLat: [number, number], cls: string, title: string, label?: string) => {
         const el = document.createElement('div');
         el.className = `track-marker ${cls}`;
         el.title = title;
+        if (label) el.textContent = label;
         const marker = new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat(lngLat).addTo(m);
         markers.current.push(marker);
       };
       mk(coords[0] as [number, number], 'start', t('track.start'));
       mk(coords[coords.length - 1] as [number, number], 'end', t('track.end'));
-      summary?.stops.forEach((s) => mk([s.lon, s.lat], 'stop', `${fmtDuration(s.minutes)}`));
+      summary?.stops.forEach((s, i) => mk([s.lon, s.lat], 'stop stop-num', `${i + 1} · ${fmtDuration(s.minutes)}`, String(i + 1)));
 
       const bounds = coords.reduce((b, c) => b.extend(c as [number, number]), new maplibregl.LngLatBounds(coords[0] as [number, number], coords[0] as [number, number]));
       m.fitBounds(bounds, { padding: 40, maxZoom: 15, duration: 400 });
@@ -306,19 +370,34 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
             <h2>{t('track.title')}</h2>
             <p>
               {vehicleId} · <bdi dir="ltr">{plate}</bdi>
+              {(trip?.driverName || assignedDriver) && <> · <b>{trip?.driverName || assignedDriver}</b></>}
             </p>
           </div>
           <button className="btn ghost" onClick={onClose}>{t('track.close')}</button>
         </header>
 
         <div className="track-controls">
+          <label className="trip-pick">
+            {t('track.trip', 'Voyage')}
+            <select value={tripId} onChange={(e) => (e.target.value ? pickTrip(e.target.value) : setTripId(''))}>
+              <option value="">{t('track.allTrips', '— Période libre —')}</option>
+              {trips.map((tr) => (
+                <option key={tr.id} value={tr.id}>
+                  {new Date(tr.startedAt).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  {' · '}{tr.origin || '—'} → {tr.destination || '—'}
+                  {tr.clientName ? ` · ${tr.clientName}` : ''}
+                  {tr.driverName ? ` · ${tr.driverName}` : ''}
+                </option>
+              ))}
+            </select>
+          </label>
           <label>
             {t('track.from')}
-            <input type="datetime-local" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <input type="datetime-local" value={from} onChange={(e) => { setTripId(''); setFrom(e.target.value); }} />
           </label>
           <label>
             {t('track.to')}
-            <input type="datetime-local" value={to} onChange={(e) => setTo(e.target.value)} />
+            <input type="datetime-local" value={to} onChange={(e) => { setTripId(''); setTo(e.target.value); }} />
           </label>
           <button className="btn mint" disabled={loading} onClick={() => void load(from, to)}>{loading ? t('track.loading') : t('track.load')}</button>
           <span className="presets">
@@ -329,6 +408,7 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
         </div>
 
         {error && <p className="notice">{error}</p>}
+        {trip && <p className="muted small">{t('track.tripNote', 'Période réglée sur le voyage (journée entière si l’heure n’a pas été saisie). Modifiez Du / Au pour l’ajuster.')}</p>}
         {points !== null && points.length >= MAX_POINTS && <p className="notice">{t('track.tooMany', { n: MAX_POINTS })}</p>}
 
         <div className="track-map" ref={container} />
@@ -380,11 +460,12 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
 
         {summary && summary.stops.length > 0 && (
           <table className="track-table">
-            <thead><tr><th>{t('track.stops')}</th><th>{t('track.from')}</th><th>{t('track.to')}</th><th>{t('track.position')}</th></tr></thead>
+            <thead><tr><th>#</th><th>{t('track.stops')}</th><th>{t('track.from')}</th><th>{t('track.to')}</th><th>{t('track.position')}</th></tr></thead>
             <tbody>
               {summary.stops.map((s, i) => (
-                <tr key={i}>
-                  <td>{fmtDuration(s.minutes)}</td>
+                <tr key={i} className="track-stop-row" onClick={() => map.current?.flyTo({ center: [s.lon, s.lat], zoom: 16 })}>
+                  <td><span className="stop-badge">{i + 1}</span></td>
+                  <td><b>{fmtDuration(s.minutes)}</b></td>
                   <td>{new Date(s.from).toLocaleString(locale, { hour12: false })}</td>
                   <td>{new Date(s.to).toLocaleString(locale, { hour12: false })}</td>
                   <td dir="ltr">{s.lat.toFixed(5)}, {s.lon.toFixed(5)}</td>
