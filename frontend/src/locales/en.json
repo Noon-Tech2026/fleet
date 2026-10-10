@@ -371,7 +371,11 @@
     "trip": "Trip",
     "allTrips": "— Free period —",
     "tripNote": "Period set to the trip (whole day when no time was entered). Change From / To to adjust it.",
-    "containers": "Containers"
+    "containers": "Containers",
+    "inProgress": "in progress",
+    "noLoad": "no load",
+    "toValidate": "to validate",
+    "voyageNote": "Left {{zone}} on {{from}} → {{to}}"
   },
   "dialog": {
     "common": {

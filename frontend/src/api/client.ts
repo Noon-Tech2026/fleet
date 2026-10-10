@@ -308,6 +308,7 @@ export const api = {
 
   deleteDriver: (id: string) => request<void>(`/api/accounting/drivers/${id}`, { method: 'DELETE' }),
 
+  vehicleVoyages: (id: string) => request<import('../lib/types').VoyageView[]>(`/api/vehicles/${encodeURIComponent(id)}/voyages`),
   vehicleTrips: (id: string, range?: { from?: string; to?: string }) => request<TripEntry[]>(`/api/vehicles/${id}/trips${rangeQs(range)}`),
 
   createTrip: (input: {

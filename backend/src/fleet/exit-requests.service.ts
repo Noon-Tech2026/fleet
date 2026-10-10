@@ -115,6 +115,51 @@ export class ExitRequestsService {
     return this.repo.find({ where: vehicleId ? { vehicleId } : {}, order: { createdAt: 'DESC' }, take: limit });
   }
 
+  /**
+   * Voyages reels : chaque demande de sortie ouvre un voyage, qui se termine au
+   * premier retour du camion dans la meme zone (positions.zone_id), au plus tard
+   * a la sortie suivante. Pas de retour => voyage en cours.
+   */
+  async voyages(vehicleId: string, limit = 60) {
+    const m = this.repo.manager;
+    const iso = (v: unknown): string | null => {
+      if (v === null || v === undefined) return null;
+      const d = v instanceof Date ? v : new Date(String(v).includes('T') ? String(v) : `${String(v).replace(' ', 'T')}Z`);
+      return Number.isNaN(d.getTime()) ? null : d.toISOString();
+    };
+    const exits: Array<{ id: string; zone_id: string | null; zone_name: string; exited_at: Date; button_pressed_at: Date | null; status: string; trip_id: string | null; reason: string | null }> =
+      await m.query(
+        'SELECT id, zone_id, zone_name, exited_at, button_pressed_at, status, trip_id, reason FROM exit_requests WHERE vehicle_id = ? ORDER BY exited_at DESC LIMIT ?',
+        [vehicleId, limit],
+      );
+    const out: Array<Record<string, unknown>> = [];
+    for (let i = 0; i < exits.length; i++) {
+      const e = exits[i];
+      const next = i > 0 ? exits[i - 1].exited_at : null;
+      let returnedAt: string | null = null;
+      if (e.zone_id) {
+        // 2 min de marge : le GPS peut encore "rebondir" dans la zone juste apres la sortie.
+        const params: unknown[] = [vehicleId, e.zone_id, e.exited_at];
+        let sql = 'SELECT MIN(recorded_at) AS t FROM positions WHERE vehicle_id = ? AND zone_id = ? AND recorded_at > DATE_ADD(?, INTERVAL 2 MINUTE)';
+        if (next) { sql += ' AND recorded_at <= ?'; params.push(next); }
+        const rows: Array<{ t: unknown }> = await m.query(sql, params);
+        returnedAt = iso(rows[0]?.t);
+      }
+      out.push({
+        id: e.id,
+        zoneName: e.zone_name,
+        exitedAt: iso(e.exited_at),
+        buttonPressedAt: iso(e.button_pressed_at),
+        returnedAt,
+        nextExitAt: iso(next),
+        status: e.status,
+        reason: e.reason,
+        tripId: e.trip_id,
+      });
+    }
+    return out;
+  }
+
   private async get(id: string): Promise<ExitRequest> {
     const r = await this.repo.findOne({ where: { id } });
     if (!r) throw new NotFoundException('Demande de sortie inconnue');

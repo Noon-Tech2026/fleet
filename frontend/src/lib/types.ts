@@ -339,3 +339,16 @@ export interface Zone {
 }
 
 export type ZoneInput = Omit<Zone, 'id' | 'active'>;
+
+/** Voyage reel : sortie de zone (appui du bouton) -> retour dans la meme zone. */
+export interface VoyageView {
+  id: string;
+  zoneName: string;
+  exitedAt: string;
+  buttonPressedAt: string | null;
+  returnedAt: string | null;
+  nextExitAt: string | null;
+  status: 'pending' | 'confirmed' | 'bypassed';
+  reason: string | null;
+  tripId: string | null;
+}

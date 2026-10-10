@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import maplibregl, { Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { BaseMapControl } from '../lib/basemap';
-import type { TrackPoint, TripEntry } from '../lib/types';
+import type { TrackPoint, TripEntry, VoyageView } from '../lib/types';
 import { api } from '../api/client';
 
 interface Props {
@@ -104,23 +104,6 @@ function tripContainers(tr: TripEntry): string {
   return list.map((c) => `${c.containerNumber || '?'}${c.size ? ` (${c.size}')` : ''}`).join(', ');
 }
 
-/** Periode d'un voyage. Date sans heure (00:00 ou 12:00 pile) = journee entiere. */
-function tripRange(tr: TripEntry): { from: string; to: string } {
-  const dateOnly = (d: Date) => d.getMinutes() === 0 && d.getSeconds() === 0 && (d.getHours() === 0 || d.getHours() === 12);
-  const s = new Date(tr.startedAt);
-  const start = dateOnly(s) ? new Date(s.getFullYear(), s.getMonth(), s.getDate(), 0, 0) : s;
-  let end: Date;
-  if (tr.endedAt) {
-    const e = new Date(tr.endedAt);
-    end = dateOnly(e) ? new Date(e.getFullYear(), e.getMonth(), e.getDate(), 23, 59) : e;
-  } else {
-    end = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 23, 59);
-  }
-  const now = new Date();
-  if (end > now) end = now;
-  return { from: toLocalInput(start), to: toLocalInput(end) };
-}
-
 /** Chevron (pointe vers la droite) : MapLibre le tourne dans le sens du trace. */
 function arrowImage(): ImageData {
   const size = 24;
@@ -154,7 +137,9 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
   const [trips, setTrips] = useState<TripEntry[]>([]);
   const [tripId, setTripId] = useState('');
   const [assignedDriver, setAssignedDriver] = useState('');
-  const trip = trips.find((x) => x.id === tripId) ?? null;
+  const [voyages, setVoyages] = useState<VoyageView[]>([]);
+  const voyage = voyages.find((x) => x.id === tripId) ?? null;
+  const trip = voyage?.tripId ? trips.find((x) => x.id === voyage.tripId) ?? null : null;
 
   const container = useRef<HTMLDivElement | null>(null);
   const map = useRef<MapLibreMap | null>(null);
@@ -209,6 +194,7 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
     api.vehicleTrips(vehicleId, { from: ymd(new Date(Date.now() - 90 * 86_400_000)), to: ymd(new Date()) })
       .then((list) => setTrips([...list].sort((a, b) => b.startedAt.localeCompare(a.startedAt))))
       .catch(() => setTrips([]));
+    api.vehicleVoyages(vehicleId).then(setVoyages).catch(() => setVoyages([]));
     api.drivers()
       .then((list) => {
         const d = (list as unknown as Array<{ vehicleId?: string | null; fullName?: string }>).find((x) => x.vehicleId === vehicleId);
@@ -219,11 +205,29 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
 
   function pickTrip(id: string) {
     setTripId(id);
-    const tr = trips.find((x) => x.id === id);
-    if (!tr) return;
-    const r = tripRange(tr);
-    setFrom(r.from);
-    setTo(r.to);
+    const v = voyages.find((x) => x.id === id);
+    if (!v) return;
+    // De la minute de sortie a la minute qui suit le retour (ou maintenant si en cours).
+    const end = v.returnedAt ? new Date(Date.parse(v.returnedAt) + 60_000) : new Date();
+    setFrom(toLocalInput(new Date(v.exitedAt)));
+    setTo(toLocalInput(end));
+  }
+
+  const fmtShort = (iso: string) => new Date(iso).toLocaleString(locale, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
+  const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false });
+  function voyageLabel(v: VoyageView): string {
+    const tr = v.tripId ? trips.find((x) => x.id === v.tripId) : undefined;
+    const back = v.returnedAt
+      ? `${fmtTime(v.returnedAt)} (${fmtDuration(Math.round((Date.parse(v.returnedAt) - Date.parse(v.exitedAt)) / 60_000))})`
+      : t('track.inProgress', 'en cours');
+    const parts = [`${fmtShort(v.exitedAt)} → ${back}`];
+    if (v.zoneName) parts.push(v.zoneName);
+    if (tr && tripContainers(tr)) parts.push(tripContainers(tr));
+    if (tr?.clientName) parts.push(tr.clientName);
+    if (tr?.driverName) parts.push(tr.driverName);
+    if (v.status === 'bypassed') parts.push(`${t('track.noLoad', 'sans chargement')}${v.reason ? ` (${v.reason})` : ''}`);
+    if (v.status === 'pending') parts.push(t('track.toValidate', 'à valider'));
+    return parts.join(' · ');
   }
 
   const summary = useMemo(() => (points && points.length > 1 ? summarize(points) : null), [points]);
@@ -387,14 +391,8 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
             {t('track.trip', 'Voyage')}
             <select value={tripId} onChange={(e) => (e.target.value ? pickTrip(e.target.value) : setTripId(''))}>
               <option value="">{t('track.allTrips', '— Période libre —')}</option>
-              {trips.map((tr) => (
-                <option key={tr.id} value={tr.id}>
-                  {new Date(tr.startedAt).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                  {tripContainers(tr) ? ` · ${tripContainers(tr)}` : ''}
-                  {tr.origin || tr.destination ? ` · ${tr.origin || '—'} → ${tr.destination || '—'}` : ''}
-                  {tr.clientName ? ` · ${tr.clientName}` : ''}
-                  {tr.driverName ? ` · ${tr.driverName}` : ''}
-                </option>
+              {voyages.map((v) => (
+                <option key={v.id} value={v.id}>{voyageLabel(v)}</option>
               ))}
             </select>
           </label>
@@ -416,7 +414,7 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
 
         {error && <p className="notice">{error}</p>}
         {trip && tripContainers(trip) && <p className="trip-containers"><b>{t('track.containers', 'Conteneurs')} :</b> <bdi dir="ltr">{tripContainers(trip)}</bdi></p>}
-        {trip && <p className="muted small">{t('track.tripNote', 'Période réglée sur le voyage (journée entière si l’heure n’a pas été saisie). Modifiez Du / Au pour l’ajuster.')}</p>}
+        {voyage && <p className="muted small">{t('track.voyageNote', { defaultValue: 'Sortie de {{zone}} le {{from}} → {{to}}', zone: voyage.zoneName || '—', from: fmtShort(voyage.exitedAt), to: voyage.returnedAt ? `retour ${fmtShort(voyage.returnedAt)}` : t('track.inProgress', 'en cours') })}</p>}
         {points !== null && points.length >= MAX_POINTS && <p className="notice">{t('track.tooMany', { n: MAX_POINTS })}</p>}
 
         <div className="track-map" ref={container} />

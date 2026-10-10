@@ -361,7 +361,11 @@
     "trip": "Voyage",
     "allTrips": "— Période libre —",
     "tripNote": "Période réglée sur le voyage (journée entière si l'heure n'a pas été saisie). Modifiez Du / Au pour l'ajuster.",
-    "containers": "Conteneurs"
+    "containers": "Conteneurs",
+    "inProgress": "en cours",
+    "noLoad": "sans chargement",
+    "toValidate": "à valider",
+    "voyageNote": "Sortie de {{zone}} le {{from}} → {{to}}"
   },
   "dialog": {
     "common": {

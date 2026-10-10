@@ -120,6 +120,12 @@ export class FleetController {
     return (await this.exitRequests.history(vehicleId)).map(toView);
   }
 
+  /** Voyages reels (sortie de zone -> retour dans la zone) pour l'historique des mouvements. */
+  @Get('vehicles/:id/voyages')
+  voyages(@Param('id') id: string) {
+    return this.exitRequests.voyages(id);
+  }
+
   @RequireRole(Role.Supervisor)
   @Post('exit-requests/:id/confirm')
   async confirmExit(@Param('id') id: string, @Body() dto: ConfirmExitDto, @CurrentUser() user: JwtPayload) {
