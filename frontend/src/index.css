@@ -2906,3 +2906,44 @@ tr.ledger-highlight > td:first-child { border-left: 4px solid #e0a020; }
 /* === historique-conteneurs-v1 === */
 .trip-containers { margin: 6px 0 0; font-size: 15px; }
 .trip-containers bdi { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; }
+/* === historique-voyage-style-v1 === */
+.track-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 14px; }
+.track-controls .trip-pick { flex: 1 1 100%; max-width: 640px; }
+.track-controls .trip-pick select,
+.track-controls input[type="datetime-local"] {
+  box-sizing: border-box;
+  height: 48px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 16px;
+  color: inherit;
+  background-color: var(--surface, #fff);
+  border: 1px solid var(--line, #d9dee4);
+  border-radius: 12px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.track-controls .trip-pick select {
+  width: 100%;
+  min-width: 0;
+  padding-inline-end: 40px;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  text-overflow: ellipsis;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+[dir="rtl"] .track-controls .trip-pick select { background-position: left 14px center; }
+.track-controls .trip-pick select:hover,
+.track-controls input[type="datetime-local"]:hover { border-color: #b9c2cc; }
+.track-controls .trip-pick select:focus,
+.track-controls input[type="datetime-local"]:focus { border-color: #3f9b5f; box-shadow: 0 0 0 3px rgba(63, 155, 95, .18); }
+.track-controls .btn.mint { height: 48px; }
+.track-controls .presets { display: flex; gap: 8px; margin-inline-start: auto; }
+.trip-containers { margin: 8px 0 0; }
+@media (max-width: 700px) {
+  .track-controls label { flex: 1 1 100%; }
+  .track-controls .presets { margin-inline-start: 0; }
+}
