@@ -569,7 +569,15 @@
         "other": "أخرى"
       },
       "retourVide": "إرجاع فارغ",
-      "markRetour": "استُلم الوصل"
+      "markRetour": "استُلم الوصل",
+      "accFees": "منح الرحلات",
+      "accSalary": "الراتب",
+      "accDue": "المستحق",
+      "accDeclared": "المُعلَن",
+      "accRest": "الباقي",
+      "accFeesHint": "المدفوعات: المنح، أخرى",
+      "accSalaryHint": "المدفوعات: الراتب، السُّلف",
+      "accTotalHint": "المنح + الراتب"
     },
     "salary": "الراتب الشهري (أوقية)",
     "vehicle": "الشاحنة المرتبطة",

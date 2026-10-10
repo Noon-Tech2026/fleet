@@ -569,7 +569,15 @@
         "other": "Other"
       },
       "retourVide": "Empty return",
-      "markRetour": "Slip received"
+      "markRetour": "Slip received",
+      "accFees": "Trip bonuses",
+      "accSalary": "Salary",
+      "accDue": "Due",
+      "accDeclared": "declared",
+      "accRest": "Remaining",
+      "accFeesHint": "Payments: bonuses, other",
+      "accSalaryHint": "Payments: salary, advances",
+      "accTotalHint": "Bonuses + salary"
     },
     "salary": "Monthly salary (MRU)",
     "vehicle": "Assigned truck",

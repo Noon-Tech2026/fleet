@@ -820,10 +820,17 @@ export class AccountingService implements OnModuleInit {
     const sumP = (rows: { amount: string }[]) => rows.reduce((a, p) => a + Number(p.amount), 0);
     const paid = sumP(payments), salTotal = sumP(periodSal);
     const allPaid = sumP(allPays), allSalTotal = sumP(allSal);
+    // Deux comptes : salaire / avance soldent le salaire ; primes et « autre » soldent les primes.
+    const isSal = (k: string) => k === 'salary' || k === 'advance';
+    const paidOf = (rows: { kind: string; amount: string }[], sal: boolean) => sumP(rows.filter((p) => isSal(p.kind) === sal));
+    const feesPaid = paidOf(payments, false), salaryPaid = paidOf(payments, true);
+    const allFeesPaid = paidOf(allPays, false), allSalaryPaid = paidOf(allPays, true);
     return {
       driverId,
-      period: { fees: fees.total, feesCount: fees.count, salaries: salTotal, paid, balance: fees.total + salTotal - paid },
-      overall: { fees: allFees.total, salaries: allSalTotal, paid: allPaid, balance: allFees.total + allSalTotal - allPaid },
+      period: { fees: fees.total, feesCount: fees.count, salaries: salTotal, paid, balance: fees.total + salTotal - paid,
+        feesPaid, salaryPaid, feesBalance: fees.total - feesPaid, salaryBalance: salTotal - salaryPaid },
+      overall: { fees: allFees.total, salaries: allSalTotal, paid: allPaid, balance: allFees.total + allSalTotal - allPaid,
+        feesPaid: allFeesPaid, salaryPaid: allSalaryPaid, feesBalance: allFees.total - allFeesPaid, salaryBalance: allSalTotal - allSalaryPaid },
       fees: fees.items,
       salaries: salaries.map((x) => ({ id: x.id, month: x.month, amount: Number(x.amount), paid: x.driverPaymentId !== null })),
       payments: payments.map((p) => ({ id: p.id, kind: p.kind, at: p.at.toISOString(), amount: Number(p.amount), notes: p.notes, createdBy: p.createdBy })),

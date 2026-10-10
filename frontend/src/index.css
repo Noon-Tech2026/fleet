@@ -2947,3 +2947,25 @@ tr.ledger-highlight > td:first-child { border-left: 4px solid #e0a020; }
   .track-controls label { flex: 1 1 100%; }
   .track-controls .presets { margin-inline-start: 0; }
 }
+
+/* === chauffeur-comptes-v1 === */
+.ledger-accounts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0 16px; }
+@media (max-width: 900px) { .ledger-accounts { grid-template-columns: 1fr; } }
+.ledger-account { border: 1px solid var(--line, #d9dee4); border-radius: 14px; padding: 14px 16px; background: var(--surface, #fff); }
+.ledger-account h4 { margin: 0 0 10px; font-size: 16px; }
+.ledger-account dl { margin: 0; display: grid; gap: 6px; }
+.ledger-account dl > div { display: flex; justify-content: space-between; gap: 10px; }
+.ledger-account dt { color: var(--dim, #4b5563); }
+.ledger-account dt small { font-weight: 400; }
+.ledger-account dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ledger-account .acc-rest { border-top: 1px dashed var(--line, #d9dee4); padding-top: 6px; margin-top: 2px; }
+.ledger-account .acc-rest dd { font-size: 18px; }
+.ledger-account p { margin: 8px 0 0; }
+.ledger-account.acc-fees { border-top: 4px solid #3f9b5f; }
+.ledger-account.acc-salary { border-top: 4px solid #3b6fb6; }
+.ledger-account.acc-total { border-top: 4px solid #b7791f; display: flex; flex-direction: column; justify-content: center; }
+.ledger-account.acc-total b { font-size: 26px; }
+.ledger-account.acc-total.danger b { color: #c0392b; }
+.ledger-account.acc-total.warn b { color: #b7791f; }
+.ledger-account.acc-total.ok b { color: #2f7d4f; }
+.text-warn { color: #b7791f; }

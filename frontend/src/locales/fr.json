@@ -559,7 +559,15 @@
         "other": "Autre"
       },
       "retourVide": "Retour à vide",
-      "markRetour": "Bon reçu"
+      "markRetour": "Bon reçu",
+      "accFees": "Primes de voyage",
+      "accSalary": "Salaire",
+      "accDue": "Dû",
+      "accDeclared": "déclaré",
+      "accRest": "Reste dû",
+      "accFeesHint": "Paiements : primes, autre",
+      "accSalaryHint": "Paiements : salaire, avances",
+      "accTotalHint": "Primes + salaire"
     },
     "salary": "Salaire mensuel (MRU)",
     "vehicle": "Camion attribué",

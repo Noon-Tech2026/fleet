@@ -96,8 +96,8 @@ function rangeQs(range?: { from?: string; to?: string }): string {
 
 export interface DriverLedger {
   driverId: string;
-  period: { fees: number; feesCount: number; salaries: number; paid: number; balance: number };
-  overall: { fees: number; salaries: number; paid: number; balance: number };
+  period: { fees: number; feesCount: number; salaries: number; paid: number; balance: number; feesPaid: number; salaryPaid: number; feesBalance: number; salaryBalance: number };
+  overall: { fees: number; salaries: number; paid: number; balance: number; feesPaid: number; salaryPaid: number; feesBalance: number; salaryBalance: number };
   salaries: { id: string; month: string; amount: number; paid: boolean }[];
   fees: { expenseId: string; tripId: string | null; vehicleId: string; at: string; amount: number; origin: string | null; destination: string | null; containers: string; paid: boolean; retourVideAt: string | null; retourVideBy: string | null }[];
   payments: { id: string; kind: 'fee' | 'salary' | 'advance' | 'other'; at: string; amount: number; notes: string | null; createdBy: string }[];

@@ -23,7 +23,7 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
   const [at, setAt] = useState(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [payKind, setPayKind] = useState<'advance' | 'other' | 'fee'>('advance');
+  const [payKind, setPayKind] = useState<'advance' | 'other' | 'fee' | 'salary'>('advance');
   const [salMonth, setSalMonth] = useState(new Date().toISOString().slice(0, 7));
   const [salAmount, setSalAmount] = useState('');
   const [busy, setBusy] = useState(false);
@@ -95,8 +95,8 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
       period: periodLabel(period, lang, t('period.all')), lang, rtl: lang.startsWith('ar'),
       labels: { printedOn: t('print.printedOn'), period: t('print.period'), page: '', total: t('clients.ledger.total') },
       kpis: [
-        { label: t('drivers.ledger.fees'), value: formatMoney(ledger.period.fees), tone: 'ok' },
-        { label: t('drivers.ledger.salaries'), value: formatMoney(ledger.period.salaries), tone: 'neutral' },
+        { label: `${t('drivers.ledger.accFees', 'Primes de voyage')} — ${t('drivers.ledger.accRest', 'Reste dû')}`, value: formatMoney(ledger.overall.feesBalance), tone: ledger.overall.feesBalance > 0 ? 'warn' : 'ok' },
+        { label: `${t('drivers.ledger.accSalary', 'Salaire')} — ${t('drivers.ledger.accRest', 'Reste dû')}`, value: formatMoney(ledger.overall.salaryBalance), tone: ledger.overall.salaryBalance > 0 ? 'warn' : ledger.overall.salaryBalance < 0 ? 'danger' : 'ok' },
         { label: t('drivers.ledger.paid'), value: formatMoney(ledger.period.paid), tone: 'neutral' },
         { label: ledger.overall.balance < 0 ? t('drivers.ledger.driverOwes') : t('drivers.ledger.balance'), value: formatMoney(ledger.overall.balance), tone: ledger.overall.balance > 0 ? 'warn' : ledger.overall.balance < 0 ? 'danger' : 'ok' },
       ],
@@ -145,20 +145,40 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
 
         {ledger && (
           <>
-            <div className="fleet-summary compact">
-              <div className="summary-cell ok"><b>{formatMoney(ledger.period.fees)}</b><span>{t('drivers.ledger.fees')} · {t('drivers.feesCount', { n: ledger.period.feesCount })}</span></div>
-              <div className="summary-cell"><b>{formatMoney(ledger.period.salaries)}</b><span>{t('drivers.ledger.salaries')}</span></div>
-              <div className="summary-cell"><b>{formatMoney(ledger.period.paid)}</b><span>{t('drivers.ledger.paid')}</span></div>
-              <div className={`summary-cell ${ledger.overall.balance > 0 ? 'warn' : ledger.overall.balance < 0 ? 'danger' : 'ok'}`}><b>{formatMoney(ledger.overall.balance)}</b><span>{ledger.overall.balance < 0 ? t('drivers.ledger.driverOwes') : t('drivers.ledger.balance')}</span></div>
+            <div className="ledger-accounts">
+              {[
+                { key: 'fees', title: t('drivers.ledger.accFees', 'Primes de voyage'), due: ledger.period.fees, dueLabel: t('drivers.feesCount', { n: ledger.period.feesCount }), paid: ledger.period.feesPaid, rest: ledger.overall.feesBalance, hint: t('drivers.ledger.accFeesHint', 'Paiements : primes, autre') },
+                { key: 'salary', title: t('drivers.ledger.accSalary', 'Salaire'), due: ledger.period.salaries, dueLabel: t('drivers.ledger.accDeclared', 'déclaré'), paid: ledger.period.salaryPaid, rest: ledger.overall.salaryBalance, hint: t('drivers.ledger.accSalaryHint', 'Paiements : salaire, avances') },
+              ].map((a) => (
+                <section key={a.key} className={`ledger-account acc-${a.key}`}>
+                  <h4>{a.title}</h4>
+                  <dl>
+                    <div><dt>{t('drivers.ledger.accDue', 'Dû')} <small>({a.dueLabel})</small></dt><dd>{formatMoney(a.due)}</dd></div>
+                    <div><dt>{t('drivers.ledger.paid')}</dt><dd>{formatMoney(a.paid)}</dd></div>
+                    <div className="acc-rest"><dt>{a.rest < 0 ? t('drivers.ledger.driverOwes') : t('drivers.ledger.accRest', 'Reste dû')}</dt><dd className={a.rest > 0 ? 'text-warn' : a.rest < 0 ? 'text-danger' : 'text-success'}>{formatMoney(a.rest)}</dd></div>
+                  </dl>
+                  <p className="muted small">{a.hint}</p>
+                </section>
+              ))}
+              <section className={`ledger-account acc-total ${ledger.overall.balance > 0 ? 'warn' : ledger.overall.balance < 0 ? 'danger' : 'ok'}`}>
+                <h4>{ledger.overall.balance < 0 ? t('drivers.ledger.driverOwes') : t('drivers.ledger.balance')}</h4>
+                <b>{formatMoney(ledger.overall.balance)}</b>
+                <p className="muted small">{t('drivers.ledger.accTotalHint', 'Primes + salaire')}</p>
+              </section>
             </div>
 
             {canPay && (
               <form className="ledger-pay" onSubmit={pay}>
                 <label className="field inline"><span>{t('common.type')}</span>
-                  <select value={payKind} onChange={(e) => setPayKind(e.target.value as 'advance' | 'other' | 'fee')}>
-                    <option value="advance">{t('drivers.ledger.kind.advance')}</option>
-                    <option value="fee">{t('drivers.ledger.kind.fee')}</option>
-                    <option value="other">{t('drivers.ledger.kind.other')}</option>
+                  <select value={payKind} onChange={(e) => setPayKind(e.target.value as 'advance' | 'other' | 'fee' | 'salary')}>
+                    <optgroup label={t('drivers.ledger.accFees', 'Primes de voyage')}>
+                      <option value="fee">{t('drivers.ledger.kind.fee')}</option>
+                      <option value="other">{t('drivers.ledger.kind.other')}</option>
+                    </optgroup>
+                    <optgroup label={t('drivers.ledger.accSalary', 'Salaire')}>
+                      <option value="advance">{t('drivers.ledger.kind.advance')}</option>
+                      <option value="salary">{t('drivers.ledger.kind.salary', 'Règlement du salaire')}</option>
+                    </optgroup>
                   </select>
                 </label>
                 <label className="field inline"><span>{t('drivers.ledger.amount')}</span><input type="number" min="1" step="1" value={amount} onChange={(e) => setAmount(e.target.value)} required /></label>
