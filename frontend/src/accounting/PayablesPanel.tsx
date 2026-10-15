@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { fmtDateTime, stamp } from '../lib/datetime';
 import { useTranslation } from 'react-i18next';
 import { api, type PayableItem } from '../api/client';
 import { formatMoney } from '../lib/accounting';
@@ -28,13 +29,13 @@ export function PayablesPanel({ canWrite, onChanged }: Props) {
   useDataChanged(load);
   useEffect(() => { void load(); }, [load]);
 
-  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const fmtDate = (iso: string) => fmtDateTime(iso, i18n.language);
   const total = (items ?? []).reduce((a, x) => a + x.amount, 0);
 
   async function pay(id: string) {
     if (window.confirm(t('payables.confirmPay', 'Confirmer le paiement ? La charge sortira de la caisse à la date choisie.')) === false) return;
     setBusy(id);
-    try { await api.payExpense(id, `${payDate}T12:00:00`); await load(); onChanged(); }
+    try { await api.payExpense(id, stamp(payDate)); await load(); onChanged(); }
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(null); }
   }

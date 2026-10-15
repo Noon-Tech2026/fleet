@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { stamp } from '../lib/datetime';
 import { useTranslation } from 'react-i18next';
 import type { VehicleInvestmentEntry, VehicleInvestmentKind } from '../lib/types';
 import { api } from '../api/client';
@@ -38,7 +39,7 @@ export function InvestmentDialog({ vehicleId, initial, onCancel, onDone }: Props
     const payload = {
       kind,
       amount: Number(amount),
-      at: new Date(`${at}T12:00:00`).toISOString(),
+      at: new Date(stamp(at)).toISOString(),
       description: description.trim() || undefined,
     };
     try {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { fmtDateTime, stamp } from '../lib/datetime';
 import { openPrintReport, periodLabel } from '../lib/printReport';
 import { useTranslation } from 'react-i18next';
 import { api, type VersementRecord } from '../api/client';
@@ -26,14 +27,14 @@ export function VersementsPanel({ period, onChanged, showTotal = false }: Props)
   const load = useCallback(() => api.versements(period).then(setRows).catch(() => setRows([])), [period]);
   useDataChanged(load);
   useEffect(() => { void load(); }, [load]);
-  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const fmtDate = (iso: string) => fmtDateTime(iso, i18n.language);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const v = Number(amount);
     if (!(v > 0) || label.trim().length < 2) return;
     setBusy(true);
-    try { await api.addVersement({ amount: v, at: `${at}T12:00:00`, label: label.trim() }); setAmount(''); setLabel(''); await load(); onChanged(); }
+    try { await api.addVersement({ amount: v, at: stamp(at), label: label.trim() }); setAmount(''); setLabel(''); await load(); onChanged(); }
     catch (err) { setError(err instanceof Error ? err.message : String(err)); }
     finally { setBusy(false); }
   }

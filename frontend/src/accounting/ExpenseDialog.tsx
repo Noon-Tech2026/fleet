@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { stamp } from '../lib/datetime';
 import { useExpenseCategories } from '../lib/useExpenseCategories';
 import { useTranslation } from 'react-i18next';
 import type { VehicleExpenseCategory, VehicleExpenseEntry } from '../lib/types';
@@ -42,7 +43,7 @@ export function ExpenseDialog({ vehicleId, initial, onCancel, onDone }: Props) {
     const payload = {
       category,
       amount: Number(amount),
-      at: new Date(`${at}T12:00:00`).toISOString(),
+      at: new Date(stamp(at)).toISOString(),
       reference: reference.trim() || undefined,
       notes: notes.trim() || undefined,
       ...(payment !== 'legacy' ? { payment } : {}),

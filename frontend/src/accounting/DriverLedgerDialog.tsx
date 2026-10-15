@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { fmtDateTime, stamp } from '../lib/datetime';
 import { openPrintReport, periodLabel } from '../lib/printReport';
 import { useTranslation } from 'react-i18next';
 import type { DriverRecord } from '../lib/types';
@@ -36,7 +37,7 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
   useDataChanged(load);
   useEffect(() => { void load(); }, [load]);
 
-  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const fmtDate = (iso: string) => fmtDateTime(iso, i18n.language);
 
   async function pay(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +45,7 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
     if (!(v > 0)) return;
     setBusy(true);
     try {
-      await api.addDriverPayment(driver.id, { amount: v, kind: payKind, at: `${at}T12:00:00`, notes: notes.trim() || undefined });
+      await api.addDriverPayment(driver.id, { amount: v, kind: payKind, at: stamp(at), notes: notes.trim() || undefined });
       setAmount(''); setNotes('');
       await load();
     } catch (err) { setError(err instanceof Error ? err.message : String(err)); }
@@ -59,7 +60,7 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
     if (selected.size === 0) return;
     setBusy(true);
     try {
-      await api.addDriverPayment(driver.id, { feeIds: [...selected], at: `${at}T12:00:00` });
+      await api.addDriverPayment(driver.id, { feeIds: [...selected], at: stamp(at) });
       setSelected(new Set());
       await load();
     } catch (err) { setError(err instanceof Error ? err.message : String(err)); }
@@ -77,7 +78,7 @@ export function DriverLedgerDialog({ driver, onClose }: Props) {
   }
   async function paySalary(id: string) {
     setBusy(true);
-    try { await api.addDriverPayment(driver.id, { salaryId: id, at: `${at}T12:00:00` }); await load(); }
+    try { await api.addDriverPayment(driver.id, { salaryId: id, at: stamp(at) }); await load(); }
     catch (err) { setError(err instanceof Error ? err.message : String(err)); }
     finally { setBusy(false); }
   }

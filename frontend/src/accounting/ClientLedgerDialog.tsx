@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { fmtDateTime, stamp } from '../lib/datetime';
 import { openPrintReport, periodLabel } from '../lib/printReport';
 import { useTranslation } from 'react-i18next';
 import type { ClientRecord } from '../lib/types';
@@ -39,7 +40,7 @@ export function ClientLedgerDialog({ client, onClose, highlightTripId }: Props) 
     return () => clearTimeout(id);
   }, [highlightTripId, ledger]);
 
-  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const fmtDate = (iso: string) => fmtDateTime(iso, i18n.language);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,7 +48,7 @@ export function ClientLedgerDialog({ client, onClose, highlightTripId }: Props) 
     if (!(v > 0) || label.trim().length < 2) return;
     setBusy(true);
     try {
-      await api.addClientEntry(client.id, { kind, amount: v, at: `${at}T12:00:00`, label: label.trim() });
+      await api.addClientEntry(client.id, { kind, amount: v, at: stamp(at), label: label.trim() });
       setAmount(''); setLabel('');
       await load();
     } catch (err) { setError(err instanceof Error ? err.message : String(err)); }
