@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { stamp } from '../lib/datetime';
+import { stamp, fmtDateTime } from '../lib/datetime';
 import { useExpenseCategories } from '../lib/useExpenseCategories';
 import { useTranslation } from 'react-i18next';
 import type { VehicleExpenseCategory, VehicleExpenseEntry } from '../lib/types';
@@ -121,7 +121,7 @@ export function ExpenseDialog({ vehicleId, initial, onCancel, onDone }: Props) {
           </label>
         </div>
         {initial?.payment === 'credit' && initial.paidAt && (
-          <p className="muted small">{t('expensePay.paidOn', 'Dette réglée le')} {new Date(initial.paidAt).toLocaleDateString()}</p>
+          <p className="muted small">{t('expensePay.paidOn', 'Dette réglée le')} {fmtDateTime(initial.paidAt, 'fr-FR')}</p>
         )}
 
         {error && <p className="error">{error}</p>}

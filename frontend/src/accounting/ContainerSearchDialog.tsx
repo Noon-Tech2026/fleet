@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { fmtDateTime } from '../lib/datetime';
 import { useTranslation } from 'react-i18next';
 import { api, type ContainerHit } from '../api/client';
 import { formatMoney } from '../lib/accounting';
@@ -16,7 +17,7 @@ export function ContainerSearchDialog({ onClose, onOpenLedger }: Props) {
   const [hits, setHits] = useState<ContainerHit[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fmt = (iso: string) => new Date(iso).toLocaleDateString(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const fmt = (iso: string) => fmtDateTime(iso, i18n.language);
 
   async function search(e: React.FormEvent) {
     e.preventDefault();

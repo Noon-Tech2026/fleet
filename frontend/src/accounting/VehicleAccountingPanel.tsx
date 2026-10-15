@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { fmtDateTime } from '../lib/datetime';
 import { openPrintReport, periodLabel } from '../lib/printReport';
 import { useExpenseCategories } from '../lib/useExpenseCategories';
 import { useTranslation } from 'react-i18next';
@@ -111,7 +112,7 @@ export function VehicleAccountingPanel({
 
   async function printVehicle() {
     const lang = i18n.language;
-    const d = (iso: string) => new Date(iso).toLocaleDateString(lang);
+    const d = (iso: string) => fmtDateTime(iso, lang);
     const tr = trips ?? [], ex = expenses ?? [], inv = investments ?? [];
     await openPrintReport({
       title: `${t('accounting.title')} — ${vehicleId}`, subtitle: plate ?? undefined,
@@ -250,7 +251,7 @@ export function VehicleAccountingPanel({
               <tbody>
                 {trips.map((trip) => (
                   <tr key={trip.id}>
-                    <td>{new Date(trip.startedAt).toLocaleDateString('fr-FR')}</td>
+                    <td>{fmtDateTime(trip.startedAt, 'fr-FR')}</td>
                     <td>{trip.clientName}</td>
                     <td>{trip.driverName}</td>
                     <td className="cell-muted">
@@ -306,7 +307,7 @@ export function VehicleAccountingPanel({
               <tbody>
                 {expenses.map((e) => (
                   <tr key={e.id}>
-                    <td>{new Date(e.at).toLocaleDateString('fr-FR')}</td>
+                    <td>{fmtDateTime(e.at, 'fr-FR')}</td>
                     <td>{categoryLabel(e.category)}</td>
                     <td className="cell-muted">{e.reference ?? '—'}{e.tripContainers && <div className="cell-sub">{e.tripContainers}</div>}</td>
                     <td>{formatMoney(e.amount)}{e.payment === 'credit' && (<div className={e.paidAt ? 'cell-sub' : 'cell-sub text-danger'}>{e.paidAt ? t('payables.paidBadge', 'Crédit réglé') : t('payables.unpaidBadge', 'À payer')}</div>)}</td>
@@ -348,7 +349,7 @@ export function VehicleAccountingPanel({
               <tbody>
                 {investments.map((i) => (
                   <tr key={i.id}>
-                    <td>{new Date(i.at).toLocaleDateString('fr-FR')}</td>
+                    <td>{fmtDateTime(i.at, 'fr-FR')}</td>
                     <td>{INVESTMENT_KIND_LABEL[i.kind]}</td>
                     <td className="cell-muted">{i.description ?? '—'}</td>
                     <td>{formatMoney(i.amount)}</td>
