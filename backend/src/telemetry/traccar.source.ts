@@ -30,6 +30,8 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
   private deviceToVehicle = new Map<number, string>();
   private reconnectDelay = 2000;
   private stopped = false;
+  /** Derniere trame recue par boitier (ms) : sert a ne pas empiler des commandes LED vers un boitier eteint. */
+  private lastSeen = new Map<number, number>();
 
   constructor(private readonly config: ConfigService) {}
 
@@ -171,6 +173,8 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
       try {
         const payload = JSON.parse(raw.toString()) as { positions?: TraccarPosition[]; events?: TraccarEvent[] };
         for (const p of payload.positions ?? []) {
+          const seenAt = Date.parse(p.deviceTime ?? p.fixTime);
+          if (Number.isFinite(seenAt)) this.lastSeen.set(p.deviceId, Math.max(seenAt, this.lastSeen.get(p.deviceId) ?? 0));
           // Traccar range la reponse a une commande (getio) dans une position, attribut `result`.
           const result = p.attributes?.result;
           if (typeof result === 'string' && /D[IO]\d\s*:/.test(result)) {
@@ -233,6 +237,36 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
       gsm: Number(a.sat ?? 0),
       at: new Date(p.deviceTime ?? p.fixTime),
     };
+  }
+
+  /** Derniere position GPS reelle (hors reponses de commande) dans les 6 h precedant le dernier contact. */
+  async lastRealPosition(vehicleId: string): Promise<RawPosition | null> {
+    const device = await this.findDevice(vehicleId);
+    const last = device ? Date.parse(String(device.lastUpdate ?? '')) : NaN;
+    if (!device || !Number.isFinite(last)) return null;
+    const to = new Date(last + 60_000).toISOString();
+    const from = new Date(last - 6 * 3_600_000).toISOString();
+    const res = await this.api(`/api/reports/route?deviceId=${device.id}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, {
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) return null;
+    const list = (await res.json()) as TraccarPosition[];
+    for (let i = list.length - 1; i >= 0; i--) {
+      const p = list[i];
+      if (typeof p.attributes?.result === 'string') continue;
+      if (!p.latitude && !p.longitude) continue;
+      return this.map(p);
+    }
+    return null;
+  }
+
+  /** LED seules (DOUT1 et DOUT2 inchanges) vers un boitier muet depuis plus de 10 min : inutile. */
+  private skipOffline(deviceId: number, outputs: string[], vehicleId: string, data: string): boolean {
+    if (outputs[0] !== '?' || outputs[1] !== '?') return false;
+    const seen = this.lastSeen.get(deviceId);
+    if (seen === undefined || Date.now() - seen < 10 * 60_000) return false;
+    this.log.debug(`${vehicleId} — hors ligne, commande LED non envoyee : ${data}`);
+    return true;
   }
 
   /* --- interrogation d'etat (getio) ------------------------------------ */
@@ -298,6 +332,7 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
       outputs[output - 1] = physical ? '1' : '0';
     }
     const data = `setdigout ${outputs.join('')}`;
+    if (this.skipOffline(deviceId, outputs, vehicleId, data)) return;
     this.log.log(`${vehicleId} — commande boitier : ${data}`);
     const res = await this.api('/api/commands/send', {
       method: 'POST',
@@ -324,6 +359,7 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
       timeouts[output - 1] = String(durationSec);
       data += ` ${timeouts.join(' ')}`;
     }
+    if (this.skipOffline(deviceId, outputs, vehicleId, data)) return;
     this.log.log(`${vehicleId} — commande boitier : ${data}`);
     const res = await this.api('/api/commands/send', {
       method: 'POST',

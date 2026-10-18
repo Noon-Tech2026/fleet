@@ -40,6 +40,14 @@ export class FleetService implements OnModuleInit {
         if (d.vehicleId && d.fullName && d.active !== false) map.set(d.vehicleId, d.fullName);
       }
       this.driverByVehicle = map;
+      // Camions deja a l'ecran (y compris hors ligne) : chauffeur a jour sans attendre une trame.
+      for (const v of this.state.values()) {
+        const name = map.get(v.id) ?? this.vehicles.peek(v.id)?.driver;
+        if (name !== undefined && v.driver !== name) {
+          v.driver = name;
+          this.events.publish({ type: 'position', vehicle: { ...v } });
+        }
+      }
     } catch {
       /* base indisponible au demarrage : nouvel essai au prochain tour */
     }
@@ -74,9 +82,34 @@ export class FleetService implements OnModuleInit {
     // Au boot : interroger tous les boitiers (ceux hors ligne repondront a leur reveil).
     setTimeout(() => void this.source.queryIoAll?.().catch(() => undefined), 8000);
 
+    // Chauffeurs charges AVANT les premieres trames (sinon « Non affecte » apres un redemarrage).
+    await this.refreshDrivers();
     await this.source.start((raw) => {
       void this.ingest(raw).catch((err) => this.log.error(`Ingestion : ${String(err)}`));
     });
+    setTimeout(() => void this.restoreMissing(), 20_000);
+  }
+
+  /**
+   * Camions sans etat apres le demarrage alors qu'ils ont deja emis : leur derniere
+   * trame Traccar etait une reponse de commande (getio, sans GPS). On reprend leur
+   * derniere vraie position.
+   */
+  private async restoreMissing(): Promise<void> {
+    const src = this.source as TelemetrySource & { lastRealPosition?: (id: string) => Promise<RawPosition | null> };
+    if (!src.lastRealPosition) return;
+    for (const v of this.vehicles.list()) {
+      if (this.state.has(v.id)) continue;
+      try {
+        const raw = await src.lastRealPosition(v.id);
+        if (raw && !this.state.has(v.id)) {
+          await this.ingest(raw);
+          this.log.log(`${v.id} — derniere position restauree (${raw.at.toISOString()})`);
+        }
+      } catch (e) {
+        this.log.warn(`${v.id} — restauration impossible : ${String(e)}`);
+      }
+    }
   }
 
   /** Rebroadcast de l'etat complet : apres un changement du referentiel camions. */
