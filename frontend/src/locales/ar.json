@@ -375,7 +375,10 @@
     "inProgress": "جارية",
     "noLoad": "بدون حمولة",
     "toValidate": "للتأكيد",
-    "voyageNote": "الخروج من {{zone}} في {{from}} ← {{to}}"
+    "voyageNote": "الخروج من {{zone}} في {{from}} ← {{to}}",
+    "legKm": "المسافة من التوقف السابق",
+    "fromStart": "من البداية",
+    "toEnd": "من آخر توقف إلى نهاية الفترة"
   },
   "dialog": {
     "common": {

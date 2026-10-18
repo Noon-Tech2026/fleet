@@ -29,6 +29,8 @@ interface Stop {
   from: string;
   to: string;
   minutes: number;
+  /** km parcourus depuis la fin de l'arret precedent (ou le debut de la periode). */
+  km: number;
 }
 
 interface Summary {
@@ -37,6 +39,8 @@ interface Summary {
   movingMin: number;
   stoppedMin: number;
   stops: Stop[];
+  /** km parcourus apres le dernier arret. */
+  kmAfter: number;
 }
 
 function haversineKm(a: TrackPoint, b: TrackPoint): number {
@@ -56,9 +60,12 @@ function summarize(points: TrackPoint[]): Summary {
   let stoppedMs = 0;
   const stops: Stop[] = [];
   let stopStart: TrackPoint | null = null;
+  let kmAtStopStart = 0;
+  let lastEndKm = 0;
 
   for (let i = 0; i < points.length; i++) {
     const p = points[i];
+    const kmPrev = km;
     maxSpeed = Math.max(maxSpeed, p.speed);
     if (i > 0) {
       const prev = points[i - 1];
@@ -69,19 +76,25 @@ function summarize(points: TrackPoint[]): Summary {
       else stoppedMs += dt;
     }
     if (p.speed <= STOP_SPEED) {
-      if (stopStart === null) stopStart = p;
+      if (stopStart === null) { stopStart = p; kmAtStopStart = km; }
     } else if (stopStart !== null) {
       const ms = Date.parse(p.recordedAt) - Date.parse(stopStart.recordedAt);
-      if (ms >= STOP_MIN_MS) stops.push({ lat: stopStart.lat, lon: stopStart.lon, from: stopStart.recordedAt, to: p.recordedAt, minutes: Math.round(ms / 60_000) });
+      if (ms >= STOP_MIN_MS) {
+        stops.push({ lat: stopStart.lat, lon: stopStart.lon, from: stopStart.recordedAt, to: p.recordedAt, minutes: Math.round(ms / 60_000), km: kmAtStopStart - lastEndKm });
+        lastEndKm = kmPrev; // fin de l'arret = dernier point immobile
+      }
       stopStart = null;
     }
   }
   if (stopStart !== null && points.length > 0) {
     const last = points[points.length - 1];
     const ms = Date.parse(last.recordedAt) - Date.parse(stopStart.recordedAt);
-    if (ms >= STOP_MIN_MS) stops.push({ lat: stopStart.lat, lon: stopStart.lon, from: stopStart.recordedAt, to: last.recordedAt, minutes: Math.round(ms / 60_000) });
+    if (ms >= STOP_MIN_MS) {
+      stops.push({ lat: stopStart.lat, lon: stopStart.lon, from: stopStart.recordedAt, to: last.recordedAt, minutes: Math.round(ms / 60_000), km: kmAtStopStart - lastEndKm });
+      lastEndKm = km;
+    }
   }
-  return { km, maxSpeed, movingMin: Math.round(movingMs / 60_000), stoppedMin: Math.round(stoppedMs / 60_000), stops };
+  return { km, maxSpeed, movingMin: Math.round(movingMs / 60_000), stoppedMin: Math.round(stoppedMs / 60_000), stops, kmAfter: km - lastEndKm };
 }
 
 /** Valeur pour <input type="datetime-local"> en heure locale. */
@@ -230,6 +243,8 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
     return parts.join(' · ');
   }
 
+  const fmtKm = (v: number) => `${Math.max(0, v).toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
+
   const summary = useMemo(() => (points && points.length > 1 ? summarize(points) : null), [points]);
 
   // Carte : construite une fois, trace redessinee a chaque chargement.
@@ -291,7 +306,7 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
       };
       mk(coords[0] as [number, number], 'start', t('track.start'));
       mk(coords[coords.length - 1] as [number, number], 'end', t('track.end'));
-      summary?.stops.forEach((s, i) => mk([s.lon, s.lat], 'stop stop-num', `${i + 1} · ${fmtDuration(s.minutes)}`, String(i + 1)));
+      summary?.stops.forEach((s, i) => mk([s.lon, s.lat], 'stop stop-num', `${i + 1} · ${fmtDuration(s.minutes)} · ${fmtKm(s.km)}`, String(i + 1)));
 
       const bounds = coords.reduce((b, c) => b.extend(c as [number, number]), new maplibregl.LngLatBounds(coords[0] as [number, number], coords[0] as [number, number]));
       m.fitBounds(bounds, { padding: 40, maxZoom: 15, duration: 400 });
@@ -466,17 +481,25 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
 
         {summary && summary.stops.length > 0 && (
           <table className="track-table">
-            <thead><tr><th>#</th><th>{t('track.stops')}</th><th>{t('track.from')}</th><th>{t('track.to')}</th><th>{t('track.position')}</th></tr></thead>
+            <thead><tr><th>#</th><th>{t('track.legKm', 'Depuis l’arrêt préc.')}</th><th>{t('track.stops')}</th><th>{t('track.from')}</th><th>{t('track.to')}</th><th>{t('track.position')}</th></tr></thead>
             <tbody>
               {summary.stops.map((s, i) => (
                 <tr key={i} className="track-stop-row" onClick={() => map.current?.flyTo({ center: [s.lon, s.lat], zoom: 16 })}>
                   <td><span className="stop-badge">{i + 1}</span></td>
+                  <td className="leg-km"><b>{fmtKm(s.km)}</b>{i === 0 && <span className="muted small"> {t('track.fromStart', 'depuis le début')}</span>}</td>
                   <td><b>{fmtDuration(s.minutes)}</b></td>
                   <td>{new Date(s.from).toLocaleString(locale, { hour12: false })}</td>
                   <td>{new Date(s.to).toLocaleString(locale, { hour12: false })}</td>
                   <td dir="ltr">{s.lat.toFixed(5)}, {s.lon.toFixed(5)}</td>
                 </tr>
               ))}
+              {summary.kmAfter >= 0.05 && (
+                <tr className="track-leg-end">
+                  <td>→</td>
+                  <td className="leg-km"><b>{fmtKm(summary.kmAfter)}</b></td>
+                  <td colSpan={4} className="muted">{t('track.toEnd', 'Du dernier arrêt à la fin de la période')}</td>
+                </tr>
+              )}
             </tbody>
           </table>
         )}

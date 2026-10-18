@@ -375,7 +375,10 @@
     "inProgress": "in progress",
     "noLoad": "no load",
     "toValidate": "to validate",
-    "voyageNote": "Left {{zone}} on {{from}} → {{to}}"
+    "voyageNote": "Left {{zone}} on {{from}} → {{to}}",
+    "legKm": "From previous stop",
+    "fromStart": "from start",
+    "toEnd": "From the last stop to the end of the period"
   },
   "dialog": {
     "common": {

@@ -365,7 +365,10 @@
     "inProgress": "en cours",
     "noLoad": "sans chargement",
     "toValidate": "à valider",
-    "voyageNote": "Sortie de {{zone}} le {{from}} → {{to}}"
+    "voyageNote": "Sortie de {{zone}} le {{from}} → {{to}}",
+    "legKm": "Depuis l’arrêt préc.",
+    "fromStart": "depuis le début",
+    "toEnd": "Du dernier arrêt à la fin de la période"
   },
   "dialog": {
     "common": {

@@ -2969,3 +2969,6 @@ tr.ledger-highlight > td:first-child { border-left: 4px solid #e0a020; }
 .ledger-account.acc-total.warn b { color: #b7791f; }
 .ledger-account.acc-total.ok b { color: #2f7d4f; }
 .text-warn { color: #b7791f; }
+/* === historique-distance-arrets-v1 === */
+.track-table td.leg-km { white-space: nowrap; color: #0b5a3e; }
+.track-table tr.track-leg-end td { background: rgba(18, 112, 79, 0.05); }
