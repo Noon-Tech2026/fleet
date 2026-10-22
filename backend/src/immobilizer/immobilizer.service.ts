@@ -33,6 +33,10 @@ import { CommandLog } from '../auth/entities/command-log.entity';
 const SPEED_THRESHOLD = 3; // km/h — decision client 19/09/2026 (la vitesse GPS saute de 9 a 0 ; 3 km/h etait juge trop strict)
 const STATIONARY_MS = 10_000; // duree d'immobilite requise
 const ACK_TIMEOUT_MS = 15_000; // delai max pour que le boitier confirme DOUT1
+// Trame plus vieille que FRESH_MS = boitier hors ligne : son etat (vitesse) ne prouve plus rien,
+// et Traccar garderait la commande pour la livrer plus tard SANS controle de vitesse.
+const FRESH_MS = 60_000;
+const REASSERT_MS = 2 * 60_000; // renvoi auto de l'autorisation : au plus une fois par 2 min
 
 export interface Actor {
   id: string | null;
@@ -98,7 +102,36 @@ export class ImmobilizerService implements OnModuleInit {
     if (wanted !== undefined && this.pending.has(vehicle.id) === false && (wanted === 'blocked') !== actual) {
       this.log.warn(`${vehicle.id} — etat boitier (${actual ? 'bloque' : 'autorise'}) different de l'etat voulu (${wanted})`);
       this.alerts.raise(vehicle.id, 'warning', 'starter_mismatch', `Démarreur ${actual ? 'bloqué' : 'autorisé'} sur le boîtier alors que l'état voulu est « ${wanted === 'blocked' ? 'bloqué' : 'autorisé'} »`);
+      if (actual && wanted === 'allowed') this.reassertAllowed(vehicle.id);
     }
+  }
+
+  /** Horodatage de la derniere trame vue par vehicule : un trou > FRESH_MS remet l'immobilite a zero. */
+  private readonly lastFrameAt = new Map<string, number>();
+  /** Dernier renvoi automatique de l'autorisation par vehicule. */
+  private readonly lastReassert = new Map<string, number>();
+
+  /** Trame recente (boitier en ligne). Sans horodatage : consideree recente (appel interne). */
+  private isFresh(v: { updatedAt?: string }, now = Date.now()): boolean {
+    if (v.updatedAt === undefined) return true;
+    const t = Date.parse(v.updatedAt);
+    return Number.isFinite(t) && now - t < FRESH_MS;
+  }
+
+  /**
+   * Etat voulu « autorise » mais relais trouve « bloque » : renvoie l'autorisation
+   * (sens sur : ne coupe jamais rien). Jamais de renvoi automatique d'un blocage.
+   */
+  private reassertAllowed(vehicleId: string): void {
+    if (this.desired.get(vehicleId) !== 'allowed' || this.pending.has(vehicleId) || this.inFlight.has(vehicleId)) return;
+    const now = Date.now();
+    if (now - (this.lastReassert.get(vehicleId) ?? 0) < REASSERT_MS) return;
+    this.lastReassert.set(vehicleId, now);
+    this.lastCommandAt.set(vehicleId, now);
+    this.log.warn(`${vehicleId} — relais bloque alors que l'etat voulu est autorise : autorisation renvoyee`);
+    void this.source.setDigitalOutput(vehicleId, 1, false)
+      .then(() => setTimeout(() => void this.source.queryIo?.(vehicleId).catch(() => undefined), 2500))
+      .catch((e) => this.log.warn(`${vehicleId} — renvoi autorisation : ${String(e)}`));
   }
 
   /** Instant (ms) depuis lequel chaque vehicule est immobile ; absent = en mouvement. */
@@ -122,7 +155,20 @@ export class ImmobilizerService implements OnModuleInit {
   ) {}
 
   /** A appeler a chaque position recue : met a jour le compteur d'immobilite. */
-  trackMotion(v: Pick<VehicleState, 'id' | 'speed'>, now = Date.now()): void {
+  trackMotion(v: Pick<VehicleState, 'id' | 'speed'> & { updatedAt?: string }, now = Date.now()): void {
+    // Boitier hors ligne : une vieille trame ne prouve pas que le camion est immobile.
+    if (this.isFresh(v, now) === false) {
+      this.stationarySince.delete(v.id);
+      this.cancelCheck(v.id);
+      return;
+    }
+    // Trou de trames (reseau perdu) : on ignore ce qui s'est passe pendant le trou.
+    if (v.updatedAt !== undefined) {
+      const t = Date.parse(v.updatedAt);
+      const prev = this.lastFrameAt.get(v.id);
+      if (prev !== undefined && t - prev > FRESH_MS) this.stationarySince.delete(v.id);
+      if (prev === undefined || t > prev) this.lastFrameAt.set(v.id, t);
+    }
     if (v.speed <= SPEED_THRESHOLD) {
       if (this.stationarySince.has(v.id) === false) this.stationarySince.set(v.id, now);
     } else {
@@ -151,7 +197,9 @@ export class ImmobilizerService implements OnModuleInit {
     );
   }
 
-  isSafeToBlock(v: Pick<VehicleState, 'id' | 'speed' | 'ignition'>, now = Date.now()): boolean {
+  isSafeToBlock(v: Pick<VehicleState, 'id' | 'speed' | 'ignition'> & { updatedAt?: string }, now = Date.now()): boolean {
+    // Jamais vers un boitier hors ligne : Traccar livrerait la commande plus tard sans controle de vitesse.
+    if (this.isFresh(v, now) === false) return false;
     if (v.speed > SPEED_THRESHOLD) return false;
     // Pas de raccourci "contact coupe" : la lecture d'ignition n'est pas fiable
     // sur C-01 (lue "coupe" a 14 km/h). L'immobilite stable est la seule preuve.
@@ -166,7 +214,7 @@ export class ImmobilizerService implements OnModuleInit {
       this.pending.set(vehicle.id, { actor, reason });
       this.log.warn(
         `${vehicle.id} — blocage differe demande par ${actor.email} ` +
-          `(${vehicle.speed} km/h, contact ${vehicle.ignition ? 'mis' : 'coupe'})`,
+          `(${this.isFresh(vehicle) ? `${vehicle.speed} km/h, contact ${vehicle.ignition ? 'mis' : 'coupe'}` : 'boitier hors ligne — envoi au retour du reseau, camion immobile'})`,
       );
       this.scheduleCheck(vehicle);
       await this.persist(vehicle.id, 'blocked', true, actor, reason);
@@ -185,6 +233,7 @@ export class ImmobilizerService implements OnModuleInit {
     // seulement pour une trame posterieure au dernier ordre (livraison differee).
     if (outputActive !== undefined && this.frameIsFresh(vehicle)) {
       vehicle.starter = this.pending.has(vehicle.id) ? 'pending_block' : outputActive ? 'blocked' : 'allowed';
+      if (outputActive) this.reassertAllowed(vehicle.id);
     }
     const waiting = this.pending.get(vehicle.id);
     if (waiting === undefined) return;
