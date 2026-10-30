@@ -388,8 +388,19 @@ export class ImmobilizerService implements OnModuleInit {
     } catch (e) { this.log.warn(`${vehicleId} — accuse bouton voyage : ${String(e)}`); }
   }
 
+  /**
+   * Le voyant deblocage n'a de sens que si le camion est bloque (ou va l'etre).
+   * Protege contre les rappels differes (regles) qui arrivent apres une autorisation.
+   */
+  private unlockLedWanted(vehicleId: string): boolean {
+    if (this.pending.has(vehicleId)) return true;
+    if (this.inFlight.get(vehicleId)?.lock.action === 'block') return true;
+    return this.desired.get(vehicleId) === 'blocked';
+  }
+
   /** Les deux voyants en une commande (reconciliation periodique). */
   async setLeds(vehicleId: string, trip: boolean, unlock: boolean): Promise<void> {
+    if (unlock && this.unlockLedWanted(vehicleId) === false) unlock = false;
     try {
       if (this.source.setDigitalOutputs) await this.source.setDigitalOutputs(vehicleId, { 3: trip, 4: unlock });
     } catch (e) { this.log.warn(`${vehicleId} — voyants : ${String(e)}`); }
@@ -400,6 +411,10 @@ export class ImmobilizerService implements OnModuleInit {
   }
 
   async ledUnlock(vehicleId: string, on: boolean): Promise<void> {
+    if (on && this.unlockLedWanted(vehicleId) === false) {
+      this.log.log(`${vehicleId} — voyant deblocage non rallume : camion autorise`);
+      return;
+    }
     try { await this.source.setDigitalOutput(vehicleId, 4, on); } catch (e) { this.log.warn(`${vehicleId} — voyant deblocage : ${String(e)}`); }
   }
 
