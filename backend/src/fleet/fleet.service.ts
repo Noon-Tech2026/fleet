@@ -112,6 +112,44 @@ export class FleetService implements OnModuleInit {
     }
   }
 
+  /** Point ou l'arret en cours a commence, par camion. */
+  private readonly stopAnchor = new Map<string, { lat: number; lon: number }>();
+
+  /**
+   * Debut de l'arret en cours. Roulage (> 5 km/h) : null. Un deplacement de plus de
+   * 300 m depuis le point d'arret ouvre un nouvel arret (le bruit GPS ne le fait pas).
+   */
+  private async stopSince(previous: VehicleState | undefined, raw: RawPosition): Promise<string | null> {
+    const id = raw.vehicleId;
+    if (raw.speed > 5) {
+      this.stopAnchor.delete(id);
+      return null;
+    }
+    const anchor = this.stopAnchor.get(id);
+    if (anchor && previous?.stoppedSince) {
+      if (haversineKm(anchor.lat, anchor.lon, raw.lat, raw.lon) < 0.3) return previous.stoppedSince;
+      this.stopAnchor.set(id, { lat: raw.lat, lon: raw.lon });
+      return raw.at.toISOString();
+    }
+    this.stopAnchor.set(id, { lat: raw.lat, lon: raw.lon });
+    if (previous !== undefined) return previous.speed > 5 ? raw.at.toISOString() : previous.stoppedSince ?? raw.at.toISOString();
+    // Premiere trame apres demarrage de l'API : fin du dernier roulage connu en base.
+    try {
+      const rows: Array<{ t: unknown }> = await this.dataSource.query(
+        'SELECT MAX(recorded_at) AS t FROM positions WHERE vehicle_id = ? AND speed > 5',
+        [id],
+      );
+      const v = rows[0]?.t;
+      if (v !== null && v !== undefined) {
+        const d = v instanceof Date ? v : new Date(String(v).includes('T') ? String(v) : `${String(v).replace(' ', 'T')}Z`);
+        if (Number.isFinite(d.getTime()) && d.getTime() <= raw.at.getTime()) return d.toISOString();
+      }
+    } catch {
+      /* base indisponible : on part de cette trame */
+    }
+    return raw.at.toISOString();
+  }
+
   /** Rebroadcast de l'etat complet : apres un changement du referentiel camions. */
   pushSnapshot(): void {
     this.events.publish({ type: 'snapshot', vehicles: this.all(), alerts: [] } as never);
@@ -187,6 +225,8 @@ export class FleetService implements OnModuleInit {
     const fuelMainR = fuelOf('main');
     const fuelAuxR = fuelOf('aux');
 
+    const stoppedSince = await this.stopSince(previous, raw);
+
     const current: VehicleState = {
       id: raw.vehicleId,
       plate: meta.plate,
@@ -222,6 +262,7 @@ export class FleetService implements OnModuleInit {
 
       online: true,
       updatedAt: raw.at.toISOString(),
+      stoppedSince,
     };
 
     this.state.set(current.id, current);

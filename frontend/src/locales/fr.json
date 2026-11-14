@@ -231,7 +231,9 @@
     "capacity": "capacité {{capacity}} L",
     "unlockRequested": "🔔 Le chauffeur demande le déblocage du démarreur",
     "fuelAlerts": "Alertes carburant",
-    "fuelAlertsNone": "Aucune anomalie de carburant détectée."
+    "fuelAlertsNone": "Aucune anomalie de carburant détectée.",
+    "stoppedFor": "Arrêt {{d}}",
+    "offlineFor": "Hors ligne {{d}}"
   },
   "maintenance": {
     "status": {

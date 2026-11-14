@@ -2,6 +2,7 @@ import type { VehicleState } from '../lib/types';
 import type { VehicleDirectoryEntry } from '../api/client';
 import { statusOf } from '../lib/status';
 import { useTranslation } from 'react-i18next';
+import { fmtAgo, sinceOf } from '../lib/ago';
 
 /** Somme des deux réservoirs d'un F3000 — sert uniquement à l'échelle de la
  *  barre de la vignette, jamais à un calcul métier. */
@@ -72,6 +73,17 @@ export function VehicleList({ vehicles, pending = [], selectedId, onSelect, onTr
                   <span className={`badge ${status.tone}`}>{t(`status.${status.key}`)}</span>
                 </div>
                 <div className="plate" dir="ltr">{v.plate}</div>
+                {(() => {
+                  const s = sinceOf(v);
+                  const who = v.driver?.trim();
+                  if (!who && !s) return null;
+                  return (
+                    <div className="vc-driver">
+                      {who && <b>{who}</b>}
+                      {s && <span className={`vc-since ${s.kind}`}>{s.kind === 'off' ? t('supervision.offlineFor', { defaultValue: 'Hors ligne {{d}}', d: fmtAgo(s.iso) }) : t('supervision.stoppedFor', { defaultValue: 'Arrêt {{d}}', d: fmtAgo(s.iso) })}</span>}
+                    </div>
+                  );
+                })()}
                 <div className="row muted">
                   <span className="metric">
                     {v.speed} <u>km/h</u>

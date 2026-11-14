@@ -231,7 +231,9 @@
     "capacity": "السعة {{capacity}} لتر",
     "unlockRequested": "🔔 السائق يطلب فتح التشغيل",
     "fuelAlerts": "تنبيهات الوقود",
-    "fuelAlertsNone": "لم يُكتشف أي شذوذ في الوقود."
+    "fuelAlertsNone": "لم يُكتشف أي شذوذ في الوقود.",
+    "stoppedFor": "متوقفة {{d}}",
+    "offlineFor": "غير متصلة {{d}}"
   },
   "maintenance": {
     "status": {

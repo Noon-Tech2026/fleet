@@ -231,7 +231,9 @@
     "capacity": "capacity {{capacity}} L",
     "unlockRequested": "🔔 The driver is requesting the starter to be unlocked",
     "fuelAlerts": "Fuel alerts",
-    "fuelAlertsNone": "No fuel anomaly detected."
+    "fuelAlertsNone": "No fuel anomaly detected.",
+    "stoppedFor": "Stopped {{d}}",
+    "offlineFor": "Offline {{d}}"
   },
   "maintenance": {
     "status": {

@@ -2972,3 +2972,17 @@ tr.ledger-highlight > td:first-child { border-left: 4px solid #e0a020; }
 /* === historique-distance-arrets-v1 === */
 .track-table td.leg-km { white-space: nowrap; color: #0b5a3e; }
 .track-table tr.track-leg-end td { background: rgba(18, 112, 79, 0.05); }
+/* === supervision-carte-v1 === */
+.vehicle-card .vc-driver { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; margin: 2px 0 4px; font-size: 13px; }
+.vehicle-card .vc-driver b { font-weight: 700; color: var(--ink, #1f2933); }
+.vc-since { font-size: 12px; font-weight: 600; color: #b45309; }
+.vc-since.off { color: #6b7280; }
+.veh-tag .veh-since { display: block; font-size: 11px; font-weight: 700; color: #b45309; }
+.veh-tag .veh-since.off { color: #4b5563; }
+/* Trait vers la position reelle quand le marqueur est ecarte. */
+.veh-marker .veh-leader { display: none; position: absolute; left: 50%; top: 50%; height: 2px; background: rgba(31, 41, 51, .55); transform-origin: 0 50%; pointer-events: none; z-index: -1; }
+.veh-marker.is-spread .veh-leader { display: block; }
+/* Hors ligne : lisible (gris fonce, bord pointille), plus de transparence. */
+.veh-marker.tone-off { opacity: 1 !important; filter: none !important; }
+.veh-marker.tone-off .veh-pin { background: #4b5563 !important; border: 2px dashed #ffffff !important; box-shadow: 0 0 0 2px #4b5563 !important; opacity: 1 !important; }
+.veh-marker.tone-off .veh-tag { opacity: 1 !important; color: #1f2933 !important; background: #ffffff !important; border: 1px dashed #6b7280 !important; }

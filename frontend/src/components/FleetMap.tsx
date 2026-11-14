@@ -4,6 +4,7 @@ import maplibregl, { Map as MapLibreMap, Marker, StyleSpecification } from 'mapl
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { BaseMapControl } from '../lib/basemap';
 import type { VehicleState } from '../lib/types';
+import { fmtAgo, sinceOf } from '../lib/ago';
 
 /**
  * Style neutre : aucune requete reseau, donc la carte fonctionne meme
@@ -43,6 +44,14 @@ export function FleetMap({ vehicles, selectedId, onSelect }: Props) {
   const markers = useRef(new Map<string, Marker>());
   const fitted = useRef(false);
   const focused = useRef<string | null>(null);
+  // Rafraichit les durees affichees (« Arrêt 23 min ») sans attendre de trame.
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const i = setInterval(() => setTick((x) => x + 1), 30_000);
+    return () => clearInterval(i);
+  }, []);
+  // Ecartement des camions superposes, recalcule a chaque zoom / deplacement.
+  const spreadRef = useRef<() => void>(() => undefined);
 
   // La carte est construite une fois pour toutes ; les rappels changent a
   // chaque rendu et ne doivent pas la faire reconstruire.
@@ -116,6 +125,7 @@ export function FleetMap({ vehicles, selectedId, onSelect }: Props) {
         // silencieux : le flux SSE signale deja une API injoignable
       }
 
+      m.on('moveend', () => spreadRef.current());
       setReady(true);
     });
 
@@ -137,6 +147,10 @@ export function FleetMap({ vehicles, selectedId, onSelect }: Props) {
     if (!ready || !m) return;
 
     const seen = new Set<string>();
+    const labels = {
+      stop: (d: string) => t('supervision.stoppedFor', { defaultValue: 'Arrêt {{d}}', d }),
+      off: (d: string) => t('supervision.offlineFor', { defaultValue: 'Hors ligne {{d}}', d }),
+    };
 
     for (const v of vehicles) {
       seen.add(v.id);
@@ -147,7 +161,7 @@ export function FleetMap({ vehicles, selectedId, onSelect }: Props) {
         el.type = 'button';
         el.className = 'veh-marker';
         el.innerHTML =
-          '<span class="veh-pin"><i class="veh-arrow"></i></span><span class="veh-tag"></span>';
+          '<i class="veh-leader"></i><span class="veh-pin"><i class="veh-arrow"></i></span><span class="veh-tag"></span>';
         el.addEventListener('click', (e) => {
           e.stopPropagation();
           onSelectRef.current(v.id);
@@ -160,7 +174,7 @@ export function FleetMap({ vehicles, selectedId, onSelect }: Props) {
         marker.setLngLat([v.lon, v.lat]);
       }
 
-      paintMarker(marker.getElement(), v, v.id === selectedId);
+      paintMarker(marker.getElement(), v, v.id === selectedId, labels);
     }
 
     for (const [id, marker] of markers.current) {
@@ -169,6 +183,9 @@ export function FleetMap({ vehicles, selectedId, onSelect }: Props) {
         markers.current.delete(id);
       }
     }
+
+    spreadRef.current = () => spreadMarkers(m, markers.current);
+    spreadRef.current();
 
     // Premier cadrage sur la flotte reelle : le centre code en dur ne vaut
     // que tant qu'aucune position n'est arrivee.
@@ -186,7 +203,7 @@ export function FleetMap({ vehicles, selectedId, onSelect }: Props) {
       focused.current = selectedId;
       m.easeTo({ center: [target.lon, target.lat], duration: 600 });
     }
-  }, [vehicles, selectedId, ready]);
+  }, [vehicles, selectedId, ready, tick, t]);
 
   return (
     <div className="map-shell">
@@ -209,7 +226,9 @@ export function FleetMap({ vehicles, selectedId, onSelect }: Props) {
 
 /* --- rendu d'un marqueur -------------------------------------------------- */
 
-function paintMarker(el: HTMLElement, v: VehicleState, selected: boolean) {
+interface Labels { stop: (d: string) => string; off: (d: string) => string }
+
+function paintMarker(el: HTMLElement, v: VehicleState, selected: boolean, labels: Labels) {
   const moving = v.online && v.speed > 3;
   const tone = !v.online ? 'off' : v.starter !== 'allowed' ? 'blocked' : moving ? 'moving' : 'idle';
 
@@ -235,7 +254,15 @@ function paintMarker(el: HTMLElement, v: VehicleState, selected: boolean) {
     l1.textContent = moving ? `${who} · ${v.speed} km/h` : who;
     const l2 = document.createElement('small');
     l2.textContent = v.plate || v.id;
-    tag.replaceChildren(l1, l2);
+    const s = sinceOf(v);
+    if (s) {
+      const l3 = document.createElement('small');
+      l3.className = `veh-since ${s.kind}`;
+      l3.textContent = s.kind === 'off' ? labels.off(fmtAgo(s.iso)) : labels.stop(fmtAgo(s.iso));
+      tag.replaceChildren(l1, l2, l3);
+    } else {
+      tag.replaceChildren(l1, l2);
+    }
   }
 }
 
@@ -308,4 +335,39 @@ function circle(lat: number, lon: number, radiusMeters: number): number[][] {
 
 function emptyCollection(): GeoJSON.FeatureCollection {
   return { type: 'FeatureCollection', features: [] };
+}
+
+/* --- camions superposes ---------------------------------------------------- */
+
+/**
+ * Camions a moins de 34 px les uns des autres a l'ecran : ecartes en cercle autour
+ * du point reel (decalage du marqueur, la position GPS ne change pas), avec un trait
+ * qui ramene a ce point.
+ */
+function spreadMarkers(m: MapLibreMap, all: Map<string, Marker>): void {
+  const items = [...all.values()].map((mk) => ({ mk, p: m.project(mk.getLngLat()) }));
+  const used = new Set<number>();
+  for (let i = 0; i < items.length; i++) {
+    if (used.has(i)) continue;
+    const group = [i];
+    for (let j = i + 1; j < items.length; j++) {
+      if (!used.has(j) && Math.hypot(items[i].p.x - items[j].p.x, items[i].p.y - items[j].p.y) < 34) group.push(j);
+    }
+    group.forEach((k) => used.add(k));
+    const n = group.length;
+    const r = n > 1 ? 40 + 8 * n : 0;
+    group.forEach((k, idx) => {
+      const a = (2 * Math.PI * idx) / n - Math.PI / 2;
+      const dx = Math.round(r * Math.cos(a));
+      const dy = Math.round(r * Math.sin(a));
+      items[k].mk.setOffset([dx, dy]);
+      const el = items[k].mk.getElement();
+      el.classList.toggle('is-spread', n > 1);
+      const leader = el.querySelector<HTMLElement>('.veh-leader');
+      if (leader) {
+        leader.style.width = `${Math.hypot(dx, dy)}px`;
+        leader.style.transform = `rotate(${Math.atan2(-dy, -dx)}rad)`;
+      }
+    });
+  }
 }

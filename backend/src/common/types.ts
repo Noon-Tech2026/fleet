@@ -70,6 +70,8 @@ export interface VehicleState {
 
   online: boolean;
   updatedAt: string; // ISO 8601
+  /** Debut de l'arret en cours (ISO) ; null en roulage. */
+  stoppedSince?: string | null;
 }
 
 export interface Alert {
