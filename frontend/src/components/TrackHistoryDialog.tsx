@@ -235,6 +235,7 @@ export function TrackHistoryDialog({ vehicleId, plate, onClose }: Props) {
       : t('track.inProgress', 'en cours');
     const parts = [`${fmtShort(v.exitedAt)} → ${back}`];
     if (v.zoneName) parts.push(v.zoneName);
+    if (v.fuelLiters !== null && v.fuelLiters !== undefined) parts.push(`⛽ ${v.fuelLiters} L${v.km ? ` / ${v.km} km` : ''}`);
     if (tr && tripContainers(tr)) parts.push(tripContainers(tr));
     if (tr?.clientName) parts.push(tr.clientName);
     if (tr?.driverName) parts.push(tr.driverName);

@@ -126,6 +126,12 @@ export class FleetController {
     return this.exitRequests.voyages(id);
   }
 
+  /** Consommation moyenne par voyage et par camion (comptabilite). */
+  @Get('fuel-per-voyage')
+  fuelPerVoyage(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.exitRequests.fuelStats(from || undefined, to || undefined);
+  }
+
   @RequireRole(Role.Supervisor)
   @Post('exit-requests/:id/confirm')
   async confirmExit(@Param('id') id: string, @Body() dto: ConfirmExitDto, @CurrentUser() user: JwtPayload) {

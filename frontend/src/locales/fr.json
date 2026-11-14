@@ -657,7 +657,9 @@
     "description": "Description",
     "noInvestments": "Aucun investissement",
     "noVehicles": "Aucun camion",
-    "searchVehicle": "Rechercher un camion ou une plaque"
+    "searchVehicle": "Rechercher un camion ou une plaque",
+    "fuelPerTrip": "Carburant / voyage",
+    "fuelMeasured": "{{n}} voyage(s) mesuré(s)"
   },
   "starter": {
     "neverMoving": "Cette commande ne coupe jamais un moteur en marche.",

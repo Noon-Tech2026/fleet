@@ -27,6 +27,18 @@ export function AccountingPage() {
   const [dataVersion, setDataVersion] = useState(0);
   useEffect(() => { apiClient.accountingOverview(period).then(setOverview).catch(() => setOverview(null)); }, [period, dataVersion]);
   const [catalogOpen, setCatalogOpen] = useState(false);
+  // Consommation moyenne par voyage (capteurs de carburant), chargee a part : plus lente.
+  const [fuel, setFuel] = useState<Map<string, { voyages: number; avgLiters: number | null; avgKm: number | null; l100: number | null }>>(new Map());
+  useEffect(() => {
+    apiClient.fuelPerVoyage(period as unknown as { from?: string; to?: string })
+      .then((list) => setFuel(new Map(list.map((x) => [x.vehicleId, x]))))
+      .catch(() => setFuel(new Map()));
+  }, [period, dataVersion]);
+  function fuelText(id: string): string {
+    const f = fuel.get(id);
+    if (!f || f.avgLiters === null) return '—';
+    return `${f.avgLiters} L${f.l100 !== null ? ` · ${f.l100} L/100 km` : ''}`;
+  }
 
   const canRecordTrip = can('operator');
   const canManageMoney = can('supervisor');
@@ -61,6 +73,13 @@ export function AccountingPage() {
   // Le repertoire, pas la telemetrie en direct : un camion tout juste cree
   // doit rester consultable ici avant meme d'avoir emis sa premiere position.
   const byVehicle = useMemo(() => new Map(fleet.map((v) => [v.id, v])), [fleet]);
+  const driverOf = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const d of drivers as unknown as Array<{ vehicleId?: string | null; fullName?: string; active?: boolean }>) {
+      if (d.vehicleId && d.fullName && d.active !== false) map.set(d.vehicleId, d.fullName);
+    }
+    return map;
+  }, [drivers]);
 
 
   const selectedVehicle = selectedVehicleId ? byVehicle.get(selectedVehicleId) : undefined;
@@ -85,9 +104,9 @@ export function AccountingPage() {
       ],
       sections: [{
         title: t('print.byVehicle'),
-        columns: [{ label: t('common.truck') }, { label: t('accounting.trips'), align: 'center', width: '9%' }, { label: t('accounting.fleetRevenue'), align: 'right' }, { label: t('accounting.fleetExpenses'), align: 'right' }, { label: t('accounting.fleetInvest'), align: 'right' }, { label: t('accounting.fleetNet'), align: 'right' }],
-        rows: (summaries ?? []).map((x) => [`${x.vehicleId}${byVehicle.get(x.vehicleId)?.plate ? ' · ' + byVehicle.get(x.vehicleId)?.plate : ''}`, x.tripsCount, formatMoney(x.revenue), formatMoney(x.expenses), formatMoney(x.investments), formatMoney(x.netResult)]),
-        total: [t('clients.ledger.total'), (summaries ?? []).reduce((a, x) => a + x.tripsCount, 0), formatMoney((summaries ?? []).reduce((a, x) => a + x.revenue, 0)), formatMoney((summaries ?? []).reduce((a, x) => a + x.expenses, 0)), formatMoney((summaries ?? []).reduce((a, x) => a + x.investments, 0)), formatMoney((summaries ?? []).reduce((a, x) => a + x.netResult, 0))],
+        columns: [{ label: t('common.truck') }, { label: t('accounting.trips'), align: 'center', width: '9%' }, { label: t('accounting.fuelPerTrip', 'Carburant / voyage'), align: 'center' }, { label: t('accounting.fleetRevenue'), align: 'right' }, { label: t('accounting.fleetExpenses'), align: 'right' }, { label: t('accounting.fleetInvest'), align: 'right' }, { label: t('accounting.fleetNet'), align: 'right' }],
+        rows: (summaries ?? []).map((x) => [`${x.vehicleId}${byVehicle.get(x.vehicleId)?.plate ? ' · ' + byVehicle.get(x.vehicleId)?.plate : ''}${driverOf.get(x.vehicleId) ? ' · ' + driverOf.get(x.vehicleId) : ''}`, x.tripsCount, fuelText(x.vehicleId), formatMoney(x.revenue), formatMoney(x.expenses), formatMoney(x.investments), formatMoney(x.netResult)]),
+        total: [t('clients.ledger.total'), (summaries ?? []).reduce((a, x) => a + x.tripsCount, 0), '', formatMoney((summaries ?? []).reduce((a, x) => a + x.revenue, 0)), formatMoney((summaries ?? []).reduce((a, x) => a + x.expenses, 0)), formatMoney((summaries ?? []).reduce((a, x) => a + x.investments, 0)), formatMoney((summaries ?? []).reduce((a, x) => a + x.netResult, 0))],
         empty: t('accounting.noVehicles'),
       }],
     });
@@ -148,6 +167,7 @@ export function AccountingPage() {
                   <tr>
                     <th>{t('common.truck')}</th>
                     <th>{t('accounting.trips')}</th>
+                    <th>{t('accounting.fuelPerTrip', 'Carburant / voyage')}</th>
                     <th>{t('accounting.revenue')}</th>
                     <th>{t('accounting.expenses')}</th>
                     <th>{t('accounting.investment')}</th>
@@ -166,8 +186,13 @@ export function AccountingPage() {
                       <td>
                         <strong>{s.vehicleId}</strong>
                         <div className="cell-sub">{byVehicle.get(s.vehicleId)?.plate ? <span className="plate-badge sm" dir="ltr">{byVehicle.get(s.vehicleId)?.plate}</span> : '—'}</div>
+                        {driverOf.get(s.vehicleId) && <div className="cell-sub"><b>{driverOf.get(s.vehicleId)}</b></div>}
                       </td>
                       <td>{s.tripsCount}</td>
+                      <td>
+                        <strong>{fuelText(s.vehicleId)}</strong>
+                        {(fuel.get(s.vehicleId)?.voyages ?? 0) > 0 && <div className="cell-sub">{t('accounting.fuelMeasured', { defaultValue: '{{n}} voyage(s) mesuré(s)', n: fuel.get(s.vehicleId)?.voyages })}</div>}
+                      </td>
                       <td>{formatMoney(s.revenue)}</td>
                       <td>{formatMoney(s.expenses)}</td>
                       <td>{formatMoney(s.investments)}</td>

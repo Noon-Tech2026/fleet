@@ -667,7 +667,9 @@
     "description": "الوصف",
     "noInvestments": "لا استثمارات",
     "noVehicles": "لا شاحنات",
-    "searchVehicle": "بحث عن شاحنة أو لوحة"
+    "searchVehicle": "بحث عن شاحنة أو لوحة",
+    "fuelPerTrip": "الوقود / رحلة",
+    "fuelMeasured": "{{n}} رحلة مقاسة"
   },
   "starter": {
     "neverMoving": "هذا الأمر لا يقطع محرك شاحنة تتحرك أبداً.",

@@ -344,6 +344,9 @@ export type ZoneInput = Omit<Zone, 'id' | 'active'>;
 
 /** Voyage reel : sortie de zone (appui du bouton) -> retour dans la meme zone. */
 export interface VoyageView {
+  /** Carburant consomme pendant le voyage (L) ; null si non mesurable / en cours. */
+  fuelLiters?: number | null;
+  km?: number | null;
   id: string;
   zoneName: string;
   exitedAt: string;

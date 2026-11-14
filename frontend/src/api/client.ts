@@ -308,6 +308,10 @@ export const api = {
 
   deleteDriver: (id: string) => request<void>(`/api/accounting/drivers/${id}`, { method: 'DELETE' }),
 
+  fuelPerVoyage: (range?: { from?: string; to?: string }) =>
+    request<Array<{ vehicleId: string; voyages: number; avgLiters: number | null; avgKm: number | null; l100: number | null }>>(
+      `/api/fuel-per-voyage?${new URLSearchParams(Object.entries(range ?? {}).filter(([, v]) => typeof v === 'string' && v !== '') as [string, string][]).toString()}`,
+    ),
   vehicleVoyages: (id: string) => request<import('../lib/types').VoyageView[]>(`/api/vehicles/${encodeURIComponent(id)}/voyages`),
   vehicleTrips: (id: string, range?: { from?: string; to?: string }) => request<TripEntry[]>(`/api/vehicles/${id}/trips${rangeQs(range)}`),
 

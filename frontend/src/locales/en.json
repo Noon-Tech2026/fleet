@@ -667,7 +667,9 @@
     "description": "Description",
     "noInvestments": "No investment",
     "noVehicles": "No truck",
-    "searchVehicle": "Search a truck or a plate"
+    "searchVehicle": "Search a truck or a plate",
+    "fuelPerTrip": "Fuel / trip",
+    "fuelMeasured": "{{n}} trip(s) measured"
   },
   "starter": {
     "neverMoving": "This command never cuts the engine of a moving truck.",

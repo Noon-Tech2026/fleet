@@ -137,6 +137,7 @@ export class ExitRequestsService {
       const e = exits[i];
       const next = i > 0 ? exits[i - 1].exited_at : null;
       let returnedAt: string | null = null;
+      let retRaw: unknown = null;
       if (e.zone_id) {
         // 2 min de marge : le GPS peut encore "rebondir" dans la zone juste apres la sortie.
         const params: unknown[] = [vehicleId, e.zone_id, e.exited_at];
@@ -144,7 +145,9 @@ export class ExitRequestsService {
         if (next) { sql += ' AND recorded_at <= ?'; params.push(next); }
         const rows: Array<{ t: unknown }> = await m.query(sql, params);
         returnedAt = iso(rows[0]?.t);
+        retRaw = rows[0]?.t ?? null;
       }
+      const fuel = retRaw ? await this.fuelUse(vehicleId, e.exited_at, retRaw) : { liters: null, km: null };
       out.push({
         id: e.id,
         zoneName: e.zone_name,
@@ -155,6 +158,62 @@ export class ExitRequestsService {
         status: e.status,
         reason: e.reason,
         tripId: e.trip_id,
+        fuelLiters: fuel.liters,
+        km: fuel.km,
+      });
+    }
+    return out;
+  }
+
+  /**
+   * Carburant consomme entre deux instants (positions enregistrees) : somme des baisses
+   * du total des deux reservoirs. < 3 L = bruit ; hausse > 25 L = plein, ignore.
+   */
+  private async fuelUse(vehicleId: string, from: unknown, to: unknown): Promise<{ liters: number | null; km: number | null }> {
+    const rows: Array<{ a: unknown; b: unknown; o: unknown }> = await this.repo.manager.query(
+      'SELECT fuel_main AS a, fuel_aux AS b, odometer AS o FROM positions WHERE vehicle_id = ? AND recorded_at >= ? AND recorded_at <= ? ORDER BY recorded_at',
+      [vehicleId, from, to],
+    );
+    let ref: number | null = null;
+    let used = 0;
+    let n = 0;
+    let o0: number | null = null;
+    let o1: number | null = null;
+    for (const r of rows) {
+      const o = Number(r.o);
+      if (o > 0) { if (o0 === null) o0 = o; o1 = o; }
+      const tot = Number(r.a) + Number(r.b);
+      if (!Number.isFinite(tot) || tot <= 0) continue; // capteur absent / non calibre
+      n += 1;
+      if (ref === null) { ref = tot; continue; }
+      if (tot > ref + 25) ref = tot; // plein en route
+      else if (tot < ref - 3) { used += ref - tot; ref = tot; }
+    }
+    const km = o0 !== null && o1 !== null && o1 >= o0 ? o1 - o0 : null;
+    return { liters: n >= 2 ? Math.round(used) : null, km };
+  }
+
+  /** Moyennes de consommation par camion sur les voyages termines de la periode (YYYY-MM-DD). */
+  async fuelStats(from?: string, to?: string) {
+    const ids: Array<{ v: string }> = await this.repo.manager.query('SELECT DISTINCT vehicle_id AS v FROM exit_requests');
+    const out: Array<{ vehicleId: string; voyages: number; avgLiters: number | null; avgKm: number | null; l100: number | null }> = [];
+    for (const { v } of ids) {
+      const list = await this.voyages(v, 2000);
+      let liters = 0, km = 0, count = 0;
+      for (const x of list) {
+        const day = String(x.exitedAt ?? '').slice(0, 10);
+        if (!x.returnedAt || x.status === 'bypassed' || x.fuelLiters === null || x.fuelLiters === undefined) continue;
+        if ((from && day < from) || (to && day > to)) continue;
+        liters += Number(x.fuelLiters);
+        km += Number(x.km ?? 0);
+        count += 1;
+      }
+      out.push({
+        vehicleId: v,
+        voyages: count,
+        avgLiters: count ? Math.round(liters / count) : null,
+        avgKm: count ? Math.round(km / count) : null,
+        l100: km >= 5 ? Math.round((liters / km) * 1000) / 10 : null,
       });
     }
     return out;
