@@ -166,31 +166,66 @@ export class ExitRequestsService {
   }
 
   /**
-   * Carburant consomme entre deux instants (positions enregistrees) : somme des baisses
-   * du total des deux reservoirs. < 3 L = bruit ; hausse > 25 L = plein, ignore.
+   * Carburant consomme entre deux instants (fuel-v2).
+   * depart (mediane a l'arret) - arrivee (mediane a l'arret) + pleins en route.
+   * null = non mesurable : capteurs absents, boitier muet > 5 min en roulage, incoherence.
    */
   private async fuelUse(vehicleId: string, from: unknown, to: unknown): Promise<{ liters: number | null; km: number | null }> {
-    const rows: Array<{ a: unknown; b: unknown; o: unknown }> = await this.repo.manager.query(
-      'SELECT fuel_main AS a, fuel_aux AS b, odometer AS o FROM positions WHERE vehicle_id = ? AND recorded_at >= ? AND recorded_at <= ? ORDER BY recorded_at',
+    const rows: Array<{ a: unknown; b: unknown; o: unknown; s: unknown; t: unknown }> = await this.repo.manager.query(
+      'SELECT fuel_main AS a, fuel_aux AS b, odometer AS o, speed AS s, recorded_at AS t FROM positions WHERE vehicle_id = ? AND recorded_at >= ? AND recorded_at <= ? ORDER BY recorded_at',
       [vehicleId, from, to],
     );
-    let ref: number | null = null;
-    let used = 0;
-    let n = 0;
+    const ms = (v: unknown) => (v instanceof Date ? v.getTime() : Date.parse(String(v).includes('T') ? String(v) : `${String(v).replace(' ', 'T')}Z`));
+    const median = (xs: number[]) => {
+      const a = [...xs].sort((x, y) => x - y);
+      const k = Math.floor(a.length / 2);
+      return a.length % 2 ? a[k] : (a[k - 1] + a[k]) / 2;
+    };
+
+    // Trou de trames en roulage : km et carburant de ce voyage ne sont pas fiables.
+    for (let i = 1; i < rows.length; i++) {
+      const gap = ms(rows[i].t) - ms(rows[i - 1].t);
+      if (gap > 5 * 60_000 && (Number(rows[i].s) > 5 || Number(rows[i - 1].s) > 5)) return { liters: null, km: null };
+    }
+
     let o0: number | null = null;
     let o1: number | null = null;
+    const pts: Array<{ tot: number; stopped: boolean }> = [];
     for (const r of rows) {
       const o = Number(r.o);
       if (o > 0) { if (o0 === null) o0 = o; o1 = o; }
       const tot = Number(r.a) + Number(r.b);
-      if (!Number.isFinite(tot) || tot <= 0) continue; // capteur absent / non calibre
-      n += 1;
-      if (ref === null) { ref = tot; continue; }
-      if (tot > ref + 25) ref = tot; // plein en route
-      else if (tot < ref - 3) { used += ref - tot; ref = tot; }
+      if (Number.isFinite(tot) && tot > 0) pts.push({ tot, stopped: Number(r.s) <= 3 });
     }
     const km = o0 !== null && o1 !== null && o1 >= o0 ? o1 - o0 : null;
-    return { liters: n >= 2 ? Math.round(used) : null, km };
+    if (pts.length < 4) return { liters: null, km };
+
+    const firstStop = pts.filter((p) => p.stopped).slice(0, 5).map((p) => p.tot);
+    const lastStop = pts.filter((p) => p.stopped).slice(-5).map((p) => p.tot);
+    const start = median(firstStop.length >= 2 ? firstStop : pts.slice(0, 5).map((p) => p.tot));
+    const end = median(lastStop.length >= 2 ? lastStop : pts.slice(-5).map((p) => p.tot));
+
+    // Pleins : serie lissee (mediane glissante de 5), hausse > 25 L au-dessus du minimum courant.
+    const sm = pts.map((_, i) => median(pts.slice(Math.max(0, i - 2), i + 3).map((p) => p.tot)));
+    let refill = 0;
+    let runMin = sm[0];
+    let base = 0;
+    let peak = 0;
+    let filling = false;
+    for (const v of sm) {
+      if (filling) {
+        if (v > peak) peak = v;
+        else if (v < peak - 5) { refill += peak - base; filling = false; runMin = v; }
+        continue;
+      }
+      if (v > runMin + 25) { filling = true; base = runMin; peak = v; continue; }
+      if (v < runMin) runMin = v;
+    }
+    if (filling) refill += peak - base;
+
+    const liters = start - end + refill;
+    if (liters < -10) return { liters: null, km };
+    return { liters: Math.max(0, Math.round(liters)), km };
   }
 
   /** Moyennes de consommation par camion sur les voyages termines de la periode (YYYY-MM-DD). */
