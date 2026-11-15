@@ -2986,3 +2986,6 @@ tr.ledger-highlight > td:first-child { border-left: 4px solid #e0a020; }
 .veh-marker.tone-off { opacity: 1 !important; filter: none !important; }
 .veh-marker.tone-off .veh-pin { background: #4b5563 !important; border: 2px dashed #ffffff !important; box-shadow: 0 0 0 2px #4b5563 !important; opacity: 1 !important; }
 .veh-marker.tone-off .veh-tag { opacity: 1 !important; color: #1f2933 !important; background: #ffffff !important; border: 1px dashed #6b7280 !important; }
+/* === supervision-carte-v2 === */
+.veh-marker.is-selected .veh-tag .veh-since { color: #ffffff !important; }
+.veh-marker.is-spread { z-index: 4; }

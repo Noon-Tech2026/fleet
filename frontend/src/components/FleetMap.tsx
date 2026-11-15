@@ -351,15 +351,17 @@ function spreadMarkers(m: MapLibreMap, all: Map<string, Marker>): void {
     if (used.has(i)) continue;
     const group = [i];
     for (let j = i + 1; j < items.length; j++) {
-      if (!used.has(j) && Math.hypot(items[i].p.x - items[j].p.x, items[i].p.y - items[j].p.y) < 34) group.push(j);
+      if (!used.has(j) && Math.abs(items[i].p.x - items[j].p.x) < 150 && Math.abs(items[i].p.y - items[j].p.y) < 70) group.push(j);
     }
     group.forEach((k) => used.add(k));
     const n = group.length;
-    const r = n > 1 ? 40 + 8 * n : 0;
+    // Ellipse : les etiquettes sont plus larges que hautes.
+    const rx = n > 1 ? 90 + 20 * n : 0;
+    const ry = n > 1 ? 45 + 18 * n : 0;
     group.forEach((k, idx) => {
       const a = (2 * Math.PI * idx) / n - Math.PI / 2;
-      const dx = Math.round(r * Math.cos(a));
-      const dy = Math.round(r * Math.sin(a));
+      const dx = Math.round(rx * Math.cos(a));
+      const dy = Math.round(ry * Math.sin(a));
       items[k].mk.setOffset([dx, dy]);
       const el = items[k].mk.getElement();
       el.classList.toggle('is-spread', n > 1);

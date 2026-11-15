@@ -69,6 +69,8 @@ export class FleetService implements OnModuleInit {
   }
 
   async onModuleInit(): Promise<void> {
+    // Chaque minute : un camion muet depuis 5 min passe « Hors ligne » a l'ecran.
+    setInterval(() => this.sweepOffline(), 60_000);
     setTimeout(() => void this.immobilizer.resyncOutputs(this.vehicles.list().map((v) => v.id)), 12_000);
     // Reponses getio : etat reel des sorties, applique au camion concerne.
     this.source.onIoReport?.((report) => {
@@ -148,6 +150,16 @@ export class FleetService implements OnModuleInit {
       /* base indisponible : on part de cette trame */
     }
     return raw.at.toISOString();
+  }
+
+  private sweepOffline(): void {
+    const now = Date.now();
+    for (const v of this.state.values()) {
+      if (v.online !== false && now - Date.parse(v.updatedAt) >= OFFLINE_AFTER_MS) {
+        v.online = false;
+        this.events.publish({ type: 'position', vehicle: { ...v } });
+      }
+    }
   }
 
   /** Rebroadcast de l'etat complet : apres un changement du referentiel camions. */
@@ -260,7 +272,8 @@ export class FleetService implements OnModuleInit {
       battery: Number(raw.battery.toFixed(1)),
       gsm: raw.gsm,
 
-      online: true,
+      // Trame en retard (memoire du boitier videe) : pas « en ligne ».
+      online: Date.now() - raw.at.getTime() < OFFLINE_AFTER_MS,
       updatedAt: raw.at.toISOString(),
       stoppedSince,
     };
