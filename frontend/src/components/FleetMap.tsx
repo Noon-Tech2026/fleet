@@ -442,6 +442,15 @@ function clusterMarkers(m: MapLibreMap, all: Map<string, Marker>, clusters: Mark
       e.stopPropagation();
       m.fitBounds(bounds, { padding: 140, maxZoom: 16, duration: 500 });
     });
-    clusters.push(new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([lng / n, lat / n]).addTo(m));
+    el.style.zIndex = '5'; // cluster-z : au-dessus des etiquettes
+    const cm = new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([lng / n, lat / n]).addTo(m);
+    // Bulle sur le camion selectionne : decalee a droite de son etiquette.
+    const sel = selectedId ? all.get(selectedId) : undefined;
+    if (sel) {
+      const ps = m.project(sel.getLngLat());
+      const pc = m.project(cm.getLngLat());
+      if (Math.abs(ps.x - pc.x) < 110 && Math.abs(ps.y - pc.y) < 70) cm.setOffset([ps.x <= pc.x ? 110 : -110, 0]);
+    }
+    clusters.push(cm);
   }
 }
