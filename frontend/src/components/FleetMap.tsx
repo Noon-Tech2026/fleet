@@ -52,6 +52,8 @@ export function FleetMap({ vehicles, selectedId, onSelect }: Props) {
   }, []);
   // Ecartement des camions superposes, recalcule a chaque zoom / deplacement.
   const spreadRef = useRef<() => void>(() => undefined);
+  // Bulles de regroupement affichees (recreees a chaque zoom / deplacement).
+  const clusters = useRef<Marker[]>([]);
 
   // La carte est construite une fois pour toutes ; les rappels changent a
   // chaque rendu et ne doivent pas la faire reconstruire.
@@ -184,7 +186,7 @@ export function FleetMap({ vehicles, selectedId, onSelect }: Props) {
       }
     }
 
-    spreadRef.current = () => spreadMarkers(m, markers.current);
+    spreadRef.current = () => clusterMarkers(m, markers.current, clusters.current, selectedId);
     spreadRef.current();
 
     // Premier cadrage sur la flotte reelle : le centre code en dur ne vaut
@@ -345,6 +347,7 @@ function emptyCollection(): GeoJSON.FeatureCollection {
  * qui ramene a ce point.
  */
 function spreadMarkers(m: MapLibreMap, all: Map<string, Marker>): void {
+  all.forEach((mk) => { mk.getElement().style.display = ''; });
   const items = [...all.values()].map((mk) => ({ mk, p: m.project(mk.getLngLat()) }));
   const used = new Set<number>();
   for (let i = 0; i < items.length; i++) {
@@ -371,5 +374,74 @@ function spreadMarkers(m: MapLibreMap, all: Map<string, Marker>): void {
         leader.style.transform = `rotate(${Math.atan2(-dy, -dx)}rad)`;
       }
     });
+  }
+}
+
+/* --- bulles de regroupement ------------------------------------------------- */
+
+/**
+ * Camions proches a l'ecran (moins de 70 x 50 px) : caches et remplaces par une bulle
+ * numerotee. Zoom >= 15 : plus de bulles, ecartement des camions superposes.
+ */
+function clusterMarkers(m: MapLibreMap, all: Map<string, Marker>, clusters: Marker[], selectedId: string | null): void {
+  clusters.forEach((c) => c.remove());
+  clusters.length = 0;
+  if (m.getZoom() >= 15) {
+    spreadMarkers(m, all);
+    return;
+  }
+  const items = [...all.entries()].map(([id, mk]) => ({ id, mk, p: m.project(mk.getLngLat()) }));
+  const used = new Set<number>();
+  const show = (mk: Marker) => {
+    const el = mk.getElement();
+    el.style.display = '';
+    el.classList.remove('is-spread');
+    mk.setOffset([0, 0]);
+  };
+  for (let i = 0; i < items.length; i++) {
+    if (used.has(i)) continue;
+    used.add(i);
+    if (items[i].id === selectedId) { show(items[i].mk); continue; }
+    const group = [i];
+    for (let j = i + 1; j < items.length; j++) {
+      if (used.has(j) || items[j].id === selectedId) continue;
+      if (Math.abs(items[i].p.x - items[j].p.x) < 70 && Math.abs(items[i].p.y - items[j].p.y) < 50) {
+        group.push(j);
+        used.add(j);
+      }
+    }
+    if (group.length === 1) { show(items[i].mk); continue; }
+
+    let lng = 0;
+    let lat = 0;
+    const bounds = new maplibregl.LngLatBounds();
+    const names: string[] = [];
+    let tone = 'idle';
+    for (const k of group) {
+      const mk = items[k].mk;
+      const ll = mk.getLngLat();
+      lng += ll.lng;
+      lat += ll.lat;
+      bounds.extend(ll);
+      const el = mk.getElement();
+      el.style.display = 'none';
+      names.push(el.getAttribute('aria-label')?.split(' — ').slice(0, 2).join(' · ') ?? items[k].id);
+      if (el.classList.contains('tone-blocked')) tone = 'blocked';
+      else if (el.classList.contains('tone-moving') && tone !== 'blocked') tone = 'moving';
+    }
+    const n = group.length;
+    const size = Math.min(64, 34 + 4 * n);
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = `veh-cluster tone-${tone}`;
+    el.style.width = `${size}px`;
+    el.style.height = `${size}px`;
+    el.textContent = String(n);
+    el.title = names.join('\n');
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      m.fitBounds(bounds, { padding: 140, maxZoom: 16, duration: 500 });
+    });
+    clusters.push(new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([lng / n, lat / n]).addTo(m));
   }
 }

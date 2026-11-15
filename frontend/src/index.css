@@ -2989,3 +2989,8 @@ tr.ledger-highlight > td:first-child { border-left: 4px solid #e0a020; }
 /* === supervision-carte-v2 === */
 .veh-marker.is-selected .veh-tag .veh-since { color: #ffffff !important; }
 .veh-marker.is-spread { z-index: 4; }
+/* === supervision-clusters-v1 === */
+.veh-cluster { display: grid; place-items: center; padding: 0; border-radius: 50%; background: #ffffff; border: 3px solid #5fae58; color: #1f2933; font-weight: 800; font-size: 15px; line-height: 1; box-shadow: 0 2px 8px rgba(0, 0, 0, .28); cursor: pointer; transition: transform .12s; }
+.veh-cluster:hover { transform: scale(1.08); }
+.veh-cluster.tone-moving { border-color: #f0a020; }
+.veh-cluster.tone-blocked { border-color: #ef625a; }
