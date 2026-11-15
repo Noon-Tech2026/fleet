@@ -200,10 +200,23 @@ export class ExitRequestsService {
     const km = o0 !== null && o1 !== null && o1 >= o0 ? o1 - o0 : null;
     if (pts.length < 4) return { liters: null, km };
 
-    const firstStop = pts.filter((p) => p.stopped).slice(0, 5).map((p) => p.tot);
-    const lastStop = pts.filter((p) => p.stopped).slice(-5).map((p) => p.tot);
-    const start = median(firstStop.length >= 2 ? firstStop : pts.slice(0, 5).map((p) => p.tot));
-    const end = median(lastStop.length >= 2 ? lastStop : pts.slice(-5).map((p) => p.tot));
+    // fuel-v3 : niveaux lus a l'arret juste AVANT la sortie et juste APRES le retour.
+    const totals = (list: Array<{ a: unknown; b: unknown }>) =>
+      list.map((r) => Number(r.a) + Number(r.b)).filter((x) => Number.isFinite(x) && x > 0);
+    const before = totals(await this.repo.manager.query(
+      'SELECT fuel_main AS a, fuel_aux AS b FROM positions WHERE vehicle_id = ? AND recorded_at < ? AND recorded_at >= DATE_SUB(?, INTERVAL 60 MINUTE) AND speed <= 3 ORDER BY recorded_at DESC LIMIT 5',
+      [vehicleId, from, from],
+    ));
+    const after = totals(await this.repo.manager.query(
+      'SELECT fuel_main AS a, fuel_aux AS b FROM positions WHERE vehicle_id = ? AND recorded_at > ? AND recorded_at <= DATE_ADD(?, INTERVAL 30 MINUTE) AND speed <= 3 ORDER BY recorded_at LIMIT 5',
+      [vehicleId, to, to],
+    ));
+    const headIn = median(pts.slice(0, 5).map((p) => p.tot));
+    const tailIn = median(pts.slice(-5).map((p) => p.tot));
+    let start = before.length >= 2 ? median(before) : headIn;
+    let end = after.length >= 2 ? median(after) : tailIn;
+    if (headIn > start + 25) start = headIn; // plein juste avant la sortie, apres les lectures
+    if (end > tailIn + 25) end = tailIn; // plein juste apres le retour
 
     // Pleins : serie lissee (mediane glissante de 5), hausse > 25 L au-dessus du minimum courant.
     const sm = pts.map((_, i) => median(pts.slice(Math.max(0, i - 2), i + 3).map((p) => p.tot)));
