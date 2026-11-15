@@ -401,10 +401,9 @@ function clusterMarkers(m: MapLibreMap, all: Map<string, Marker>, clusters: Mark
   for (let i = 0; i < items.length; i++) {
     if (used.has(i)) continue;
     used.add(i);
-    if (items[i].id === selectedId) { show(items[i].mk); continue; }
     const group = [i];
     for (let j = i + 1; j < items.length; j++) {
-      if (used.has(j) || items[j].id === selectedId) continue;
+      if (used.has(j)) continue;
       if (Math.abs(items[i].p.x - items[j].p.x) < 70 && Math.abs(items[i].p.y - items[j].p.y) < 50) {
         group.push(j);
         used.add(j);
@@ -424,7 +423,8 @@ function clusterMarkers(m: MapLibreMap, all: Map<string, Marker>, clusters: Mark
       lat += ll.lat;
       bounds.extend(ll);
       const el = mk.getElement();
-      el.style.display = 'none';
+      if (items[k].id === selectedId) { show(mk); el.style.zIndex = '6'; } // cluster-v2 : selection visible
+      else el.style.display = 'none';
       names.push(el.getAttribute('aria-label')?.split(' — ').slice(0, 2).join(' · ') ?? items[k].id);
       if (el.classList.contains('tone-blocked')) tone = 'blocked';
       else if (el.classList.contains('tone-moving') && tone !== 'blocked') tone = 'moving';
@@ -443,14 +443,6 @@ function clusterMarkers(m: MapLibreMap, all: Map<string, Marker>, clusters: Mark
       m.fitBounds(bounds, { padding: 140, maxZoom: 16, duration: 500 });
     });
     el.style.zIndex = '5'; // cluster-z : au-dessus des etiquettes
-    const cm = new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([lng / n, lat / n]).addTo(m);
-    // Bulle sur le camion selectionne : decalee a droite de son etiquette.
-    const sel = selectedId ? all.get(selectedId) : undefined;
-    if (sel) {
-      const ps = m.project(sel.getLngLat());
-      const pc = m.project(cm.getLngLat());
-      if (Math.abs(ps.x - pc.x) < 110 && Math.abs(ps.y - pc.y) < 70) cm.setOffset([ps.x <= pc.x ? 110 : -110, 0]);
-    }
-    clusters.push(cm);
+    clusters.push(new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([lng / n, lat / n]).addTo(m));
   }
 }
