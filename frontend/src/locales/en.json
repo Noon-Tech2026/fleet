@@ -616,6 +616,19 @@
       "confirmDelete": "Delete this entry?",
       "total": "Period total",
       "solde": "Balance"
+    },
+    "statement": {
+      "title": "Customer account statement",
+      "due": "Balance due",
+      "count": "Entries",
+      "detail": "Entries",
+      "signCompany": "Stamp and signature",
+      "signClient": "Agreed — customer",
+      "button": "Statement ({{n}})",
+      "hint": "PDF statement of the ticked entries",
+      "selected": "{{n}} / {{total}} entries selected",
+      "all": "Select all",
+      "none": "Clear selection"
     }
   },
   "users": {

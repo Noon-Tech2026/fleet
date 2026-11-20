@@ -606,6 +606,19 @@
       "confirmDelete": "Supprimer cette écriture ?",
       "total": "Total période",
       "solde": "Solde"
+    },
+    "statement": {
+      "title": "Relevé de compte client",
+      "due": "Solde dû",
+      "count": "Opérations",
+      "detail": "Détail des opérations",
+      "signCompany": "Cachet et signature",
+      "signClient": "Bon pour accord — client",
+      "button": "Relevé ({{n}})",
+      "hint": "Relevé PDF des opérations cochées",
+      "selected": "{{n}} / {{total}} opération(s) sélectionnée(s)",
+      "all": "Tout sélectionner",
+      "none": "Tout désélectionner"
     }
   },
   "users": {

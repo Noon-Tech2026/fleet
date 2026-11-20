@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { fmtDateTime, stamp } from '../lib/datetime';
 import { openPrintReport, periodLabel } from '../lib/printReport';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +26,9 @@ export function ClientLedgerDialog({ client, onClose, highlightTripId }: Props) 
   const [label, setLabel] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Operations a inclure dans le releve envoye au client (toutes par defaut).
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const knownIds = useRef<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     try { setLedger(await api.clientLedger(client.id, period)); setError(null); }
@@ -42,6 +45,24 @@ export function ClientLedgerDialog({ client, onClose, highlightTripId }: Props) 
 
   const fmtDate = (iso: string) => fmtDateTime(iso, i18n.language);
 
+  // Nouvelles operations : cochees ; celles que l'utilisateur a decochees le restent.
+  useEffect(() => {
+    if (!ledger) return;
+    setSelected((prev) => {
+      const next = new Set<string>();
+      for (const l of ledger.lines) if (!knownIds.current.has(l.id) || prev.has(l.id)) next.add(l.id);
+      knownIds.current = new Set(ledger.lines.map((l) => l.id));
+      return next;
+    });
+  }, [ledger]);
+
+  function toggleSel(id: string) {
+    setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  }
+  const selLines = ledger ? ledger.lines.filter((l) => selected.has(l.id)) : [];
+  const selDebit = selLines.reduce((a, l) => a + (l.kind === 'debit' ? l.amount : 0), 0);
+  const selCredit = selLines.reduce((a, l) => a + (l.kind === 'credit' ? l.amount : 0), 0);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const v = Number(amount);
@@ -55,28 +76,35 @@ export function ClientLedgerDialog({ client, onClose, highlightTripId }: Props) 
     finally { setBusy(false); }
   }
 
+  /** Releve de compte : uniquement les operations cochees, dans l'ordre chronologique. */
   async function print() {
-    if (!ledger) return;
+    if (!ledger || selLines.length === 0) return;
     const lang = i18n.language;
-    const asc = [...ledger.lines].sort((a, b) => a.at.localeCompare(b.at));
-    let run = 0; const bal = new Map<string, number>();
-    for (const l of asc) { run += l.kind === 'debit' ? l.amount : -l.amount; bal.set(l.id, run); }
+    const asc = [...selLines].sort((a, b) => a.at.localeCompare(b.at));
+    let run = 0;
+    const rows = asc.map((l) => {
+      run += l.kind === 'debit' ? l.amount : -l.amount;
+      return [fmtDate(l.at), l.label, l.kind === 'debit' ? formatMoney(l.amount) : '', l.kind === 'credit' ? formatMoney(l.amount) : '', formatMoney(run)];
+    });
+    const due = selDebit - selCredit;
     await openPrintReport({
-      title: t('clients.ledger.title'), subtitle: client.name,
+      title: t('clients.statement.title', 'Relevé de compte client'), subtitle: client.name,
       period: periodLabel(period, lang, t('period.all')), lang, rtl: lang.startsWith('ar'),
       labels: { printedOn: t('print.printedOn'), period: t('print.period'), page: '', total: t('clients.ledger.total') },
       kpis: [
-        { label: t('clients.ledger.debit'), value: formatMoney(ledger.period.debit), tone: 'danger' },
-        { label: t('clients.ledger.credit'), value: formatMoney(ledger.period.credit), tone: 'ok' },
-        { label: t('clients.ledger.balance'), value: formatMoney(ledger.overall.balance), tone: ledger.overall.balance > 0 ? 'warn' : 'ok' },
+        { label: t('clients.ledger.debit'), value: formatMoney(selDebit), tone: 'danger' },
+        { label: t('clients.ledger.credit'), value: formatMoney(selCredit), tone: 'ok' },
+        { label: t('clients.statement.due', 'Solde dû'), value: formatMoney(due), tone: due > 0 ? 'warn' : 'ok' },
+        { label: t('clients.statement.count', 'Opérations'), value: String(asc.length), tone: 'neutral' },
       ],
       sections: [{
-        title: t('clients.ledger.title'),
-        columns: [{ label: t('common.date'), width: '11%' }, { label: t('clients.ledger.label') }, { label: t('clients.ledger.debit'), align: 'right', width: '14%' }, { label: t('clients.ledger.credit'), align: 'right', width: '14%' }, { label: t('clients.ledger.solde'), align: 'right', width: '14%' }],
-        rows: ledger.lines.map((l) => [fmtDate(l.at), l.label, l.kind === 'debit' ? formatMoney(l.amount) : '', l.kind === 'credit' ? formatMoney(l.amount) : '', formatMoney(bal.get(l.id) ?? 0)]),
-        total: [t('clients.ledger.total'), '', formatMoney(ledger.period.debit), formatMoney(ledger.period.credit), formatMoney(ledger.period.balance)],
+        title: t('clients.statement.detail', 'Détail des opérations'),
+        columns: [{ label: t('common.date'), width: '14%' }, { label: t('clients.ledger.label') }, { label: t('clients.ledger.debit'), align: 'right', width: '14%' }, { label: t('clients.ledger.credit'), align: 'right', width: '14%' }, { label: t('clients.ledger.solde'), align: 'right', width: '14%' }],
+        rows,
+        total: [t('clients.ledger.total'), '', formatMoney(selDebit), formatMoney(selCredit), formatMoney(due)],
         empty: t('clients.ledger.empty'),
       }],
+      signatures: [t('clients.statement.signCompany', 'Cachet et signature'), t('clients.statement.signClient', 'Bon pour accord — client')],
     });
   }
 
@@ -91,7 +119,9 @@ export function ClientLedgerDialog({ client, onClose, highlightTripId }: Props) 
         <header className="modal-head">
           <div><h2>{t('clients.ledger.title')} — {client.name}</h2></div>
           <div className="chips">
-            <button className="btn ghost" onClick={() => void print()}>{t('common.print')}</button>
+            <button className="btn primary" disabled={selLines.length === 0} onClick={() => void print()} title={t('clients.statement.hint', 'Relevé PDF des opérations cochées')}>
+              {t('clients.statement.button', { defaultValue: 'Relevé ({{n}})', n: selLines.length })}
+            </button>
             <button className="btn ghost" onClick={onClose}>{t('track.close')}</button>
           </div>
         </header>
@@ -122,6 +152,19 @@ export function ClientLedgerDialog({ client, onClose, highlightTripId }: Props) 
               </form>
             )}
 
+            {ledger.lines.length > 0 && (
+              <div className="sel-bar">
+                <span>{t('clients.statement.selected', { defaultValue: '{{n}} / {{total}} opération(s) sélectionnée(s)', n: selLines.length, total: ledger.lines.length })}</span>
+                <span className="text-danger">{t('clients.ledger.debit')} {formatMoney(selDebit)}</span>
+                <span className="text-success">{t('clients.ledger.credit')} {formatMoney(selCredit)}</span>
+                <b>{t('clients.statement.due', 'Solde dû')} {formatMoney(selDebit - selCredit)}</b>
+                <span className="sel-actions">
+                  <button type="button" className="btn ghost small" onClick={() => setSelected(new Set(ledger.lines.map((l) => l.id)))}>{t('clients.statement.all', 'Tout sélectionner')}</button>
+                  <button type="button" className="btn ghost small" onClick={() => setSelected(new Set())}>{t('clients.statement.none', 'Tout désélectionner')}</button>
+                </span>
+              </div>
+            )}
+
             {ledger.lines.length === 0 ? <p className="muted small">{t('clients.ledger.empty')}</p> : (() => {
               // Solde cumule : on parcourt du plus ancien au plus recent, puis on reaffiche du plus recent.
               const asc = [...ledger.lines].sort((a, b) => a.at.localeCompare(b.at));
@@ -130,10 +173,11 @@ export function ClientLedgerDialog({ client, onClose, highlightTripId }: Props) 
               for (const l of asc) { run += l.kind === 'debit' ? l.amount : -l.amount; withBalance.set(l.id, run); }
               return (
               <table className="table small">
-                <thead><tr><th>{t('common.date')}</th><th>{t('clients.ledger.label')}</th><th>{t('clients.ledger.debit')}</th><th>{t('clients.ledger.credit')}</th><th>{t('clients.ledger.solde')}</th>{isAdmin && <th />}</tr></thead>
+                <thead><tr><th className="sel-col"><input type="checkbox" aria-label={t('clients.statement.all', 'Tout sélectionner')} ref={(el) => { if (el) el.indeterminate = selLines.length > 0 && selLines.length < ledger.lines.length; }} checked={ledger.lines.length > 0 && selLines.length === ledger.lines.length} onChange={(e) => setSelected(e.target.checked ? new Set(ledger.lines.map((x) => x.id)) : new Set())} /></th><th>{t('common.date')}</th><th>{t('clients.ledger.label')}</th><th>{t('clients.ledger.debit')}</th><th>{t('clients.ledger.credit')}</th><th>{t('clients.ledger.solde')}</th>{isAdmin && <th />}</tr></thead>
                 <tbody>
                   {ledger.lines.map((l) => (
                     <tr key={l.id} className={highlightTripId && l.tripId === highlightTripId && l.kind === 'debit' ? 'ledger-highlight' : undefined}>
+                      <td className="sel-col"><input type="checkbox" checked={selected.has(l.id)} onChange={() => toggleSel(l.id)} aria-label={l.label} /></td>
                       <td>{fmtDate(l.at)}</td>
                       <td>{l.label}</td>
                       <td className="text-danger">{l.kind === 'debit' ? formatMoney(l.amount) : ''}</td>
@@ -145,7 +189,7 @@ export function ClientLedgerDialog({ client, onClose, highlightTripId }: Props) 
                 </tbody>
                 <tfoot>
                   <tr className="ledger-total">
-                    <td colSpan={2}><b>{t('clients.ledger.total')}</b></td>
+                    <td colSpan={3}><b>{t('clients.ledger.total')}</b></td>
                     <td className="text-danger"><b>{formatMoney(ledger.period.debit)}</b></td>
                     <td className="text-success"><b>{formatMoney(ledger.period.credit)}</b></td>
                     <td className={ledger.period.balance > 0 ? 'text-danger' : 'text-success'}><b>{formatMoney(ledger.period.balance)}</b></td>

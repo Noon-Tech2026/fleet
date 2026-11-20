@@ -2994,3 +2994,9 @@ tr.ledger-highlight > td:first-child { border-left: 4px solid #e0a020; }
 .veh-cluster:hover { transform: scale(1.08); }
 .veh-cluster.tone-moving { border-color: #f0a020; }
 .veh-cluster.tone-blocked { border-color: #ef625a; }
+/* === releve-client-selection-v1 === */
+.ledger-modal .sel-col { width: 34px; text-align: center; }
+.ledger-modal .sel-col input { width: 17px; height: 17px; cursor: pointer; accent-color: #1f6f43; }
+.ledger-modal tr:has(td.sel-col input:not(:checked)) td:not(.sel-col) { opacity: .4; }
+.sel-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin: 10px 0 8px; padding: 9px 12px; border: 1px solid #d5e6da; border-radius: 10px; background: #f3f8f4; font-size: 14px; }
+.sel-bar .sel-actions { margin-inline-start: auto; display: flex; gap: 6px; }

@@ -12,6 +12,8 @@ export interface ReportDoc {
   lang: string;
   rtl?: boolean;
   labels: { printedOn: string; period: string; page: string; total: string };
+  /** Cases vides en bas du document (cachet, signature, bon pour accord). */
+  signatures?: string[];
 }
 
 const esc = (v: unknown) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
@@ -30,6 +32,9 @@ export async function openPrintReport(doc: ReportDoc): Promise<void> {
     return `<section><h2>${esc(s.title)}</h2><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody>${foot}</table></section>`;
   }).join('');
   const now = new Date().toLocaleString(doc.lang);
+  const sigs = doc.signatures?.length
+    ? `<div class="sigs">${doc.signatures.map((s) => `<div class="sig"><div class="sl">${esc(s)}</div></div>`).join('')}</div>`
+    : '';
   const html = `<!doctype html><html lang="${esc(doc.lang)}"${doc.rtl ? ' dir="rtl"' : ''}><head><meta charset="utf-8"><title>${esc(doc.title)}</title>
 <style>
   @page { size: A4 portrait; margin: 14mm 12mm 16mm; }
@@ -58,6 +63,9 @@ export async function openPrintReport(doc: ReportDoc): Promise<void> {
   tr { break-inside: avoid; }
   .right { text-align: right; white-space: nowrap; } .center { text-align: center; } .left { text-align: left; }
   .empty { text-align: center; color: #777; font-style: italic; }
+  .sigs { display: flex; gap: 24px; margin-top: 28px; break-inside: avoid; }
+  .sig { flex: 1; height: 95px; border: 1px dashed #9aa5ad; border-radius: 4px; padding: 6px 9px; }
+  .sl { font-size: 9.5px; color: #555; text-transform: uppercase; letter-spacing: .07em; }
   footer { position: fixed; bottom: 0; left: 0; right: 0; font-size: 9px; color: #777; display: flex; justify-content: space-between; border-top: 1px solid #ddd; padding-top: 3px; }
   @media screen { body { background: #e9ecef; padding: 20px; } .sheet { background: #fff; max-width: 210mm; margin: 0 auto; padding: 14mm 12mm 16mm; box-shadow: 0 2px 12px rgba(0,0,0,.12); } footer { position: static; margin-top: 16px; } }
 </style></head><body><div class="sheet">
@@ -67,6 +75,7 @@ export async function openPrintReport(doc: ReportDoc): Promise<void> {
 </header>
 <div class="kpis">${kpis}</div>
 ${sections}
+${sigs}
 <footer><span>${esc(brand.name)} — ${esc(doc.title)}</span><span>${esc(now)}</span></footer>
 </div><script>window.addEventListener('load', () => { setTimeout(() => window.print(), 250); });</script></body></html>`;
   const w = window.open('', '_blank', 'width=900,height=1000');
