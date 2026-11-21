@@ -86,9 +86,8 @@ export class FleetService implements OnModuleInit {
 
     // Chauffeurs charges AVANT les premieres trames (sinon « Non affecte » apres un redemarrage).
     await this.refreshDrivers();
-    await this.source.start((raw) => {
-      void this.ingest(raw).catch((err) => this.log.error(`Ingestion : ${String(err)}`));
-    });
+    // Trames d'un meme camion traitees dans l'ordre, jamais en parallele.
+    await this.source.start((raw) => this.enqueue(raw));
     setTimeout(() => void this.restoreMissing(), 20_000);
   }
 
@@ -160,6 +159,19 @@ export class FleetService implements OnModuleInit {
         this.events.publish({ type: 'position', vehicle: { ...v } });
       }
     }
+  }
+
+  /** File par camion : une trame n'est traitee qu'apres la precedente du meme camion. */
+  private readonly chains = new Map<string, Promise<void>>();
+
+  private enqueue(raw: RawPosition): void {
+    const prev = this.chains.get(raw.vehicleId) ?? Promise.resolve();
+    const next = prev
+      .then(() => this.ingest(raw))
+      .catch((err) => this.log.error(`Ingestion : ${String(err)}`));
+    this.chains.set(raw.vehicleId, next);
+    // Liberer la reference quand la file est vide.
+    void next.then(() => { if (this.chains.get(raw.vehicleId) === next) this.chains.delete(raw.vehicleId); });
   }
 
   /** Rebroadcast de l'etat complet : apres un changement du referentiel camions. */
