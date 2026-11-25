@@ -8,6 +8,7 @@ import { useAuth } from '../auth/AuthContext';
 import { StarterDialog } from './StarterDialog';
 import { VehicleHistoryDialog } from './VehicleHistoryDialog';
 import { TrackHistoryDialog } from './TrackHistoryDialog';
+import { IdleLogDialog } from './IdleLogDialog';
 import { CreateVehicleDialog } from './CreateVehicleDialog';
 import { EditVehicleDialog } from './EditVehicleDialog';
 import { PendingVehicleCard } from './PendingVehicleCard';
@@ -59,6 +60,7 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
   const [dialogVehicleId, setDialogVehicleId] = useState<string | null>(null);
   const [historyVehicleId, setHistoryVehicleId] = useState<string | null>(null);
   const [trackVehicle, setTrackVehicle] = useState<{ id: string; plate: string } | null>(null);
+  const [idleVehicle, setIdleVehicle] = useState<{ id: string; plate: string } | null>(null);
   const [creatingVehicle, setCreatingVehicle] = useState(false);
   const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -221,6 +223,7 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
                       {t('overview.track')}
                     </button>
                     <button className="btn ghost small" onClick={() => setTrackVehicle({ id: v.id, plate: v.plate })}>{t('track.button')}</button>
+                    <button className="btn ghost small" onClick={() => setIdleVehicle({ id: v.id, plate: v.plate })}>{t('idle.button', 'Ralenti')}</button>
                     <button className="btn ghost small" onClick={() => setHistoryVehicleId(v.id)}>
                       {t('overview.history')}
                     </button>
@@ -256,6 +259,10 @@ export function FleetOverview({ vehicles, onTrack }: Props) {
           onCancel={() => setDialogVehicleId(null)}
           onConfirm={(reason) => block(dialogVehicle.id, reason)}
         />
+      )}
+
+      {idleVehicle && (
+        <IdleLogDialog vehicleId={idleVehicle.id} plate={idleVehicle.plate} onClose={() => setIdleVehicle(null)} />
       )}
 
       {trackVehicle && (

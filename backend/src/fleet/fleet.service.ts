@@ -179,6 +179,71 @@ export class FleetService implements OnModuleInit {
     this.events.publish({ type: 'snapshot', vehicles: this.all(), alerts: [] } as never);
   }
 
+  /**
+   * Periodes moteur tournant camion arrete >= minMinutes, d'apres l'historique Traccar.
+   * Meme regle que l'alerte en direct (RulesService.checkIdle). Fenetre max 7 jours,
+   * lue jour par jour pour limiter la memoire.
+   */
+  async idleSessions(id: string, fromIso?: string, toIso?: string, minMinutes = 10) {
+    this.get(id); // 404 si camion inconnu
+    const src = this.source as TelemetrySource & { route?: (v: string, f: Date, t: Date) => Promise<RawPosition[]> };
+    const to = toIso && Number.isFinite(Date.parse(toIso)) ? new Date(toIso) : new Date();
+    let from = fromIso && Number.isFinite(Date.parse(fromIso)) ? new Date(fromIso) : new Date(to.getTime() - 3 * 86_400_000);
+    if (to.getTime() - from.getTime() > 7 * 86_400_000) from = new Date(to.getTime() - 7 * 86_400_000);
+    const driver = this.driverByVehicle.get(id) ?? '';
+    const sessions: Array<{ from: string; to: string; minutes: number; liters: number; lat: number; lon: number; zone: string | null; ongoing: boolean }> = [];
+    if (!src.route) return { supported: false, driver, from: from.toISOString(), to: to.toISOString(), sessions };
+
+    const GAP = 10 * 60_000, RADIUS = 200, L_PER_H = 3;
+    const st: { cur: { since: number; last: number; lat: number; lon: number } | null } = { cur: null };
+    const close = (end: number, ongoing = false) => {
+      const c = st.cur;
+      st.cur = null;
+      if (c === null || end - c.since < minMinutes * 60_000) return;
+      const minutes = Math.round((end - c.since) / 60_000);
+      sessions.push({
+        from: new Date(c.since).toISOString(), to: new Date(end).toISOString(), minutes,
+        liters: Math.round((minutes / 60) * L_PER_H * 10) / 10,
+        lat: c.lat, lon: c.lon, zone: this.zoneNameAt(c.lat, c.lon), ongoing,
+      });
+    };
+
+    for (let t0 = from.getTime(); t0 < to.getTime(); t0 += 86_400_000) {
+      const list = await src.route(id, new Date(t0), new Date(Math.min(t0 + 86_400_000, to.getTime())));
+      list.sort((a, b) => a.at.getTime() - b.at.getTime());
+      for (const p of list) {
+        const t = p.at.getTime();
+        if (st.cur !== null && t - st.cur.last > GAP) close(st.cur.last);
+        const moved = st.cur !== null && distanceM(st.cur.lat, st.cur.lon, p.lat, p.lon) > RADIUS;
+        if (p.ignition === false || moved) {
+          if (st.cur !== null) close(t);
+          if (p.ignition === false || p.speed >= 5) continue;
+        }
+        if (st.cur === null) {
+          if (p.speed >= 5) continue;
+          st.cur = { since: t, last: t, lat: p.lat, lon: p.lon };
+        } else {
+          st.cur.last = t;
+        }
+      }
+    }
+    if (st.cur !== null) close(st.cur.last, Date.now() - st.cur.last < GAP);
+    sessions.reverse(); // plus recent en premier
+    return { supported: true, driver, from: from.toISOString(), to: to.toISOString(), sessions };
+  }
+
+  /** Nom de la zone contenant le point, sinon null. */
+  private zoneNameAt(lat: number, lon: number): string | null {
+    try {
+      const g = this.geofence as unknown as { locate?: (a: number, b: number) => unknown };
+      const z = g.locate?.(lat, lon);
+      const zid = typeof z === 'string' ? z : z && typeof z === 'object' && 'id' in z ? String((z as { id: unknown }).id) : null;
+      return zid ? this.geofence.get(zid)?.name ?? null : null;
+    } catch {
+      return null;
+    }
+  }
+
   all(): VehicleState[] {
     const now = Date.now();
     return [...this.state.values()].map((v) => ({
@@ -311,4 +376,11 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
   const dLon = toRad(lon2 - lon1);
   const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+/** Distance en metres entre deux points GPS. */
+function distanceM(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const r = Math.PI / 180;
+  const a = Math.sin(((lat2 - lat1) * r) / 2) ** 2 + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(((lon2 - lon1) * r) / 2) ** 2;
+  return 6_371_000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }

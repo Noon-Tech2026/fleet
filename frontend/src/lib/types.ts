@@ -23,6 +23,8 @@ export type AlertCode =
   | 'exit_bypassed'
   | 'fuel_drop'
   | 'fuel_low'
+  | 'idle_engine'
+  | 'idle_engine_end'
   | 'starter_blocked'
   | 'starter_released'
   | 'starter_mismatch'

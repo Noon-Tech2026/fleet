@@ -49,6 +49,7 @@ export class RulesService {
     await this.checkUnlockRequest(previous, current);
     await this.checkDeparture(previous, current);
     this.checkFuel(current);
+    await this.checkIdle(current);
     this.checkMaintenance(current);
   }
 
@@ -246,6 +247,53 @@ export class RulesService {
     return this.perimeterAlarm.has(vehicleId);
   }
 
+  /* --- Moteur tournant a l'arret ---------------------------------------- */
+  private readonly idle = new Map<string, { since: number; last: number; lat: number; lon: number; alerted: boolean; lastBuzz: number; buzzes: number }>();
+
+  private async checkIdle(current: VehicleState): Promise<void> {
+    const t = Date.parse(current.updatedAt) || Date.now();
+    let s = this.idle.get(current.id);
+
+    // Trou de transmission : on ne compte pas un temps qu'on n'a pas vu.
+    if (s !== undefined && t - s.last > IDLE_GAP_MS) { this.endIdle(current, s, s.last); s = undefined; }
+
+    const moved = s !== undefined && distanceM(s.lat, s.lon, current.lat, current.lon) > IDLE_RADIUS_M;
+    if (current.ignition === false || moved) {
+      if (s !== undefined) this.endIdle(current, s, t);
+      if (current.ignition === false || current.speed >= 5) return;
+      s = undefined; // a bouge puis s'arrete de nouveau : nouveau point d'arret
+    }
+    if (current.speed >= 5 && s === undefined) return; // roule : pas d'arret en cours
+
+    if (s === undefined) {
+      this.idle.set(current.id, { since: t, last: t, lat: current.lat, lon: current.lon, alerted: false, lastBuzz: 0, buzzes: 0 });
+      return;
+    }
+    s.last = t;
+    const fresh = Date.now() - t < 2 * 60_000; // pas de bip sur une trame rejouee
+    const minutes = Math.floor((t - s.since) / 60_000);
+
+    if (s.alerted === false && minutes >= IDLE_ALERT_MIN) {
+      s.alerted = true;
+      const zone = current.zoneId ? this.geofence.get(current.zoneId)?.name : undefined;
+      this.alerts.raise(current.id, 'warning', 'idle_engine',
+        `Moteur tournant à l'arrêt depuis ${minutes} min — ${current.driver || 'chauffeur non affecté'}${zone ? ` — ${zone}` : ''}`);
+      if (fresh) { s.lastBuzz = Date.now(); s.buzzes = 1; await this.immobilizer.buzzerOn(current.id, IDLE_BUZZ_SECONDS); }
+    } else if (s.alerted && fresh && s.buzzes < IDLE_BUZZ_MAX && Date.now() - s.lastBuzz >= IDLE_BUZZ_REPEAT_MS) {
+      s.lastBuzz = Date.now(); s.buzzes += 1;
+      await this.immobilizer.buzzerOn(current.id, IDLE_BUZZ_SECONDS);
+    }
+  }
+
+  private endIdle(current: VehicleState, s: { since: number; alerted: boolean }, end: number): void {
+    this.idle.delete(current.id);
+    if (s.alerted === false) return; // moins de 10 min : rien a signaler
+    const minutes = Math.round((end - s.since) / 60_000);
+    const liters = Math.round((minutes / 60) * IDLE_L_PER_HOUR);
+    this.alerts.raise(current.id, 'info', 'idle_engine_end',
+      `Ralenti terminé — ${minutes} min moteur tournant à l'arrêt (≈ ${liters} L) — ${current.driver || 'chauffeur non affecté'}`);
+  }
+
   private checkFuel(current: VehicleState): void {
     const labels: Record<string, [level: 'critical' | 'warning' | 'info', text: (tank: string, d: number) => string]> = {
       fuel_drop: ['critical', (t, d) => `Chute anormale du réservoir ${t} — ${d} L véhicule à l'arrêt (vol possible)`],
@@ -281,4 +329,20 @@ export class RulesService {
       }
     }
   }
+}
+
+/** Moteur tournant a l'arret : alerte + bip cabine (jamais de coupure moteur). */
+const IDLE_ALERT_MIN = 10;              // seuil demande par le client
+const IDLE_RADIUS_M = 200;              // une file qui avance de quelques metres reste « a l'arret »
+const IDLE_GAP_MS = 10 * 60_000;        // trou de trames au-dela duquel on ne compte plus
+const IDLE_BUZZ_SECONDS = 10;
+const IDLE_BUZZ_REPEAT_MS = 10 * 60_000;
+const IDLE_BUZZ_MAX = 3;
+const IDLE_L_PER_HOUR = 3;              // estimation conso ralenti camion lourd
+
+/** Distance en metres entre deux points GPS. */
+function distanceM(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const r = Math.PI / 180;
+  const a = Math.sin(((lat2 - lat1) * r) / 2) ** 2 + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(((lon2 - lon1) * r) / 2) ** 2;
+  return 6_371_000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }

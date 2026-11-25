@@ -789,5 +789,23 @@
     "others": "Other containers",
     "notes": "Notes",
     "openLedger": "Open client ledger"
+  },
+  "idle": {
+    "button": "Idling",
+    "title": "Engine idling while stopped",
+    "last24h": "24 h",
+    "lastDays": "{{count}} days",
+    "rule": "Ignition on, truck stopped, over 10 min. Fuel estimated at 3 L/h.",
+    "error": "History unavailable right now.",
+    "unsupported": "History not available for this device.",
+    "count": "Periods",
+    "total": "Total time",
+    "fuel": "Estimated fuel",
+    "nights": "At night",
+    "empty": "No period over 10 min in this range.",
+    "duration": "Duration",
+    "place": "Place",
+    "night": "Night",
+    "ongoing": "ongoing"
   }
 }

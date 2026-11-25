@@ -66,6 +66,12 @@ export class FleetController {
     return this.alerts.recent();
   }
 
+  /** Moteur tournant a l'arret plus de 10 min (historique, max 7 jours). */
+  @Get('vehicles/:id/idle')
+  idleLog(@Param('id') id: string, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.fleet.idleSessions(id, from || undefined, to || undefined);
+  }
+
   @Get('vehicles/:id/commands')
   commandHistory(@Param('id') id: string) {
     return this.immobilizer.history(id);

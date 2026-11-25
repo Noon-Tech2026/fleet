@@ -26,6 +26,8 @@ export type AlertCode =
   | 'fuel_refill'
   | 'fuel_overconsumption'
   | 'fuel_low'
+  | 'idle_engine'
+  | 'idle_engine_end'
   | 'starter_blocked'
   | 'starter_released'
   | 'starter_mismatch'

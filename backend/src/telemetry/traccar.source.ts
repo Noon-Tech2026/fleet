@@ -239,6 +239,24 @@ export class TraccarSource implements TelemetrySource, OnModuleDestroy {
     };
   }
 
+  /** Historique complet d'un boitier (rapport route Traccar), sans les reponses de commande. */
+  async route(vehicleId: string, from: Date, to: Date): Promise<RawPosition[]> {
+    const device = await this.findDevice(vehicleId);
+    if (!device) return [];
+    const res = await this.api(`/api/reports/route?deviceId=${device.id}&from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`, {
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) return [];
+    const out: RawPosition[] = [];
+    for (const p of (await res.json()) as TraccarPosition[]) {
+      if (typeof p.attributes?.result === 'string') continue;
+      if (!p.latitude && !p.longitude) continue;
+      const m = this.map(p);
+      if (m) out.push(m);
+    }
+    return out;
+  }
+
   /** Derniere position GPS reelle (hors reponses de commande) dans les 6 h precedant le dernier contact. */
   async lastRealPosition(vehicleId: string): Promise<RawPosition | null> {
     const device = await this.findDevice(vehicleId);

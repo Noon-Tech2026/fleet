@@ -779,5 +779,23 @@
     "others": "Autres conteneurs",
     "notes": "Notes",
     "openLedger": "Ouvrir le journal client"
+  },
+  "idle": {
+    "button": "Ralenti",
+    "title": "Moteur tournant à l'arrêt",
+    "last24h": "24 h",
+    "lastDays": "{{count}} jours",
+    "rule": "Contact mis, camion arrêté, plus de 10 min. Gasoil estimé à 3 L/h.",
+    "error": "Historique indisponible pour le moment.",
+    "unsupported": "Historique non disponible pour ce boîtier.",
+    "count": "Périodes",
+    "total": "Durée totale",
+    "fuel": "Gasoil estimé",
+    "nights": "La nuit",
+    "empty": "Aucune période de plus de 10 min sur cette durée.",
+    "duration": "Durée",
+    "place": "Lieu",
+    "night": "Nuit",
+    "ongoing": "en cours"
   }
 }
