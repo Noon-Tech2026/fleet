@@ -8,6 +8,7 @@ import { StarterDialog } from './StarterDialog';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 
+import { IdleButton } from './IdleLogDialog';
 interface Props {
   vehicle: VehicleState;
   simulatorMode: boolean;
@@ -87,6 +88,7 @@ export function VehicleDetail({ vehicle, onTrack, requests = [], onShowRequests,
           {onTrack && (
             <button className="btn ghost small" onClick={onTrack}>{t('track.button')}</button>
           )}
+          <IdleButton vehicleId={vehicle.id} plate={vehicle.plate} />
         </div>
       </header>
 

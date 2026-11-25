@@ -134,3 +134,15 @@ export function IdleLogDialog({ vehicleId, plate, onClose }: Props) {
     </div>
   );
 }
+
+/** Bouton + dialogue, sans etat a gerer dans le parent. */
+export function IdleButton({ vehicleId, plate }: { vehicleId: string; plate: string }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button className="btn ghost small" onClick={() => setOpen(true)}>{t('idle.button', 'Ralenti')}</button>
+      {open && <IdleLogDialog vehicleId={vehicleId} plate={plate} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
