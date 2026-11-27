@@ -270,7 +270,6 @@ export class RulesService {
       return;
     }
     s.last = t;
-    const fresh = Date.now() - t < 2 * 60_000; // pas de bip sur une trame rejouee
     const minutes = Math.floor((t - s.since) / 60_000);
 
     if (s.alerted === false && minutes >= IDLE_ALERT_MIN) {
@@ -278,10 +277,6 @@ export class RulesService {
       const zone = current.zoneId ? this.geofence.get(current.zoneId)?.name : undefined;
       this.alerts.raise(current.id, 'warning', 'idle_engine',
         `Moteur tournant à l'arrêt depuis ${minutes} min — ${current.driver || 'chauffeur non affecté'}${zone ? ` — ${zone}` : ''}`);
-      if (fresh) { s.lastBuzz = Date.now(); s.buzzes = 1; await this.immobilizer.buzzerOn(current.id, IDLE_BUZZ_SECONDS); }
-    } else if (s.alerted && fresh && s.buzzes < IDLE_BUZZ_MAX && Date.now() - s.lastBuzz >= IDLE_BUZZ_REPEAT_MS) {
-      s.lastBuzz = Date.now(); s.buzzes += 1;
-      await this.immobilizer.buzzerOn(current.id, IDLE_BUZZ_SECONDS);
     }
   }
 
@@ -331,13 +326,10 @@ export class RulesService {
   }
 }
 
-/** Moteur tournant a l'arret : alerte + bip cabine (jamais de coupure moteur). */
+/** Moteur tournant a l'arret : alerte seulement (pas de bip cabine, demande client 27/11). */
 const IDLE_ALERT_MIN = 10;              // seuil demande par le client
 const IDLE_RADIUS_M = 200;              // une file qui avance de quelques metres reste « a l'arret »
 const IDLE_GAP_MS = 10 * 60_000;        // trou de trames au-dela duquel on ne compte plus
-const IDLE_BUZZ_SECONDS = 10;
-const IDLE_BUZZ_REPEAT_MS = 10 * 60_000;
-const IDLE_BUZZ_MAX = 3;
 const IDLE_L_PER_HOUR = 3;              // estimation conso ralenti camion lourd
 
 /** Distance en metres entre deux points GPS. */
